@@ -78,6 +78,43 @@ void child_command(enum cmd_pos pos, char* argv[], int left_pipe_read_fd, int ri
 
   // TODO: Register a the sigpipe_hanlder signal handler in order to detect if we 
   //       make any misstakes and receives a SIGPIPE.
+  signal(SIGPIPE,sigpipe_handler);
+
+  switch(pos){ //{single, first, middle, last}
+  case single: //stdin + stdout
+    break; 
+  case first://stdin + pipeout
+    if (dup2(right_pipe[1], STDOUT_FILENO) == -1) {
+      perror("dup2-1");
+      exit(1);
+    }
+    close(left_pipe_read_fd);
+    close(right_pipe[0]);
+    break; 
+
+  case middle: //pipein + pipeout
+    if (dup2(left_pipe_read_fd, STDIN_FILENO) == -1){
+    perror("dup2-2");
+    exit(2);
+    }
+    if (dup2(right_pipe[1], STDOUT_FILENO) == -1){
+      perror("dup2-se1");
+      exit(11);
+    }
+    close(right_pipe[0]);
+    break;
+  case last: //pipein + stdout
+    if (dup2(left_pipe_read_fd, STDIN_FILENO)== -1){
+      perror("dup2-se");
+      exit(1);
+    }
+    close(right_pipe[1]);
+    break; 
+  default:
+    perror("error");
+    exit(EXIT_FAILURE);
+    break;}
+
   
   
   DBG("CHILD  <%ld> %s left_pipe_read_fd = %d, right_pipe_read_fd = %d, right_pipe_write_fd = %d\n", 
@@ -171,10 +208,21 @@ int pipe_and_fork(enum cmd_pos pos, char* argv[], int left_pipe_read_fd) {
   
   // TODO: The pipe must be created before the fork(), but only create
   //       a pipe if needed (use pos to make decision).
-
   
-
-  
+  if(pos==first){
+    if (pipe(new_pipe)==-1){
+      perror("er-pipe");
+      exit(1);
+      //errror
+    }
+  }else if(pos==middle){
+    if (pipe(new_pipe)==-1){
+      //error
+      perror("ex2-pipe");
+      exit(2);
+    }
+  }
+    
   // Once the pipe is created we can fork a child process for the command. 
   
   pid_t pid = fork();
@@ -198,11 +246,11 @@ int pipe_and_fork(enum cmd_pos pos, char* argv[], int left_pipe_read_fd) {
     
   default: // == PARENT ==
     
-    DBG("PARENT <%ld> just forked child <%ld> %s\n", getpid(), pid, argv[0]);
+    DBG("PARENT <%llu> just forked child <%llu> %s\n", (long long unsigned)getpid(), (long long unsigned)pid, argv[0]);
     
     // TODO: Close descriptors if necessary. 
       
-    
+    close(new_pipe[1]);
     
     // Return the read descriptor of the newly created pipe. This
     // descriptor is needed by the next child. This is the left_pipe_read_fd 
@@ -333,7 +381,10 @@ int main() {
     
     // TODO: Make sure shell doesn't print a new prompt until 
     // all the command processes (children) have terminated.
-    
+    while(children>0){
+      wait(NULL);   
+      children--;
+    }
     
   } // end while(1)
 } // end of main()
