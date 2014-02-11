@@ -126,10 +126,13 @@ int main(int argc, char *argv[])
 	printf("master: the game ends\n");
 
 	/* TODO: cleanup resources and exit with success */
+        int status;
+        pid_t pid_temp;
 	for (i = 0; i < NUM_PLAYERS; i++) {
 	  //????????????????????????? stäng fd. 
 	  //stäng alla eftersom!
-	  wait(NULL);
+	  pid_temp = wait(&status);
+          waitstat(pid_temp, status);
 	}
 	//	while(1) {};
 	return 0;
