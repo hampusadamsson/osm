@@ -30,7 +30,6 @@
 /* Iterations performed decrementing the shared variable.*/
 #define DEC_ITERATIONS (INC_ITERATIONS * INC_THREADS * INCREMENT / DEC_THREADS / DECREMENT)
 
-pthread_mutex_t mutexsum;
 
 volatile int counter;
 
@@ -44,9 +43,9 @@ inc_mutex(void *arg __attribute__((unused)))
 
     /* TODO 1: Protect access to the shared variable */
     for (i = 0; i < INC_ITERATIONS; i++) {
-		pthread_mutex_lock (&mutexsum);        
+		pthread_mutex_lock (&mutex);        
       counter += INCREMENT;
-      pthread_mutex_unlock (&mutexsum);
+      pthread_mutex_unlock (&mutex);
     }
 
     return NULL;
@@ -59,9 +58,9 @@ dec_mutex(void *arg __attribute__((unused)))
 
     /* TODO 1: Protect access to the shared variable */
     for (i = 0; i < DEC_ITERATIONS; i++) {
-        pthread_mutex_lock (&mutexsum);
+        pthread_mutex_lock (&mutex);
         counter -= DECREMENT;
-        pthread_mutex_unlock (&mutexsum);
+        pthread_mutex_unlock (&mutex);
     }
 
     return NULL;
