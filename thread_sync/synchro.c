@@ -113,7 +113,8 @@ inc_atomic(void *arg __attribute__((unused)))
 
     /* TODO 3: Use atomic primitives to manipulate the shared variable */
     for (i = 0; i < INC_ITERATIONS; i++) {
-        counter += DECREMENT; // You need to replace this
+        __sync_fetch_and_add(&counter,1);
+        //counter += DECREMENT; // You need to replace this
     }
 
     return NULL;
@@ -126,7 +127,8 @@ dec_atomic(void *arg __attribute__((unused)))
 
     /* TODO 3: Use atomic primitives to manipulate the shared variable */
     for (i = 0; i < DEC_ITERATIONS; i++) {
-        counter += DECREMENT; // You need to replace this
+        __sync_fetch_and_sub(&counter,1);
+        //counter += DECREMENT; // You need to replace this
     }
 
     return NULL;
