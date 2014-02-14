@@ -16,8 +16,10 @@
 
 #define LOOPS 5
 #define NTHREADS 3
-#define MAX_SLEEP_TIME 3
+#define MAX_SLEEP_TIME 10
 
+sem_t sem_name;
+sem_t sem_name2;
 
 /* TODO: Make the two threads perform their iterations in a
  * predictable way. Both should perform iteration 1 before iteration 2
@@ -29,12 +31,13 @@ threadA(void *param __attribute__((unused)))
     int i;
 	
     for (i = 0; i < LOOPS; i++) {
-
-	printf("threadA --> %d iteration\n", i);
-	sleep(rand() % MAX_SLEEP_TIME);
+		sem_wait(&sem_name2);
+		printf("threadA --> %d iteration\n", i);
+		sem_post(&sem_name);
+	//sleep(rand() % MAX_SLEEP_TIME);
 
     } 
-
+	
     pthread_exit(0);
 }
 
@@ -43,13 +46,13 @@ void *
 threadB(void *param  __attribute__((unused)))
 { 
     int i;
-	
+
     for (i = 0; i < LOOPS; i++) {
 
-
+	sem_wait(&sem_name);
 	printf("threadB --> %d iteration\n", i);
-	sleep(rand() % MAX_SLEEP_TIME);
-
+	//sleep(rand() % MAX_SLEEP_TIME);
+	sem_post(&sem_name2);
     } 
 
     pthread_exit(0);
@@ -58,8 +61,10 @@ threadB(void *param  __attribute__((unused)))
 int 
 main()
 {
+	 sem_init(&sem_name, 0, 1);
+	 sem_init(&sem_name2, 0, 1);     
     pthread_t tidA, tidB;
-
+	
     srand(time(NULL));
     pthread_setconcurrency(3);
 
