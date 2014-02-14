@@ -12,6 +12,7 @@
 #include <stdio.h>     /* printf(), fprintf() */
 #include <stdlib.h>    /* abort() */
 #include <pthread.h>   /* pthread_... */
+#include <pthread.h>
 
 #include "timing.h"
 
@@ -29,6 +30,8 @@
 /* Iterations performed decrementing the shared variable.*/
 #define DEC_ITERATIONS (INC_ITERATIONS * INC_THREADS * INCREMENT / DEC_THREADS / DECREMENT)
 
+pthread_mutex_t mutexsum;
+
 volatile int counter;
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -41,7 +44,9 @@ inc_mutex(void *arg __attribute__((unused)))
 
     /* TODO 1: Protect access to the shared variable */
     for (i = 0; i < INC_ITERATIONS; i++) {
-        counter += INCREMENT;
+		pthread_mutex_lock (&mutexsum);        
+      counter += INCREMENT;
+      pthread_mutex_unlock (&mutexsum);
     }
 
     return NULL;
@@ -54,7 +59,9 @@ dec_mutex(void *arg __attribute__((unused)))
 
     /* TODO 1: Protect access to the shared variable */
     for (i = 0; i < DEC_ITERATIONS; i++) {
+        pthread_mutex_lock (&mutexsum);
         counter -= DECREMENT;
+        pthread_mutex_unlock (&mutexsum);
     }
 
     return NULL;
