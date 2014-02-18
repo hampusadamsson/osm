@@ -30,6 +30,8 @@ typedef struct {
 
 
 buffer_t buffer;
+sem_t removeSema,insertSema,bufferSema;
+
 
 pthread_t consumer_tid[CONSUMERS], producer_tid[PRODUCERS];
 
@@ -45,10 +47,12 @@ insert_item(int item)
      * access to the buffer and use the existing code to remove an item.
      */
 
-
+	 sem_wait(&insertSema);
+	 sem_wait(&bufferSema);
     buffer.value[buffer.next_in] = item;
     buffer.next_in = (buffer.next_in + 1) % BUFFER_SIZE;
-
+	 sem_post(&bufferSema);	 
+	 sem_post(&removeSema);
 
     return 0;
 }
@@ -64,12 +68,14 @@ remove_item(int *item)
     /* TODO: Check and wait if the buffer is empty. Ensure exclusive
      * access to the buffer and use the existing code to remove an item.
      */
-
-
+	 
+	 sem_wait(&removeSema);
+	 sem_wait(&bufferSema);
     *item = buffer.value[buffer.next_out];
     buffer.value[buffer.next_out] = -1;
     buffer.next_out = (buffer.next_out + 1) % BUFFER_SIZE;
-
+    sem_post(&bufferSema);
+	 sem_post(&insertSema);
     return 0;
 }
 
@@ -132,7 +138,11 @@ int
 main()
 {
     long int i;
-
+	 
+	 sem_init(&removeSema,0, 0);
+	 sem_init(&insertSema, 0, BUFFER_SIZE);
+	 sem_init(&bufferSema,0,1)	;
+		 
     srand(time(NULL));
 
     /* Create the consumer threads */
