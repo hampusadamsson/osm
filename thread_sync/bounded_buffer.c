@@ -49,8 +49,8 @@ insert_item(int item)
 
 	 sem_wait(&insertSema);
 	 sem_wait(&bufferSema);
-    buffer.value[buffer.next_in] = item;
-    buffer.next_in = (buffer.next_in + 1) % BUFFER_SIZE;
+     buffer.value[buffer.next_in] = item;
+     buffer.next_in = (buffer.next_in + 1) % BUFFER_SIZE;
 	 sem_post(&bufferSema);	 
 	 sem_post(&removeSema);
 
@@ -71,12 +71,12 @@ remove_item(int *item)
 	 
 	 sem_wait(&removeSema);
 	 sem_wait(&bufferSema);
-    *item = buffer.value[buffer.next_out];
-    buffer.value[buffer.next_out] = -1;
-    buffer.next_out = (buffer.next_out + 1) % BUFFER_SIZE;
-    sem_post(&bufferSema);
+     *item = buffer.value[buffer.next_out];
+     buffer.value[buffer.next_out] = -1;
+     buffer.next_out = (buffer.next_out + 1) % BUFFER_SIZE;
+     sem_post(&bufferSema);
 	 sem_post(&insertSema);
-    return 0;
+     return 0;
 }
 
 /**
@@ -139,9 +139,9 @@ main()
 {
     long int i;
 	 
-	 sem_init(&removeSema,0, 0);
-	 sem_init(&insertSema, 0, BUFFER_SIZE);
-	 sem_init(&bufferSema,0,1)	;
+    sem_init(&removeSema,0, 0);
+    sem_init(&insertSema, 0, BUFFER_SIZE);
+    sem_init(&bufferSema,0,1)	;
 		 
     srand(time(NULL));
 

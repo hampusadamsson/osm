@@ -34,8 +34,7 @@ threadA(void *param __attribute__((unused)))
 		sem_wait(&sem_name2);
 		printf("threadA --> %d iteration\n", i);
 		sem_post(&sem_name);
-	//sleep(rand() % MAX_SLEEP_TIME);
-
+        //sleep(rand() % MAX_SLEEP_TIME);
     } 
 	
     pthread_exit(0);
@@ -48,11 +47,10 @@ threadB(void *param  __attribute__((unused)))
     int i;
 
     for (i = 0; i < LOOPS; i++) {
-
-	sem_wait(&sem_name);
-	printf("threadB --> %d iteration\n", i);
-	//sleep(rand() % MAX_SLEEP_TIME);
-	sem_post(&sem_name2);
+        sem_wait(&sem_name);
+        printf("threadB --> %d iteration\n", i);
+        sem_post(&sem_name2);
+        //sleep(rand() % MAX_SLEEP_TIME);
     } 
 
     pthread_exit(0);
@@ -61,22 +59,22 @@ threadB(void *param  __attribute__((unused)))
 int 
 main()
 {
-	 sem_init(&sem_name, 0, 1);
-	 sem_init(&sem_name2, 0, 1);     
+	sem_init(&sem_name, 0, 1);
+	sem_init(&sem_name2, 0, 1);     
     pthread_t tidA, tidB;
 	
     srand(time(NULL));
     pthread_setconcurrency(3);
 
     if (pthread_create(&tidA, NULL, threadA, NULL) || 
-	pthread_create(&tidB, NULL, threadB, NULL)) {
-	perror("pthread_create");
-	abort();
+        pthread_create(&tidB, NULL, threadB, NULL)) {
+        perror("pthread_create");
+        abort();
     }
     if (pthread_join(tidA, NULL) != 0 || 
         pthread_join(tidB, NULL) != 0) {
-	perror("pthread_join");
-	abort();
+        perror("pthread_join");
+        abort();
     }
 
     return 0;

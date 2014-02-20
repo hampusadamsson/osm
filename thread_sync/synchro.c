@@ -43,9 +43,9 @@ inc_mutex(void *arg __attribute__((unused)))
 
     /* TODO 1: Protect access to the shared variable */
     for (i = 0; i < INC_ITERATIONS; i++) {
-        pthread_mutex_lock (&mutex);        
+        pthread_mutex_lock(&mutex);        
         counter += INCREMENT;
-        pthread_mutex_unlock (&mutex);
+        pthread_mutex_unlock(&mutex);
     }
     
     return NULL;
@@ -58,9 +58,9 @@ dec_mutex(void *arg __attribute__((unused)))
 
     /* TODO 1: Protect access to the shared variable */
     for (i = 0; i < DEC_ITERATIONS; i++) {
-        pthread_mutex_lock (&mutex);
+        pthread_mutex_lock(&mutex);
         counter -= DECREMENT;
-        pthread_mutex_unlock (&mutex);
+        pthread_mutex_unlock(&mutex);
     }
 
     return NULL;
@@ -77,10 +77,11 @@ inc_cas(void *arg __attribute__((unused)))
     /* TODO 2: Use the compare and swap primitive to manipulate the shared
      * variable */
     for (i = 0; i < INC_ITERATIONS; i++) {
-    int tmp = counter;
-    while(!(__sync_bool_compare_and_swap(&counter,tmp, tmp + INCREMENT)))
-            tmp=counter;
-        //counter += INCREMENT; // You need to replace this
+        int tmp = counter;
+        while(!(__sync_bool_compare_and_swap(&counter, tmp, tmp + INCREMENT))) {
+            tmp = counter;
+            //counter += INCREMENT; // You need to replace this
+        }
     }
 
     return NULL;
@@ -95,9 +96,10 @@ dec_cas(void *arg __attribute__((unused)))
      * variable */
     for (i = 0; i < DEC_ITERATIONS; i++) {
         int tmp2 = counter;
-        while(!(__sync_bool_compare_and_swap(&counter,tmp2, tmp2 - DECREMENT)))
+        while(!(__sync_bool_compare_and_swap(&counter, tmp2, tmp2 - DECREMENT))) {
             tmp2 = counter;
-        //counter += DECREMENT; // You need to replace this
+            //counter += DECREMENT; // You need to replace this
+        }
     }
 
     return NULL;
