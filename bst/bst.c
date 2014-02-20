@@ -54,6 +54,7 @@
 volatile int lock = 0;
 //MUTEX
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; 
+pthread_mutex_t all_lock = PTHREAD_MUTEX_INITIALIZER; 
 
 struct bst_node**
 search(struct bst_node** root, comparator compare, void* data)
@@ -63,16 +64,15 @@ search(struct bst_node** root, comparator compare, void* data)
     struct bst_node** node = root;
 
     while (*node != NULL) {
-        while(__sync_lock_test_and_set(&(*node)->lock, 1));//Spin-123        
+        pthread_mutex_lock(&(*node)->mutex); //mutex
         int compare_result = compare(data, (*node)->data);
-        (*node)->lock = 0;//Spin-123
+        pthread_mutex_unlock(&(*node)->mutex); //mutex
         
         if (compare_result < 0){
             node = &(*node)->left;
         }else if (compare_result > 0){
             node = &(*node)->right;
         }else
-//            while(__sync_lock_test_and_set(&(*node)->lock, 1));//Spin-123              
             break;
     }
     return node;
@@ -103,20 +103,31 @@ node_delete_aux(struct bst_node** node)
         free_node(old_node);
 
     } else {
+        pthread_mutex_lock(&(*node)->left->mutex); //mutex
         struct bst_node** pred = &(*node)->left;
         while ((*pred)->right != NULL) {
-	    pred = &(*pred)->right;
+	    pthread_mutex_lock(&(*pred)->right->mutex); //mutex
+            pred = &(*pred)->right;
 	}
-
-        while(__sync_lock_test_and_set(&(*pred)->lock, 1));
+        
+        pthread_mutex_lock(&(*pred)->mutex); //mutex
         
         /* Swap values */
 	void* temp = (*pred)->data;
         (*pred)->data = (*node)->data;
 	(*node)->data = temp;
-        (*node)->lock = 0;//Spin-123
-        
+     
 	node_delete_aux(pred);
+        //pthread_mutex_unlock(&(*node)->mutex); //mutex
+        
+        pred = old_node;
+        pthread_mutex_unlock(&(*pred)->mutex); //mutex
+        pred=(*pred)->left;
+        pthread_mutex_unlock(&(*pred)->mutex); //mutex
+        while ((*pred)->right != NULL) {
+	    pthread_mutex_unlock(&(*pred)->right->mutex); //mutex
+            pred = &(*pred)->right;
+	}
         
     }
     
@@ -138,9 +149,9 @@ node_delete(struct bst_node** root, comparator compare, void* data)
     if (*node == NULL)
         return -1;
     
-    while(__sync_lock_test_and_set(&(*node)->lock, 1));
+    pthread_mutex_lock(&(*node)->mutex); //mutex    
     node_delete_aux(node);
-
+    
     return 0;
 }
  
@@ -165,6 +176,7 @@ node_delete_ts_cg(struct bst_node** root, comparator compare, void* data)
     if (node == NULL)
         return -1;
     
+
     /* pthread_mutex_lock(&mutex); //mutex   */
     /* node_delete(root, compare, data); //mutex */
     /* pthread_mutex_unlock(&mutex); //mutex */
@@ -197,13 +209,7 @@ node_delete_ts_fg(struct bst_node** root, comparator compare, void* data)
     if (node == NULL)
         return -1;
 
-  
-    //struct bst_node** tmp = search(root, compare, data);
-    //while(__sync_lock_test_and_set(&(*tmp)->lock, 1));
-       
     node_delete(root, compare, data);
-    
-    //(*tmp)->lock = 0;//Spin-123
     
     return 0;
 }
@@ -262,8 +268,10 @@ node_insert(struct bst_node** root, comparator compare, void* data)
         *node = new_node(data);
         return 0;
     } else
-        (*node)->lock=0;//Spin-123
-        return 1;
+        //(*node)->lock=0;//Spin-123
+    pthread_mutex_unlock(&(*node)->mutex); //mutex
+
+    return 1;
 }
 
 
@@ -282,8 +290,7 @@ new_node(void* data)
     } else {
         /* TODO: Initialize any per node variables you use for the BST */
         
-        //pthread_mutex_init(&(node->mutex), NULL);
-        node->lock=0; //unlock spinlock
+        pthread_mutex_init(&(node->mutex), NULL);
         node->left = NULL;
         node->right = NULL;
         node->data = data;
@@ -305,7 +312,6 @@ free_node(struct bst_node* node)
         fprintf(stderr, "Invalid node\n");
     else {
         /* TODO: Finalize any per node variables you use for the BST */
-        //node->lock=0;
         free(node);
     }
 }
