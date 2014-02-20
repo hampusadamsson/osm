@@ -106,11 +106,11 @@ node_delete_aux(struct bst_node** node)
         pthread_mutex_lock(&(*node)->left->mutex); //mutex
         struct bst_node** pred = &(*node)->left;
         while ((*pred)->right != NULL) {
-	    pthread_mutex_lock(&(*pred)->right->mutex); //mutex
             pred = &(*pred)->right;
+            pthread_mutex_lock(&(*pred)->mutex); //mutex
 	}
         
-        pthread_mutex_lock(&(*pred)->mutex); //mutex
+        //pthread_mutex_lock(&(*pred)->mutex); //mutex
         
         /* Swap values */
 	void* temp = (*pred)->data;
@@ -118,16 +118,19 @@ node_delete_aux(struct bst_node** node)
 	(*node)->data = temp;
      
 	node_delete_aux(pred);
+        //pthread_mutex_unlock(&(*pred)->mutex);
         //pthread_mutex_unlock(&(*node)->mutex); //mutex
         
-        pred = old_node;
-        pthread_mutex_unlock(&(*pred)->mutex); //mutex
-        pred=(*pred)->left;
-        pthread_mutex_unlock(&(*pred)->mutex); //mutex
-        while ((*pred)->right != NULL) {
-	    pthread_mutex_unlock(&(*pred)->right->mutex); //mutex
-            pred = &(*pred)->right;
-	}
+        //pred = old_node; 
+        pthread_mutex_unlock(&(old_node)->mutex); //mutex
+        if ((old_node)->left != NULL){ 
+            old_node=(old_node)->left;
+            pthread_mutex_unlock(&(old_node)->mutex); //mutex
+        }
+        while ((old_node)->right != NULL) {
+	    old_node = (old_node)->right;
+            pthread_mutex_unlock(&(old_node)->mutex); //mutex
+        }
         
     }
     
@@ -312,6 +315,7 @@ free_node(struct bst_node* node)
         fprintf(stderr, "Invalid node\n");
     else {
         /* TODO: Finalize any per node variables you use for the BST */
+
         free(node);
     }
 }
