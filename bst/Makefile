@@ -10,7 +10,7 @@
 # change to y to enable debugging support
 DEBUG:=
 
-CFLAGS=-pthread -Wall -Wextra -std=c99 -D_XOPEN_SOURCE=600
+CFLAGS=-pthread -ggdb -Wall -Wextra -std=c99 -D_XOPEN_SOURCE=600
 LDLIBS=-pthread -lrt
 
 CC=gcc

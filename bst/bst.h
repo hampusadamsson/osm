@@ -49,6 +49,8 @@ typedef int comparator(const void* left, const void* right);
  */
 struct bst_node {
     void* data;
+    //pthread_mutex_t mutex;
+    volatile int lock;
     struct bst_node* left;
     struct bst_node* right;
 };

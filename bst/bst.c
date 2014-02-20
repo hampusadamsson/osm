@@ -39,7 +39,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
-
 #include "bst.h"
 
 /**
@@ -64,15 +63,18 @@ search(struct bst_node** root, comparator compare, void* data)
     struct bst_node** node = root;
 
     while (*node != NULL) {
+        while(__sync_lock_test_and_set(&(*node)->lock, 1));//Spin-123        
         int compare_result = compare(data, (*node)->data);
-        if (compare_result < 0)
+        (*node)->lock = 0;//Spin-123
+        
+        if (compare_result < 0){
             node = &(*node)->left;
-        else if (compare_result > 0)
+        }else if (compare_result > 0){
             node = &(*node)->right;
-        else
+        }else
+//            while(__sync_lock_test_and_set(&(*node)->lock, 1));//Spin-123              
             break;
     }
-
     return node;
 }
 
@@ -86,28 +88,38 @@ static void
 node_delete_aux(struct bst_node** node)
 {
     /* TODO: For Step 2 you will have to make this function thread-safe */
+        /* while(__sync_lock_test_and_set(&(*node)->lock, 1)); */
+        /* int compare_result = compare(data, (*node)->data); */
+        /* (*node)->lock = 0;//Spin-123 */
+    //while(__sync_lock_test_and_set(&(*node)->lock, 1));
 
     struct bst_node* old_node = *node;
-
     if ((*node)->left == NULL) {
         *node = (*node)->right;
         free_node(old_node);
+        
     } else if ((*node)->right == NULL) {
         *node = (*node)->left;
         free_node(old_node);
+
     } else {
         struct bst_node** pred = &(*node)->left;
-	while ((*pred)->right != NULL) {
+        while ((*pred)->right != NULL) {
 	    pred = &(*pred)->right;
 	}
 
-	/* Swap values */
+        while(__sync_lock_test_and_set(&(*pred)->lock, 1));
+        
+        /* Swap values */
 	void* temp = (*pred)->data;
-	(*pred)->data = (*node)->data;
+        (*pred)->data = (*node)->data;
 	(*node)->data = temp;
-
+        (*node)->lock = 0;//Spin-123
+        
 	node_delete_aux(pred);
+        
     }
+    
 }
 
 /**
@@ -125,19 +137,13 @@ node_delete(struct bst_node** root, comparator compare, void* data)
 
     if (*node == NULL)
         return -1;
-
+    
+    while(__sync_lock_test_and_set(&(*node)->lock, 1));
     node_delete_aux(node);
 
     return 0;
 }
-
-/* #include <stdbool.h> */
-/* bool TestAndSet(bool *target){ */
-/*     bool rv = *target; */
-/*     *target= true; */
-/*     return rv; */
-/* } */
-
+ 
 /**
  * Deletes the node which points to the requested data.
  *
@@ -191,8 +197,14 @@ node_delete_ts_fg(struct bst_node** root, comparator compare, void* data)
     if (node == NULL)
         return -1;
 
+  
+    //struct bst_node** tmp = search(root, compare, data);
+    //while(__sync_lock_test_and_set(&(*tmp)->lock, 1));
+       
+    node_delete(root, compare, data);
     
-
+    //(*tmp)->lock = 0;//Spin-123
+    
     return 0;
 }
 
@@ -244,10 +256,13 @@ int
 node_insert(struct bst_node** root, comparator compare, void* data)
 {
     struct bst_node** node = search(root, compare, data);
+
+
     if (*node == NULL) {
         *node = new_node(data);
         return 0;
     } else
+        (*node)->lock=0;//Spin-123
         return 1;
 }
 
@@ -266,7 +281,9 @@ new_node(void* data)
         exit(1);
     } else {
         /* TODO: Initialize any per node variables you use for the BST */
-
+        
+        //pthread_mutex_init(&(node->mutex), NULL);
+        node->lock=0; //unlock spinlock
         node->left = NULL;
         node->right = NULL;
         node->data = data;
@@ -288,7 +305,7 @@ free_node(struct bst_node* node)
         fprintf(stderr, "Invalid node\n");
     else {
         /* TODO: Finalize any per node variables you use for the BST */
-
+        //node->lock=0;
         free(node);
     }
 }
@@ -302,3 +319,4 @@ free_node(struct bst_node* node)
  * c-file-style: "stroustrup"
  * End:
  */
+
