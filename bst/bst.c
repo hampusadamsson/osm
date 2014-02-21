@@ -117,21 +117,27 @@ node_delete_aux(struct bst_node** node)
         (*pred)->data = (*node)->data;
 	(*node)->data = temp;
      
-	node_delete_aux(pred);
         //pthread_mutex_unlock(&(*pred)->mutex);
         //pthread_mutex_unlock(&(*node)->mutex); //mutex
         
         //pred = old_node; 
-        pthread_mutex_unlock(&(old_node)->mutex); //mutex
+    struct bst_node* first_delete = old_node;
+
+    //pthread_mutex_unlock(&(old_node)->mutex); //mutex
+
         if ((old_node)->left != NULL){ 
             old_node=(old_node)->left;
             pthread_mutex_unlock(&(old_node)->mutex); //mutex
         }
-        while ((old_node)->right != NULL) {
+        while (((old_node)->right != NULL))  {
 	    old_node = (old_node)->right;
             pthread_mutex_unlock(&(old_node)->mutex); //mutex
+            if (old_node == pred)
+                goto klar;
         }
-        
+    klar:
+        node_delete_aux(pred);
+        pthread_mutex_unlock(&(first_delete)->mutex); //mutex
     }
     
 }
@@ -315,7 +321,7 @@ free_node(struct bst_node* node)
         fprintf(stderr, "Invalid node\n");
     else {
         /* TODO: Finalize any per node variables you use for the BST */
-
+        //pthread_mutex_unlock(&(node)->mutex); //mutex        
         free(node);
     }
 }
