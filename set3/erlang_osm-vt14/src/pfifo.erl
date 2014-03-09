@@ -28,7 +28,7 @@ loop(Fifo) ->
             PID ! fifo:empty(Fifo),
             loop(Fifo);
         {pop, PID} ->
-            case fifo:empty(Fifo) of 
+            case fifo:empty(Fifo) of
                 true ->
                     PID ! {error, empty_fifo};
                 false ->
@@ -36,7 +36,7 @@ loop(Fifo) ->
             end,
             loop(Fifo);
         {push, Value, PID} ->
-            PID ! fifo:push(Fifo, Value),
+            PID ! (fifo:push(Fifo, Value)),
             loop(Fifo)
     end.
 
@@ -83,14 +83,14 @@ pop(Fifo) ->
 -spec push(Fifo, Value) -> ok when
       Fifo::pfifo(),
       Value::term().
+
 push(Fifo, Value) ->
     Fifo ! {push, Value, self()},
     receive
         {fifo, In, Out} ->
-            Fifo
-            %%{fifo, In, Out}
+            {fifo, In, Out}
     end.
-    
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%                         EUnit Test Cases                                  %%
@@ -111,9 +111,9 @@ empty_test() ->
     F =  new(),
     ?assertMatch(true, empty(F)),
     push(F, foo),
-    ?assertMatch(false, empty(F)).
-    %%pop(F),
-    %%?assertMatch(true, empty(F)).
+    ?assertMatch(false, empty(F)),
+    pop(F),
+    ?assertMatch(true, empty(F)).
 		  
 push_pop_test() ->
     F = new(),
