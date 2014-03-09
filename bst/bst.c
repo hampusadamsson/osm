@@ -321,7 +321,7 @@ free_node(struct bst_node* node)
         fprintf(stderr, "Invalid node\n");
     else {
         /* TODO: Finalize any per node variables you use for the BST */
-        //pthread_mutex_unlock(&(node)->mutex); //mutex        
+        pthread_mutex_unlock(&(node)->mutex); //mutex        
         free(node);
     }
 }

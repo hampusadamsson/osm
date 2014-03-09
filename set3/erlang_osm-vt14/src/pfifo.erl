@@ -30,15 +30,20 @@ loop(Fifo) ->
         {pop, PID} ->
             case fifo:empty(Fifo) of
                 true ->
-                    PID ! {error, empty_fifo};
+                    PID ! {error, empty_fifo},
+                    Tmp = Fifo,
+                loop(Tmp);
                 false ->
-                    PID ! fifo:pop(Fifo)
-            end,
-            loop(Fifo);
+                    Tmp = fifo:pop(Fifo),
+                    %%[Tmp || {_, Tmp} <- Fifo],
+                    PID ! Tmp,
+                        loop(element(2, Tmp))
+            end;
         {push, Value, PID} ->
-            PID ! (fifo:push(Fifo, Value)),
-            loop(Fifo)
-    end.
+            Tmp = fifo:push(Fifo, Value),
+            PID ! Tmp,
+            loop(Tmp)
+end.
 
 
 %%  By hiding the message passing protocol inside a functional
@@ -74,7 +79,8 @@ pop(Fifo) ->
     Fifo ! {pop, self()},
     receive
         {Value, {fifo, In, Out}} ->
-            {Value, {fifo, In, Out}};
+            %%{Value, {fifo, In, Out}};
+            Value;
         {error, empty_fifo} ->
             {error, empty_fifo}
     end.
@@ -89,6 +95,7 @@ push(Fifo, Value) ->
     receive
         {fifo, In, Out} ->
             {fifo, In, Out}
+                
     end.
 
 
