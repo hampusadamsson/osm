@@ -1,6 +1,6 @@
 %% @doc Erlang mini project.
 -module(add).
--export([start/3,split/2, add_values/3, start/4, to_base_10/2, intlist/1, fulfill/2]).
+-export([start/3, add_all/2, split/2, add_values/3, start/4, to_base_10/2, intlist/1, fulfill/2]).
 
 %% @doc TODO: add documentation
 -spec start(A,B,Base) -> ok when 
@@ -23,28 +23,34 @@ start(A,B, Base) ->
       Options::[Option].
 
 start(A,B,Base, Options) ->
-    tbi.
+    La=to_base_10(intlist(A),Base),
+    Lb=to_base_10(intlist(B),Base),
+    {ListA, ListB} = fulfill(La,Lb),
+    SplitA=split(ListA,Options),
+    SplitB=split(ListB,Options),
+    add_all(SplitA,SplitB).
+    %%Result = add_values(ListA, ListB,0).
 
 
 %%_____________________________________________________________________
 
-%% repeat(Char,N) ->
-%%     [Char || _ <- lists:seq(1,N)].
-
+add_all([],[]) ->
+    [];
+add_all([HeadA|[]],[HeadB|[]]) ->
+    [add_values(HeadA,HeadB,0)];
+add_all([HeadA|A],[HeadB|B]) ->
+    Tmp = add_values(HeadA,HeadB,0),
+    [Tmp|add_all(A,B)].
+    
 list_to_int(L) ->
     Tmp = lists:map(fun(X) -> X+48 end, L),
     list_to_integer(Tmp).
 
 add_values(A,B,C) ->
-    ListA=A,
-    ListB=B,
-    
-    %%ListA = intlist(A),
-    %%ListB = intlist(B),
     Tmp=list_to_int(A)+list_to_int(B),
     Len_sum = intlist(Tmp),
     if
-        (length(Len_sum)>length(ListA)) ->
+        (length(Len_sum)>length(A)) ->
             [_Xx|Tail]=Len_sum,
             Tmp2=list_to_int(Tail),
             {Tmp2,1};
