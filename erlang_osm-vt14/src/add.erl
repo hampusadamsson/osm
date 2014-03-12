@@ -13,7 +13,7 @@ start(A,B, Base) ->
     Lb=to_base_10(intlist(B),Base),
     {ListA, ListB} = fulfill(La,Lb),
     Result = add_values(ListA, ListB,0).
-
+    
 %% @doc TODO: add documentation
 -spec start(A,B,Base, Options) -> ok when 
       A::integer(),
@@ -26,22 +26,38 @@ start(A,B,Base, Options) ->
     La=to_base_10(intlist(A),Base),
     Lb=to_base_10(intlist(B),Base),
     {ListA, ListB} = fulfill(La,Lb),
-    SplitA=split(ListA,Options),
-    SplitB=split(ListB,Options),
-    add_all(SplitA,SplitB).
-    %%Result = add_values(ListA, ListB,0).
 
+    if
+        Options>length(La) -> 
+            erlang:error('Cant split a list into more elements than the number of chars inserted'); 
+        true ->
+
+            SplitA=split(ListA,Options),
+            SplitB=split(ListB,Options),
+            add_all(SplitA,SplitB)
+    end.
 
 %%_____________________________________________________________________
 
+%% add_all([],[]) ->
+%%     [];
+%% add_all([HeadA|A],[HeadB|B]) ->
+%%     Tmp = add_values(HeadA,HeadB,0),
+%%     [Tmp|add_all(A,B)].
 add_all([],[]) ->
     [];
-%% add_all([HeadA|[]],[HeadB|[]]) ->
-%%     [add_values(HeadA,HeadB,0)];
-add_all([HeadA|A],[HeadB|B]) ->
-    Tmp = add_values(HeadA,HeadB,0),
-    [Tmp|add_all(A,B)].
-    
+add_all(A,B) ->
+    add_all(lists:reverse(A),lists:reverse(B),0).
+
+add_all([],[],0)->
+    [];
+add_all([],[],1)->
+    1;
+add_all([HeadA|A],[HeadB|B],CarryIn) ->
+    {Sum, Carry} = add_values(HeadA,HeadB,CarryIn),
+    lists:concat([add_all(A,B,Carry),Sum]).
+
+
 list_to_int([]) ->
     0;
 list_to_int(L) ->
