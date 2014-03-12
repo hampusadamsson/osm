@@ -1,6 +1,6 @@
 %% @doc Erlang mini project.
 -module(add).
--export([start/3,split/2, add_values/3, start/4, to_base_10/2, intlist/1, fulfill/2]).
+-export([start/3, add_values/3, start/4, to_base_10/2, intlist/1, fulfill/2]).
 
 %% @doc TODO: add documentation
 -spec start(A,B,Base) -> ok when 
@@ -9,10 +9,7 @@
       Base::integer().
 
 start(A,B, Base) ->
-    La=to_base_10(intlist(A),Base),
-    Lb=to_base_10(intlist(B),Base),
-    {ListA, ListB} = fulfill(La,Lb),
-    Result = add_values(ListA, ListB,0).
+    tbi.
 
 %% @doc TODO: add documentation
 -spec start(A,B,Base, Options) -> ok when 
@@ -31,23 +28,14 @@ start(A,B,Base, Options) ->
 %% repeat(Char,N) ->
 %%     [Char || _ <- lists:seq(1,N)].
 
-list_to_int(L) ->
-    Tmp = lists:map(fun(X) -> X+48 end, L),
-    list_to_integer(Tmp).
-
 add_values(A,B,C) ->
-    ListA=A,
-    ListB=B,
-    
-    %%ListA = intlist(A),
-    %%ListB = intlist(B),
-    Tmp=list_to_int(A)+list_to_int(B),
+    ListA = intlist(A),
+    ListB = intlist(B),
+    Tmp=A+B,
     Len_sum = intlist(Tmp),
     if
         (length(Len_sum)>length(ListA)) ->
-            [_Xx|Tail]=Len_sum,
-            Tmp2=list_to_int(Tail),
-            {Tmp2,1};
+            {Tmp,1};
         true ->
             {Tmp,0}
     end.
@@ -70,20 +58,4 @@ fulfill(A,B) ->
             fulfill([0|A] ,B);
         true ->
             {A,B}
-    end.
-
-split(L, N) when length(L) < N ->
-    L;
-
-split(L, Nn) ->
-    Nn2=(length(L)/Nn),
-    N=round(Nn2),
-    split(L, N, []).
-
-split(L, N, Lists) ->
-    {L1, L2} = lists:split(N, L),
-    if length(L2) > N ->
-	    split(L2, N, [L1|Lists]);
-       true ->
-            lists:reverse([L2, L1|Lists])
     end.
