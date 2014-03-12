@@ -36,12 +36,14 @@ start(A,B,Base, Options) ->
 
 add_all([],[]) ->
     [];
-add_all([HeadA|[]],[HeadB|[]]) ->
-    [add_values(HeadA,HeadB,0)];
+%% add_all([HeadA|[]],[HeadB|[]]) ->
+%%     [add_values(HeadA,HeadB,0)];
 add_all([HeadA|A],[HeadB|B]) ->
     Tmp = add_values(HeadA,HeadB,0),
     [Tmp|add_all(A,B)].
     
+list_to_int([]) ->
+    0;
 list_to_int(L) ->
     Tmp = lists:map(fun(X) -> X+48 end, L),
     list_to_integer(Tmp).
@@ -84,7 +86,11 @@ split(L, N) when length(L) < N ->
 split(L, Nn) ->
     Nn2=(length(L)/Nn),
     N=round(Nn2),
-    split(L, N, []).
+    if Nn == 1 ->
+            [L];
+       true ->
+            split(L, N, [])
+    end.
 
 split(L, N, Lists) ->
     {L1, L2} = lists:split(N, L),
