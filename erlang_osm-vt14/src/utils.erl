@@ -5,13 +5,146 @@
 
 -module(utils). 
 
--export([seqs/1, filter/2, split/2]).
+-export([seqs/1, filter/2, split/2, add_all/2]).
 
 %% To use EUnit we must include this.
 -include_lib("eunit/include/eunit.hrl").
 
 -compile(export_all). 
 
+%% add_all([],[]) ->
+%%     [];
+%% add_all([HeadA|A],[HeadB|B]) ->
+%%     Tmp = add_values(HeadA,HeadB,0),
+%%     [Tmp|add_all(A,B)].
+
+add_all([[]],[[]]) ->
+    [[]];
+add_all(A,B) ->
+    My_Pid = self(),
+    spawn(fun()->spawn_worker(My_Pid,A,B)end),    
+    receive
+        {X,0} ->
+            X;
+        {X,1} ->
+            lists:concat([[1],X])
+    end.
+    
+spawn_worker(PID, [A|[]],[B|[]]) ->
+    X = add_values((A),(B),0),         
+    PID ! X;    
+
+spawn_worker(PID,[HeadA|A],[HeadB|B]) ->
+    MyPid = self(),
+    spawn(fun()->spawn_worker(MyPid,A,B)end),
+    Sum0 = add_values(HeadA,HeadB,0),
+    Sum1 = add_values(HeadA,HeadB,1),
+    receive
+        {X,0} ->
+            PID ! {lists:concat([element(1,Sum0),X]),element(2,Sum0)};
+        {X,1} ->
+            PID ! {lists:concat([element(1,Sum1),X]),element(2,Sum1)}
+        end.
+
+list_to_int([]) ->
+    0;
+list_to_int(L) ->
+    Tmp = lists:map(fun(X) -> X+48 end, L),
+    list_to_integer(Tmp).
+
+%% add_help(ListA, ListB) ->
+%%     Sum = list_to_int(ListA) + list_to_int(ListB),
+%%     SumList = intlist(Sum),
+%%     [H|T] = intlist(Sum),
+%%     if
+%%         length([H|T]) > length(ListA) ->
+%%             {T,1};
+%%         true ->
+%%             {SumList, 0}
+%%     end.
+   
+make_same(A,B) ->
+    if
+        length(A) > length(B) ->
+            make_same(A,[0|B]);
+            true ->
+            B
+    end.
+
+add_values(A,B,C) ->
+    Tmp=list_to_int(A)+list_to_int(B)+C,
+    Len_sum = intlist(Tmp),
+
+    if
+        (length(Len_sum)>length(A)) ->
+            [_Xx|Tail]=Len_sum,
+            list_to_int(Tail),
+            %%{Tmp2,1};
+            {Tail,1};
+        (length(Len_sum)<length(A)) ->
+            {make_same(A,Len_sum),0};
+        true ->
+            {Len_sum,0}
+    end.
+
+to_base_10(A,Base) ->
+    Tmp = lists:mapfoldr(fun(X,Sum) -> {X*Sum,Sum*Base} end, 1, A),
+    Tmp2 = element(1,Tmp),
+    Tmp3 = lists:foldl(fun(Y, Sum2) -> Y + Sum2 end, 0, Tmp2),
+    intlist(Tmp3).
+
+intlist(A) ->
+    Tmp = integer_to_list(A),
+    lists:map(fun(X)-> X-48 end,Tmp).
+    
+fulfill(A,B) ->
+    if 
+        length(A)>length(B) ->
+            fulfill(A, [0|B]);
+        length(B)>length(A) ->
+            fulfill([0|A] ,B);
+        true ->
+            {A,B}
+    end.
+
+%% split(L, N) when length(L) < N ->
+%%     L;
+%% split(L, N) ->
+%%     Len=length(L),
+%%     Q=(Len div N),
+%%     R= Len rem N, 
+%%     if R == 0 ->
+%%             split(L,1,[]);
+%%        true ->
+%%             split(L, (Q+1),[])
+%%     end.
+%% split(L, N, Lists) ->
+%%     {L1, L2} = lists:split(N, L),
+%%     if length(L2) > N ->
+%%             split(L2, N, [L1|Lists]);
+%%        true ->
+%%             lists:reverse([L2, L1|Lists])
+%%     end. 
+
+split(L, N) when length(L) < N ->
+    L;
+split(L, N) when length(L) == N ->
+    lists:map(fun(X) -> [X] end, L);
+                   
+split(L, N) ->
+    split(L,N,[]).
+
+split(L, N, Lists) ->
+    Len=length(L),
+    Kvot=(Len div N),
+    
+    {L1, L2} = lists:split(Kvot, L),
+    if (length(L2) >= N) ->
+            split(L2, N-1, [L1|Lists]);
+       true ->
+            lists:reverse([L1|Lists])
+    end. 
+%%_______________________________________________________________________________________________________________________________________________________
 
 %% @doc Generates a list of lists of increasing sequences of integers
 %% starting with the empty list and ending with [1,2, ..., N].
@@ -74,8 +207,6 @@ filter_collect(N,R) ->
 	{I, L} -> filter_collect(N-1, [{I,L}|R])
     end.
 
-
-
 lqr(L, N) ->
     Len = length(L),
 
@@ -106,15 +237,16 @@ lqr(L, N) ->
 %% 3> lists:concat(utils:split(L,3)).
 %% [1,2,3,4,5,6,7,8,9,10]'''
 %% </div>
--spec split(List, N) -> Lists when
-      List :: [T],
-      Lists :: [List],
-      T :: term(),
-      N :: integer().
+
+%% -spec split(List, N) -> Lists when
+%%       List :: [T],
+%%       Lists :: [List],
+%%       T :: term(),
+%%       N :: integer().
 
 
-split(L, N) ->
-    tbi.
+%% split(L, N) ->
+%%     tbi.
 
 
 
