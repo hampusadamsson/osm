@@ -1,6 +1,6 @@
 %% @doc Erlang mini project.
 -module(add).
--export([start/3, add_all/2, split/2, add_values/3, start/4, to_base_10/2, intlist/1,list_to_int/1, fulfill/2]).
+-export([make_same/2,start/3, add_all/2, split/2, add_values/3, start/4, to_base_10/2, intlist/1,list_to_int/1, fulfill/2]).
 
 %% @doc TODO: add documentation
 -spec start(A,B,Base) -> ok when 
@@ -26,15 +26,16 @@ start(A,B,Base, Options) ->
     La=to_base_10(intlist(A),Base),
     Lb=to_base_10(intlist(B),Base),
     {ListA, ListB} = fulfill(La,Lb),
-
+    
     if
         Options>length(La) -> 
             erlang:error('Cant split a list into more elements than the number of chars inserted'); 
         true ->
-
+            
             SplitA=split(ListA,Options),
             SplitB=split(ListB,Options),
-            add_all(SplitA,SplitB)
+            Tmp = (add_all(SplitA,SplitB)),
+            list_to_int(Tmp)                   
     end.
 
 %%_____________________________________________________________________
@@ -53,14 +54,13 @@ add_all(A,B) ->
         {X,0} ->
             X;
         {X,1} ->
-            lists:concat([1,X])
+            lists:concat([[1],X])
     end.
     
 spawn_worker(PID, [A|[]],[B|[]]) ->
     X = add_values((A),(B),0),         
-    PID ! X;
-    
-    
+    PID ! X;    
+
 spawn_worker(PID,[HeadA|A],[HeadB|B]) ->
     MyPid = self(),
     Child = spawn(fun()->spawn_worker(MyPid,A,B)end),
@@ -79,16 +79,39 @@ list_to_int(L) ->
     Tmp = lists:map(fun(X) -> X+48 end, L),
     list_to_integer(Tmp).
 
+%% add_help(ListA, ListB) ->
+%%     Sum = list_to_int(ListA) + list_to_int(ListB),
+%%     SumList = intlist(Sum),
+%%     [H|T] = intlist(Sum),
+%%     if
+%%         length([H|T]) > length(ListA) ->
+%%             {T,1};
+%%         true ->
+%%             {SumList, 0}
+%%     end.
+   
+make_same(A,B) ->
+    if
+        length(A) > length(B) ->
+            make_same(A,[0|B]);
+            true ->
+            B
+    end.
+
 add_values(A,B,C) ->
     Tmp=list_to_int(A)+list_to_int(B)+C,
     Len_sum = intlist(Tmp),
+
     if
         (length(Len_sum)>length(A)) ->
             [_Xx|Tail]=Len_sum,
             Tmp2=list_to_int(Tail),
-            {Tmp2,1};
+            %%{Tmp2,1};
+            {Tail,1};
+        (length(Len_sum)<length(A)) ->
+            {make_same(A,Len_sum),0};
         true ->
-            {Tmp,0}
+            {Len_sum,0}
     end.
 
 to_base_10(A,Base) ->
