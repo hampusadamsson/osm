@@ -126,9 +126,9 @@ fulfill(A,B) ->
 %%             lists:reverse([L2, L1|Lists])
 %%     end. 
 
-split(L, N) when length(L) < N ->
-    L;
-split(L, N) when length(L) == N ->
+%% split(L, N) when length(L) < N ->
+%%     [L];
+split(L, N) when length(L) =< N ->
     lists:map(fun(X) -> [X] end, L);
                    
 split(L, N) ->
