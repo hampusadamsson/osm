@@ -1,6 +1,6 @@
 %% @doc Erlang mini project.
 -module(add).
--export([start/3, add_all/2, split/2, add_values/3, start/4, to_base_10/2, intlist/1, fulfill/2]).
+-export([start/3, add_all/2, split/2, add_values/3, start/4, to_base_10/2, intlist/1,list_to_int/1, fulfill/2]).
 
 %% @doc TODO: add documentation
 -spec start(A,B,Base) -> ok when 
@@ -44,19 +44,34 @@ start(A,B,Base, Options) ->
 %% add_all([HeadA|A],[HeadB|B]) ->
 %%     Tmp = add_values(HeadA,HeadB,0),
 %%     [Tmp|add_all(A,B)].
-add_all([],[]) ->
-    [];
+add_all([[]],[[]]) ->
+    [[]];
 add_all(A,B) ->
-    add_all(lists:reverse(A),lists:reverse(B),0).
-
-add_all([],[],0)->
-    [];
-add_all([],[],1)->
-    1;
-add_all([HeadA|A],[HeadB|B],CarryIn) ->
-    {Sum, Carry} = add_values(HeadA,HeadB,CarryIn),
-    lists:concat([add_all(A,B,Carry),Sum]).
-
+    My_Pid = self(),
+    spawn(fun()->spawn_worker(My_Pid,A,B)end),    
+    receive
+        {X,0} ->
+            X;
+        {X,1} ->
+            lists:concat([1,X])
+    end.
+    
+spawn_worker(PID, [A|[]],[B|[]]) ->
+    X = add_values((A),(B),0),         
+    PID ! X;
+    
+    
+spawn_worker(PID,[HeadA|A],[HeadB|B]) ->
+    MyPid = self(),
+    Child = spawn(fun()->spawn_worker(MyPid,A,B)end),
+    Sum0 = add_values(HeadA,HeadB,0),
+    Sum1 = add_values(HeadA,HeadB,1),
+    receive
+        {X,0} ->
+            PID ! {lists:concat([element(1,Sum0),X]),element(2,Sum0)};
+        {X,1} ->
+            PID ! {lists:concat([element(1,Sum1),X]),element(2,Sum1)}
+        end.
 
 list_to_int([]) ->
     0;
@@ -65,7 +80,7 @@ list_to_int(L) ->
     list_to_integer(Tmp).
 
 add_values(A,B,C) ->
-    Tmp=list_to_int(A)+list_to_int(B),
+    Tmp=list_to_int(A)+list_to_int(B)+C,
     Len_sum = intlist(Tmp),
     if
         (length(Len_sum)>length(A)) ->
