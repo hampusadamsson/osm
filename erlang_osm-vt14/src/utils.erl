@@ -12,11 +12,20 @@
 
 -compile(export_all). 
 
-%% add_all([],[]) ->
-%%     [];
-%% add_all([HeadA|A],[HeadB|B]) ->
-%%     Tmp = add_values(HeadA,HeadB,0),
-%%     [Tmp|add_all(A,B)].
+%% @doc Spawns a amount of childs equal to the number of elements 
+%%      in A and B and calculates the sum of each corresponding element
+%%      , resulting in a list representing the total sum
+%%
+%%
+%% === Example ===      
+%%<div class="example">```
+%% > utils:add_all([[1,2],[3,4]],[[2,3],[4,5]]).
+%% [3,5,7,9]'''
+%% </div>
+
+-spec add_all(A,B) -> [[integer()]] when
+    A::list(),
+    B::list().
 
 add_all([[]],[[]]) ->
     [[]];
@@ -107,27 +116,20 @@ fulfill(A,B) ->
             {A,B}
     end.
 
-%% split(L, N) when length(L) < N ->
-%%     L;
-%% split(L, N) ->
-%%     Len=length(L),
-%%     Q=(Len div N),
-%%     R= Len rem N, 
-%%     if R == 0 ->
-%%             split(L,1,[]);
-%%        true ->
-%%             split(L, (Q+1),[])
-%%     end.
-%% split(L, N, Lists) ->
-%%     {L1, L2} = lists:split(N, L),
-%%     if length(L2) > N ->
-%%             split(L2, N, [L1|Lists]);
-%%        true ->
-%%             lists:reverse([L2, L1|Lists])
-%%     end. 
+%%@doc Splits a list L into N sublists      
+%%
+%%
+%% === Example ===      
+%%<div class="example">```
+%% > utils:split([1,2,3,4,5,6],3).
+%% [[1,2],[3,4],[5,6]]'''
+%% </div>
 
-%% split(L, N) when length(L) < N ->
-%%     [L];
+
+-spec split(L,N) -> [list()] when
+    L::list(),
+    N::integer().
+
 split(L, N) when length(L) =< N ->
     lists:map(fun(X) -> [X] end, L);
                    

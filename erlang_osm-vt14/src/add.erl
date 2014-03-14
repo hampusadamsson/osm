@@ -2,22 +2,39 @@
 -module(add).
 -export([start/3, start/4]).
 
-%% @doc TODO: add documentation
+%% @doc Calculates the addtion between two 
+%%      integers A and B in base Base. The sum is represented 
+%%		in base 10.
+%%
+%% === Example ===      
+% <div class="example">```
+%% > add:start(123,14322,10).
+%% 14445'''
+%% </div>
+
 -spec start(A,B,Base) -> ok when 
       A::integer(),
       B::integer(), 
       Base::integer().
 
 start(A,B, Base) ->
-    %% La=utils:to_base_10(utils:intlist(A),Base),
-    %% Lb=utils:to_base_10(utils:intlist(B),Base),
-    %% {ListA, ListB} = utils:fulfill(La,Lb),
-    %% utils:add_values(ListA, ListB,0).
-start(A,B,Base,1).
+ 
+	start(A,B,Base,1).
 
 
-%% @doc TODO: add documentation
--spec start(A,B,Base, Options) -> ok when 
+%% @doc Calculates the addtion between two 
+%%      integers A and B in base Base, with 
+%%      the option which splits the list 
+%%      in Option segments. The sum is represented 
+%%		in base 10.
+%%   
+%% === Example ===      
+% <div class="example">```
+%% > add:start(123,14322,10,3).
+%% 14445'''
+%% </div>
+
+-spec start(A,B,Base, Options) -> integer() when 
       A::integer(),
       B::integer(), 
       Base::integer(),
