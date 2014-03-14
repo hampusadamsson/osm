@@ -12,8 +12,10 @@ start(A,B, Base) ->
     La=utils:to_base_10(utils:intlist(A),Base),
     Lb=utils:to_base_10(utils:intlist(B),Base),
     {ListA, ListB} = utils:fulfill(La,Lb),
-    utils:add_values(ListA, ListB,0).
+    Tmp = utils:add_values(ListA, ListB,0),
+    utils:list_to_int(element(1,Tmp)).
     
+
 %% @doc TODO: add documentation
 -spec start(A,B,Base, Options) -> ok when 
       A::integer(),

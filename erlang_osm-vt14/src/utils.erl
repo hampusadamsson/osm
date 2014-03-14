@@ -37,14 +37,44 @@ spawn_worker(PID, [A|[]],[B|[]]) ->
 spawn_worker(PID,[HeadA|A],[HeadB|B]) ->
     MyPid = self(),
     spawn(fun()->spawn_worker(MyPid,A,B)end),
-    Sum0 = add_values(HeadA,HeadB,0),
-    Sum1 = add_values(HeadA,HeadB,1),
+
+    Child1 = spawn(fun()->worker_calc(MyPid,HeadA,HeadB,0)end),
+    Child2 = spawn(fun()->worker_calc(MyPid,HeadA,HeadB,1)end),
     receive
-        {X,0} ->
-            PID ! {lists:concat([element(1,Sum0),X]),element(2,Sum0)};
-        {X,1} ->
-            PID ! {lists:concat([element(1,Sum1),X]),element(2,Sum1)}
-        end.
+	{X,0} ->
+	    exit(Child2),
+	    Child1 ! 0,
+	    receive
+		Sum ->
+		    PID ! {lists:concat([element(1,Sum),X]),element(2,Sum)}
+	    end;
+	{X,1} ->
+	    exit(Child1),
+	    Child2 ! 0,
+	    receive
+		Sum ->
+		    PID ! {lists:concat([element(1,Sum),X]),element(2,Sum)}
+	    end
+    end.
+
+worker_calc(PID,A,B,C) ->
+    Sum = add_values(A,B,C),
+    receive
+	0 ->
+	    PID ! Sum
+    end.
+
+%% spawn_worker(PID,[HeadA|A],[HeadB|B]) ->
+%%     MyPid = self(),
+%%     spawn(fun()->spawn_worker(MyPid,A,B)end),
+%%     Sum0 = add_values(HeadA,HeadB,0),
+%%     Sum1 = add_values(HeadA,HeadB,1),
+%%     receive
+%%         {X,0} ->
+%%             PID ! {lists:concat([element(1,Sum0),X]),element(2,Sum0)};
+%%         {X,1} ->
+%%             PID ! {lists:concat([element(1,Sum1),X]),element(2,Sum1)}
+%%         end.
 
 list_to_int([]) ->
     0;
