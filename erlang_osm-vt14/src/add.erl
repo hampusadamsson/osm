@@ -34,7 +34,7 @@ start(A,B, Base) ->
 %% 14445'''
 %% </div>
 
--spec start(A,B,Base, Options) -> integer() when 
+-spec start(A,B,Base, Options) -> ok when 
       A::integer(),
       B::integer(), 
       Base::integer(),
@@ -53,8 +53,9 @@ start(A,B,Base, Options) ->
             
             SplitA=utils:split(ListA,Options),
             SplitB=utils:split(ListB,Options),
-            Tmp = (utils:add_all(SplitA,SplitB)),
-            utils:list_to_int(Tmp)                   
+            Tmp = (utils:getSum(SplitA,SplitB,specOn)),
+            Tmp2 = utils:list_to_int(Tmp),
+            io:fwrite("~p + ~p = ~p \n", [A,B,Tmp2])                   
     end.
 
 %%_____________________________________________________________________
