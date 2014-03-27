@@ -24,37 +24,52 @@
 %% </div>
 
 spawn_worker(A,B,specOff) ->
+    My_PID = self(),
+   add_values(A,B,0,My_PID),
+   add_values(A,B,0,My_PID),
+ 
+   receive_Loop(nill,nill);
 
-    Sum_0 = utils:add_values(A,B,0),
-    Sum_1 = utils:add_values(A,B,1),
-    receive
-        {0,PID} ->
-             PID ! Sum_0;       
-        {1,PID} ->
-            PID ! Sum_1
-    end;
 
 spawn_worker(A,B,specOn) ->
     
     My_PID = self(),
-    Child_1 = spawn(fun() -> spawn_helper(My_PID,A,B,0)end),
-    Child_2 = spawn(fun() -> spawn_helper(My_PID,A,B,1)end),
+    Child_1 = spawn(fun() -> add_values(A,B,0,My_PID)end),
+    Child_2 = spawn(fun() -> add_values(A,B,1,My_PID)end),
     receive_Loop(Child_1,Child_2,nill,nill).
 
 spawn_helper(PID,A,B,C) ->
     utils:add_values(A,B,C,self()),
     receive 
         X ->
-            PID ! {X,C}
+            PID ! X
+    end.
+
+receive_Loop(Sum_0,Sum_1) ->
+    receive
+        
+        {Result,X,0} ->
+             receive_Loop({Result,X},Sum_1);
+        {Result,X,1} ->
+             receive_Loop(Sum_0,{Result,X});
+
+        {0,PID} when Sum_0 /= nill ->
+            PID ! Sum_0;       
+        {1,PID} when Sum_1 /= nill ->
+            PID ! Sum_1;
+        {_,PID} ->
+            PID ! notReady,
+            receive_Loop(Sum_0,Sum_1)
+
     end.
 
 receive_Loop(Child_0,Child_1,Carry_0_Result,Carry_1_Result) ->
     receive
-        {Result,0} ->
-            receive_Loop(Child_0,Child_1,Result,Carry_1_Result);
+        {Result,X,0} ->
+            receive_Loop(Child_0,Child_1,{Result,X},Carry_1_Result);
         
-        {Result,1} ->
-            receive_Loop(Child_0,Child_1,Carry_0_Result,Result);
+        {Result,X,1} ->
+            receive_Loop(Child_0,Child_1,Carry_0_Result,{Result,X});
         
         {0,PID} when Carry_0_Result /= nill ->
             PID ! Carry_0_Result,
@@ -105,7 +120,6 @@ recursiveGet(Carry,[Head|Tail],SumList) ->
         {X,Y} ->    
             recursiveGet(Y,Tail,X++SumList);
         notReady ->
-           io:format("Fick en notReady"),
            recursiveGet(Carry,[Head | Tail],SumList)
     end.
 
@@ -146,12 +160,12 @@ add_values(A,B,C,PID) ->
             [_Xx|Tail]=Len_sum,
             list_to_int(Tail),
             %%{Tmp2,1};
-            PID !  {Tail,1};
+            PID !  {Tail,1,C};
         (length(Len_sum)<length(A)) ->
-            PID !  {make_same(A,Len_sum),0};
+            PID !  {make_same(A,Len_sum),0,C};
 
         true ->
-            PID ! {Len_sum,0}
+            PID ! {Len_sum,0,C}
     end,
    timer:sleep(500).
 
