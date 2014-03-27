@@ -53,7 +53,7 @@ start(A,B,Base, Options) ->
             
             SplitA=utils:split(ListA,Options),
             SplitB=utils:split(ListB,Options),
-            Tmp = (utils:getSum(SplitA,SplitB,specOn)),
+            Tmp = (utils:getSum(SplitA,SplitB,specOff)),
             Tmp2 = utils:list_to_int(Tmp),
             io:fwrite("~p + ~p = ~p \n", [A,B,Tmp2])                   
     end.

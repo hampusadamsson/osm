@@ -34,11 +34,11 @@ spawn_worker(A,B,specOff) ->
 spawn_worker(A,B,specOn) ->
     
     My_PID = self(),
-    Child_1 = spawn(fun() -> add_values(A,B,0,My_PID)end),
-    Child_2 = spawn(fun() -> add_values(A,B,1,My_PID)end),
+    Child_1 = spawn(fun() -> spawn_helper(A,B,0,My_PID)end),
+    Child_2 = spawn(fun() -> spawn_helper(A,B,1,My_PID)end),
     receive_Loop(Child_1,Child_2,nill,nill).
 
-spawn_helper(PID,A,B,C) ->
+spawn_helper(A,B,C,PID) ->
     utils:add_values(A,B,C,self()),
     receive 
         X ->
