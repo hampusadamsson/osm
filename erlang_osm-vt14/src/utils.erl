@@ -42,8 +42,11 @@ spawn_worker(A,B,specOn) ->
     receive_Loop(Child_1,Child_2,nill,nill).
 
 spawn_helper(PID,A,B,C) ->
-    X = utils:add_values(A,B,C),         
-    PID ! {X,C}.
+    utils:add_values(A,B,C,self()),
+    receive 
+        X ->
+            PID ! {X,C}
+    end.
 
 receive_Loop(Child_0,Child_1,Carry_0_Result,Carry_1_Result) ->
     receive
@@ -62,10 +65,10 @@ receive_Loop(Child_0,Child_1,Carry_0_Result,Carry_1_Result) ->
             PID ! Carry_1_Result,                   
             exit(Child_0,not_needed);
 
-
-        true ->
-        receive_Loop(Child_0,Child_1,Carry_0_Result,Carry_1_Result)
-
+        {_,PID} ->
+            PID ! notReady,
+            receive_Loop(Child_0,Child_1,Carry_0_Result,Carry_1_Result)
+ 
     end.
 
 
@@ -98,8 +101,12 @@ recursiveGet(Carry,[Head|Tail],SumList) ->
     My_PID = self(),
     Head ! {Carry, My_PID},
     receive
+
         {X,Y} ->    
-            recursiveGet(Y,Tail,X++SumList)
+            recursiveGet(Y,Tail,X++SumList);
+        notReady ->
+           io:format("Fick en notReady"),
+           recursiveGet(Carry,[Head | Tail],SumList)
     end.
 
 
@@ -130,21 +137,23 @@ make_same(A,B) ->
             B
     end.
 
-add_values(A,B,C) ->
+add_values(A,B,C,PID) ->
     Tmp=list_to_int(A)+list_to_int(B)+C,
     Len_sum = intlist(Tmp),
-
+    
     if
         (length(Len_sum)>length(A)) ->
             [_Xx|Tail]=Len_sum,
             list_to_int(Tail),
             %%{Tmp2,1};
-            {Tail,1};
+            PID !  {Tail,1};
         (length(Len_sum)<length(A)) ->
-            {make_same(A,Len_sum),0};
+            PID !  {make_same(A,Len_sum),0};
+
         true ->
-            {Len_sum,0}
-    end.
+            PID ! {Len_sum,0}
+    end,
+   timer:sleep(500).
 
 to_base_10(A,Base) ->
     Tmp = lists:mapfoldr(fun(X,Sum) -> {X*Sum,Sum*Base} end, 1, A),
