@@ -26,7 +26,7 @@
 spawn_worker(A,B,specOff,Sleep) ->
     My_PID = self(),
    add_values(A,B,0,My_PID,Sleep),
-   add_values(A,B,0,My_PID,Sleep),
+   add_values(A,B,1,My_PID,Sleep),
  
    receive_Loop(nill,nill);
 
@@ -245,7 +245,7 @@ seqs(N) ->
     lists:foldl(F, [[]], lists:seq(1,N)),
     lists:reverse([lists:reverse(L) || L <- lists:foldl(F, [[]], lists:seq(1,N))]).
 
-		
+
 %% @doc Each list in List2 contains the elements Elem in List1 for
 %% which one of the Pred(Elem) returns true. The order of the lists in
 %% List2 is the same as the order of the predicates. In each list in
@@ -275,7 +275,7 @@ seqs(N) ->
 filter(Predicates, List) ->
     Collect = self(),
     [spawn(fun() -> Collect!{I,lists:filter(P,List)} end) ||
-	{I, P} <- lists:zip(lists:seq(1, length(Predicates)), Predicates)],
+    {I, P} <- lists:zip(lists:seq(1, length(Predicates)), Predicates)],
     
     filter_collect(length(Predicates), []).
 
@@ -283,7 +283,7 @@ filter_collect(0,R) ->
     [L || {_,L} <- lists:sort(R)];
 filter_collect(N,R) ->
     receive
-	{I, L} -> filter_collect(N-1, [{I,L}|R])
+    {I, L} -> filter_collect(N-1, [{I,L}|R])
     end.
 
 lqr(L, N) ->
@@ -331,7 +331,7 @@ lqr(L, N) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%                                                                          %%
-%%			   EUnit Test Cases                                 %%
+%%             EUnit Test Cases                                 %%
 %%                                                                          %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -345,15 +345,15 @@ seqs_test_() ->
     %% A small collection of expected results {N, seqs(N)}.
     
     Data = [{0, [[]]}, {1, [[], [1]]}, {2, [[], [1], [1,2]]}, 
-	    {7, [[],
-		 [1],
-		 [1,2],
-		 [1,2,3],
-		 [1,2,3,4],
-		 [1,2,3,4,5],
-		 [1,2,3,4,5,6],
-		 [1,2,3,4,5,6,7]]}
-	   ],
+        {7, [[],
+         [1],
+         [1,2],
+         [1,2,3],
+         [1,2,3,4],
+         [1,2,3,4,5],
+         [1,2,3,4,5,6],
+         [1,2,3,4,5,6,7]]}
+       ],
     
     [?_assertEqual(L, seqs(N)) || {N, L} <- Data].
     
@@ -368,7 +368,7 @@ filter_true_false_test_() ->
     Expected = fun(L) -> [lists:filter(P,L) || P <- [P1,P2,P3]] end,
 
     [?_assertEqual(Expected(L), filter([P1,P2,P3], L) ) || L <- seqs(10) ].
-				       
+
 filter_test() ->
     L = lists:seq(1,10),
 
@@ -394,10 +394,10 @@ split_n_test_() ->
     M = 99,
     L = lists:seq(1,M),
     Num_of_lists = fun(List, N) when N =< length(List) ->
-			   N;
-		      (List, _) ->
-			   length(List)
-		   end,
+               N;
+              (List, _) ->
+               length(List)
+           end,
     [?_assertEqual(Num_of_lists(L,N), length(split(L,N))) || N <- L].    
 
 
@@ -434,12 +434,12 @@ stat(N, M, LL) ->
 split_stat_test_() ->
     %% Assure the list of sublists contains the correct number of
     %% lists of the two expected lengths.
-	
+
     Assert = fun(L,N) ->
-		     {_, Q, _} = lqr(L,N), 
-		     ?_assertEqual(expected_stat(L,N), stat(Q+1, Q, split(L,N))) 
-	     end,
-	
+             {_, Q, _} = lqr(L,N), 
+             ?_assertEqual(expected_stat(L,N), stat(Q+1, Q, split(L,N))) 
+         end,
+
     %% Generators can depend on other generator expressions, here N
     %% depends on the length of L.
     
