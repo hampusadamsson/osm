@@ -5,7 +5,7 @@
 
 -module(utils). 
 
--export([seqs/1, filter/2, split/2, getSum/3]).
+-export([seqs/1, filter/2, split/2, getSum/4]).
 
 %% To use EUnit we must include this.
 -include_lib("eunit/include/eunit.hrl").
@@ -23,23 +23,23 @@
 %% [3,5,7,9]'''
 %% </div>
 
-spawn_worker(A,B,specOff) ->
+spawn_worker(A,B,specOff,Sleep) ->
     My_PID = self(),
-   add_values(A,B,0,My_PID),
-   add_values(A,B,0,My_PID),
+   add_values(A,B,0,My_PID,Sleep),
+   add_values(A,B,0,My_PID,Sleep),
  
    receive_Loop(nill,nill);
 
 
-spawn_worker(A,B,specOn) ->
+spawn_worker(A,B,specOn,Sleep) ->
     
     My_PID = self(),
-    Child_1 = spawn(fun() -> spawn_helper(A,B,0,My_PID)end),
-    Child_2 = spawn(fun() -> spawn_helper(A,B,1,My_PID)end),
+    Child_1 = spawn(fun() -> spawn_helper(A,B,0,My_PID,Sleep)end),
+    Child_2 = spawn(fun() -> spawn_helper(A,B,1,My_PID,Sleep)end),
     receive_Loop(Child_1,Child_2,nill,nill).
 
-spawn_helper(A,B,C,PID) ->
-    utils:add_values(A,B,C,self()),
+spawn_helper(A,B,C,PID,Sleep) ->
+    utils:add_values(A,B,C,self(),Sleep),
     receive 
         X ->
             PID ! X
@@ -88,19 +88,19 @@ receive_Loop(Child_0,Child_1,Carry_0_Result,Carry_1_Result) ->
 
 
 
-createProcessList(L1,L2,Specc) ->
+createProcessList(L1,L2,Specc,Sleep) ->
     
     Mode = [Specc],
     FixedList = [[A,B] ||{A,B} <- lists:zip(L1,L2)],
-    [spawn(fun() -> spawn_worker(B,C,D)end) || [B,C] <- FixedList, D <- Mode].
+    [spawn(fun() -> spawn_worker(B,C,D,Sleep)end) || [B,C] <- FixedList, D <- Mode].
 
 
 
-getSum(L1,L2,Specc) ->
+getSum(L1,L2,Specc,Sleep) ->
     
     L3 = lists:reverse(L1),
     L4 = lists:reverse(L2),
-    ProcessList = createProcessList(L3,L4,Specc),
+    ProcessList = createProcessList(L3,L4,Specc,Sleep),
     {X,Y} = recursiveGet(0,ProcessList,[]),
     if
         Y == 0 ->
@@ -151,7 +151,7 @@ make_same(A,B) ->
             B
     end.
 
-add_values(A,B,C,PID) ->
+add_values(A,B,C,PID,Sleep) ->
     Tmp=list_to_int(A)+list_to_int(B)+C,
     Len_sum = intlist(Tmp),
     
@@ -167,7 +167,11 @@ add_values(A,B,C,PID) ->
         true ->
             PID ! {Len_sum,0,C}
     end,
-   timer:sleep(500).
+   timer:sleep(length_sleep(Sleep)).
+
+length_sleep({Low_bound,Upper_bound})->
+    crypto:start(),
+    crypto:rand_uniform(Low_bound,Upper_bound).
 
 to_base_10(A,Base) ->
     Tmp = lists:mapfoldr(fun(X,Sum) -> {X*Sum,Sum*Base} end, 1, A),

@@ -1,6 +1,6 @@
 %% @doc Erlang mini project.
 -module(add).
--export([start/3, start/4]).
+-export([start/3, start/5]).
 
 %% @doc Calculates the addtion between two 
 %%      integers A and B in base Base. The sum is represented 
@@ -17,9 +17,9 @@
       B::integer(), 
       Base::integer().
 
-start(A,B, Base) ->
+start(A,B,Base) ->
  
-	start(A,B,Base,1).
+	start(A,B,Base,1,{0,1}).
 
 
 %% @doc Calculates the addtion between two 
@@ -34,26 +34,27 @@ start(A,B, Base) ->
 %% 14445'''
 %% </div>
 
--spec start(A,B,Base, Options) -> ok when 
+-spec start(A,B,Base,Split,Sleep) -> ok when 
       A::integer(),
+      Split::integer(), 
       B::integer(), 
       Base::integer(),
-      Option::atom() | tuple(),
-      Options::[Option].
+      Sleep::integer() | tuple(),
+      Split::[Split].
 
-start(A,B,Base, Options) ->
+start(A,B,Base,Split,Sleep) ->
     La=utils:to_base_10(utils:intlist(A),Base),
     Lb=utils:to_base_10(utils:intlist(B),Base),
     {ListA, ListB} = utils:fulfill(La,Lb),
     
     if
-        Options>length(La) -> 
+        Split>length(La) -> 
             erlang:error('Cant split a list into more elements than the number of chars inserted'); 
         true ->
             
-            SplitA=utils:split(ListA,Options),
-            SplitB=utils:split(ListB,Options),
-            Tmp = (utils:getSum(SplitA,SplitB,specOff)),
+            SplitA=utils:split(ListA,Split),
+            SplitB=utils:split(ListB,Split),
+            Tmp = (utils:getSum(SplitA,SplitB,specOff,Sleep)),
             Tmp2 = utils:list_to_int(Tmp),
             io:fwrite("~p + ~p = ~p \n", [A,B,Tmp2])                   
     end.
