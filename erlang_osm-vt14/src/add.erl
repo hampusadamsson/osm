@@ -1,6 +1,6 @@
 %% @doc Erlang mini project.
 -module(add).
--export([start/3, start/5]).
+-export([start/3, start/6]).
 
 %% @doc Calculates the addtion between two 
 %%      integers A and B in base Base. The sum is represented 
@@ -19,7 +19,7 @@
 
 start(A,B,Base) ->
  
-	start(A,B,Base,1,{0,1}).
+	start(A,B,Base,1,specOff,{0,1}).
 
 
 %% @doc Calculates the addtion between two 
@@ -34,15 +34,16 @@ start(A,B,Base) ->
 %% 14445'''
 %% </div>
 
--spec start(A,B,Base,Split,Sleep) -> ok when 
+-spec start(A,B,Base,Split,Specc,Sleep) -> ok when 
       A::integer(),
       Split::integer(), 
       B::integer(), 
+      Specc::atom(),
       Base::integer(),
       Sleep::integer() | tuple(),
       Split::[Split].
 
-start(A,B,Base,Split,Sleep) ->
+start(A,B,Base,Split,Specc,Sleep) ->
     La=utils:to_base_10(utils:intlist(A),Base),
     Lb=utils:to_base_10(utils:intlist(B),Base),
     {ListA, ListB} = utils:fulfill(La,Lb),
@@ -54,7 +55,7 @@ start(A,B,Base,Split,Sleep) ->
             
             SplitA=utils:split(ListA,Split),
             SplitB=utils:split(ListB,Split),
-            Tmp = (utils:getSum(SplitA,SplitB,specOff,Sleep)),
+            Tmp = (utils:getSum(SplitA,SplitB,Specc,Sleep)),
             Tmp2 = utils:list_to_int(Tmp),
             io:fwrite("~p + ~p = ~p \n", [A,B,Tmp2])                   
     end.
