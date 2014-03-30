@@ -43,9 +43,11 @@ start(A,B,Base) ->
       Sleep::integer() | tuple(),
       Split::[Split].
 
-start(A,B,Base,Split,Specc,Sleep) ->
-    La=utils:to_base_10(utils:intlist(A),Base),
-    Lb=utils:to_base_10(utils:intlist(B),Base),
+start(Aa,Bb,Base,Split,Specc,Sleep) ->
+    A = list_to_integer(Aa, Base),
+    B = list_to_integer(Bb, Base),
+    La=utils:intlist(A),
+    Lb=utils:intlist(B),
     {ListA, ListB} = utils:fulfill(La,Lb),
     
     if
@@ -57,7 +59,7 @@ start(A,B,Base,Split,Specc,Sleep) ->
             SplitB=utils:split(ListB,Split),
             Tmp = (utils:getSum(SplitA,SplitB,Specc,Sleep)),
             Tmp2 = utils:list_to_int(Tmp),
-            io:fwrite("~p + ~p = ~p \n", [A,B,Tmp2])                   
+            io:fwrite("~s + ~s = ~s \n", [Aa,Bb,integer_to_list(Tmp2, Base)])                   
     end.
 
 %%_____________________________________________________________________
