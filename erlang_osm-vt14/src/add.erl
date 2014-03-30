@@ -19,7 +19,7 @@
 
 start(A,B,Base) ->
  
-	start(A,B,Base,1,specOff,{0,1}).
+	start(A,B,Base,3,specOff,{0,1}).
 
 
 %% @doc Calculates the addtion between two 
