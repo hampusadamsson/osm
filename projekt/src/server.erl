@@ -88,6 +88,8 @@
 
 -include_lib("eunit/include/eunit.hrl").
 
+%% gen_server functions
+
 init(UserList) -> {ok, UserList}.
 
 handle_call({size}, _From, UserList) ->
@@ -117,9 +119,9 @@ terminate(normal, {users}) ->
     ok.
 
 code_change(_OldVsn, State, _Extra) ->
-    %% No change planned. The function is there for the behaviour,
-    %% but will not be used. Only a version on the next
     {ok, State}.
+
+%% our functions
 
 start_link() -> gen_server:start_link(?MODULE, {users, []}, []).
 
