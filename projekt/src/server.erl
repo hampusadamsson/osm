@@ -1,83 +1,144 @@
--module(server). 
+%%-module(server). 
 
--export([new/0, size/1, add_user/2, remove_user/1, empty/1, users/1]).
+%%-export([new/0, size/1, add_user/2, remove_user/1, empty/1, users/1]).
 
 %% To use EUnit we must include this:
--include_lib("eunit/include/eunit.hrl").
+%%-include_lib("eunit/include/eunit.hrl").
 
-new() ->
-    spawn(fun() -> loop(server_handler:new_user_list()) end).
+%%new() ->
+%%    spawn(fun() -> loop(server_handler:new_user_list()) end).
 
 %% This is the process loop.
 
-loop(User_list) ->
-    receive 
-        {size, PID} ->
-            PID ! {size, server_handler:size(User_list)},
-            loop(User_list);
-        {users, PID} ->
-            PID ! {users, server_handler:users(User_list)},
-            loop(User_list); 
-        {empty, PID} ->
-            PID ! server_handler:empty(User_list),
-            loop(User_list);
-        {remove_user, PID} ->
-            case server_handler:empty(User_list) of
-                true ->
-                    PID ! {error, 'empty_user-list'},
-                    loop(User_list);
-                false ->
-                    Tmp = server_handler:remove_user(User_list),
-                    PID ! Tmp,
-                        loop(element(2, Tmp))
-            end;
-        {add_user, Value, PID} ->
-            Tmp = server_handler:add_user(User_list, Value),
-            PID ! Tmp,
-            loop(Tmp)
-end.
+%%loop(User_list) ->
+%%    receive 
+%%        {size, PID} ->
+%%            PID ! {size, server_handler:size(User_list)},
+%%            loop(User_list);
+%%        {users, PID} ->
+%%            PID ! {users, server_handler:users(User_list)},
+%%            loop(User_list); 
+%%        {empty, PID} ->
+%%            PID ! server_handler:empty(User_list),
+%%            loop(User_list);
+%%        {remove_user, PID} ->
+%%            case server_handler:empty(User_list) of
+%%                true ->
+%%                    PID ! {error, 'empty_user-list'},
+%%                    loop(User_list);
+%%                false ->
+%%                    Tmp = server_handler:remove_user(User_list),
+%%                    PID ! Tmp,
+%%                        loop(element(2, Tmp))
+%%            end;
+%%        {add_user, Value, PID} ->
+%%            Tmp = server_handler:add_user(User_list, Value),
+%%            PID ! Tmp,
+%%            loop(Tmp)
+%%end.
 
-users(User_list) ->
-    User_list ! {users, self()},
-    receive 
-        {users, List} ->
-            List
-    end.
+%%users(User_list) ->
+%%    User_list ! {users, self()},
+%%    receive 
+%%        {users, List} ->
+%%            List
+%%    end.
 
-size(User_list) ->
-    User_list ! {size, self()},
-    receive 
-        {size, Size} ->
-            Size
-    end.
+%%size(User_list) ->
+%%    User_list ! {size, self()},
+%%    receive 
+%%        {size, Size} ->
+%%            Size
+%%    end.
 
-empty(User_list) ->
-    User_list ! {empty, self()},
-    receive 
-        true ->
-            true;
-        false  ->
-            false
-    end.
-
-
-remove_user(User_list) ->
-    User_list ! {remove_user, self()},
-    receive
-        {Value, {users, _Out}} ->
-            Value;
-        {error, _Msg} ->
-            {error, _Msg}
-    end.
+%%empty(User_list) ->
+%%    User_list ! {empty, self()},
+%%    receive 
+%%        true ->
+%%            true;
+%%        false  ->
+%%            false
+%%    end.
 
 
-add_user(User_list, Value) ->
-    User_list ! {add_user, Value, self()},
-    receive
-        {users, In} ->
-            {users, In}
+%%remove_user(User_list) ->
+%%    User_list ! {remove_user, self()},
+%%    receive
+%%        {Value, {users, _Out}} ->
+%%            Value;
+%%        {error, _Msg} ->
+%%            {error, _Msg}
+%%    end.
+
+
+%%add_user(User_list, Value) ->
+%%    User_list ! {add_user, Value, self()},
+%%    receive
+%%        {users, In} ->
+%%            {users, In}
                 
-    end.
+%%    end.
+
+-module(server).
+-behaviour(gen_server).
+
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2,
+        code_change/3, start_link/0, size/1, empty/1, add_user/2,
+        remove_user/1, users/1]).
+
+-include_lib("eunit/include/eunit.hrl").
+
+init(UserList) -> {ok, UserList}.
+
+handle_call({size}, _From, UserList) ->
+    {reply, server_handler:size(UserList), UserList};
+handle_call({empty}, _From, UserList) ->
+    {reply, server_handler:empty(UserList), UserList};
+handle_call({add_user, NewUser}, _From, UserList) ->
+    {reply, server_handler:add_user(UserList, NewUser), UserList};
+handle_call({remove_user}, _From, UserList) ->
+    {reply, server_handler:remove_user(UserList), UserList};
+handle_call({users}, _From, UserList) ->
+    {reply, server_handler:users(UserList), UserList};
+handle_call(terminate, _From, UserList) ->
+    {stop, normal, ok, UserList}.
+ 
+handle_cast({return, NewUser}, {users, UserList}) ->
+    {noreply, {users, [NewUser|UserList]}};
+handle_cast({return}, {users, [_|T]}) ->
+    {noreply, {users, T}}.
+
+handle_info(Msg, UserList) ->
+    io:format("Unexpected message: ~p~n",[Msg]),
+    {noreply, UserList}.
+
+terminate(normal, {users}) ->
+    [io:format("EXIT")],
+    ok.
+
+code_change(_OldVsn, State, _Extra) ->
+    %% No change planned. The function is there for the behaviour,
+    %% but will not be used. Only a version on the next
+    {ok, State}.
+
+start_link() -> gen_server:start_link(?MODULE, {users, []}, []).
+
+size(UserList) ->
+    gen_server:call(UserList, {size}).
+
+empty(UserList) ->
+    gen_server:call(UserList, {empty}).
+
+add_user(UserList, NewUser) ->
+    gen_server:call(UserList, {add_user, NewUser}),
+    gen_server:cast(UserList, {return, NewUser}).
+
+remove_user(UserList) ->
+    gen_server:call(UserList, {remove_user}),
+    gen_server:cast(UserList, {return}).
+
+users(UserList) ->
+    gen_server:call(UserList, {users}).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
