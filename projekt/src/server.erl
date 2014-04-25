@@ -150,53 +150,67 @@ users(UserList) ->
 %% All functions with names ending wiht _test() or _test_() will be
 %% called automatically by pserver_handler:test()
 
+%%common_test_() ->
+%%    {ok, A} = start_link(),
+%%    [?_assertMatch(true,empty(A)),
+%%     ?_assertMatch({users,[ett]},add_user(A,ett)),
+%%     ?_assertMatch({users,[tva,ett]},add_user(A,tva)),
+%%     ?_assertMatch({users,[tre,tva,ett]},add_user(A,tre)),
+%%     ?_assertMatch(false,empty(A)),
+%%     ?_assertMatch(tre,remove_user(A)),
+%%     ?_assertMatch(tva,remove_user(A)),
+%%     ?_assertMatch(ett,remove_user(A)),
+%%     ?_assertMatch(true,empty(A))].
+
 common_test_() ->
-    A = new(),
+    {ok, A} = start_link(),
     [?_assertMatch(true,empty(A)),
-     ?_assertMatch({users,[ett]},add_user(A,ett)),
-     ?_assertMatch({users,[tva,ett]},add_user(A,tva)),
-     ?_assertMatch({users,[tre,tva,ett]},add_user(A,tre)),
+     ?_assertMatch(ok,add_user(A,ett)),
+     ?_assertMatch(ok,add_user(A,tva)),
+     ?_assertMatch(ok,add_user(A,tre)),
+     ?_assertMatch({users, [tre, tva, ett]},users(A)),
      ?_assertMatch(false,empty(A)),
-     ?_assertMatch(tre,remove_user(A)),
-     ?_assertMatch(tva,remove_user(A)),
-     ?_assertMatch(ett,remove_user(A)),
+     ?_assertMatch(ok,remove_user(A)),
+     ?_assertMatch(ok,remove_user(A)),
+     ?_assertMatch(ok,remove_user(A)),
      ?_assertMatch(true,empty(A))].
 
 users_test_() ->
-    A = new(),
+    {ok, A} = start_link(),
     [?_assertMatch(true,empty(A)),
      ?_assertMatch({users,[]},users(A)),
-     ?_assertMatch({users,[ett]},add_user(A,ett)),
+     ?_assertMatch(ok,add_user(A,ett)),
      ?_assertMatch({users,[ett]},users(A)),
-     ?_assertMatch({users,[tva,ett]},add_user(A,tva)),
+     ?_assertMatch(ok,add_user(A,tva)),
      ?_assertMatch({users,[tva,ett]},users(A)),
-     ?_assertMatch({users,[tre,tva,ett]},add_user(A,tre)),
+     ?_assertMatch(ok,add_user(A,tre)),
      ?_assertMatch({users,[tre,tva,ett]},users(A))].
 
-start_test_() ->
-    [?_assertMatch(true, is_pid(new())),
-     ?_assertMatch(0, server:size(new())),
-     ?_assertMatch(true, empty(new())),
-     ?_assertMatch({error, 'empty_user-list'}, remove_user(new()))].
+%%start_test_() ->
+%%    [?_assertMatch(true, is_pid(new())),
+%%     ?_assertMatch(0, server:size(new())),
+%%     ?_assertMatch(true, empty(new())),
+%%     ?_assertMatch({error, 'empty_user-list'}, remove_user(new()))].
 
 empty_test() ->
-    F =  new(),
+    {ok, F} = start_link(),
     ?assertMatch(true, empty(F)),
     add_user(F, foo),
     ?assertMatch(false, empty(F)),
     remove_user(F),
     ?assertMatch(true, empty(F)).
 		  
-add_user_remove_user_test() ->
-    F = new(),
+add_user_remove_user_test_() ->
+    {ok, F} = start_link(),
     add_user(F, foo),
     add_user(F, bar),
     add_user(F, luz),
-    ?assertMatch(false, empty(F)),
-    ?assertMatch(luz, remove_user(F)),
-    ?assertMatch(bar, remove_user(F)),
-    ?assertMatch(foo, remove_user(F)),
-    ?assertMatch({error, 'empty_user-list'}, remove_user(F)).
+    [?_assertMatch({users,[luz,bar,foo]},users(F)),
+    ?_assertMatch(false, empty(F)),
+    ?_assertMatch(ok, remove_user(F)),
+    ?_assertMatch(ok, remove_user(F)),
+    ?_assertMatch(ok, remove_user(F)),
+    ?_assertMatch(true, empty(F))].
 
 		 
     
