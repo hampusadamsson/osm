@@ -111,7 +111,13 @@ handle_cast({return}, {users, [_|T]}) ->
     {noreply, {users, T}}.
 
 handle_info(Msg, UserList) ->
-    io:format("Unexpected message: ~p~n",[Msg]),
+    %%io:format("Unexpected message: ~p~n",[Msg]),
+    if
+        Msg =:= "Add user" ->
+            io:format("Alrighty then~n");
+        true ->
+            io:format("Don't know that~n")
+    end,
     {noreply, UserList}.
 
 terminate(normal, {users}) ->
@@ -142,6 +148,22 @@ remove_user(UserList) ->
 users(UserList) ->
     gen_server:call(UserList, {users}).
 
+server() ->
+    {ok, LSock} = gen_tcp:listen(1337, [binary, {packet, 0}, 
+                                        {active, false}]),
+    {ok, Sock} = gen_tcp:accept(LSock),
+    {ok, Bin} = do_recv(Sock, []),
+    ok = gen_tcp:close(Sock),
+    {ok, UL} = start_link(),
+    UL ! Bin.
+
+do_recv(Sock, Bs) ->
+    case gen_tcp:recv(Sock, 0) of
+        {ok, B} ->
+            do_recv(Sock, [Bs, B]);
+        {error, closed} ->
+            {ok, list_to_binary(Bs)}
+    end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%                         EUnit Test Cases                                  %%
