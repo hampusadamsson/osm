@@ -84,7 +84,7 @@
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2,
         code_change/3, start_link/0, size/1, empty/1, add_user/2,
-        remove_user/1, users/1, server/0]).
+        remove_user/1, users/1, start_listen/0]).
 
 -include_lib("eunit/include/eunit.hrl").
 
@@ -111,13 +111,7 @@ handle_cast({return}, {users, [_|T]}) ->
     {noreply, {users, T}}.
 
 handle_info(Msg, UserList) ->
-    %%io:format("Unexpected message: ~p~n",[Msg]),
-    if
-        Msg =:= <<"Add user">> ->
-            io:format("Alrighty then~n");
-        true ->
-            io:format("Don't know that~n")
-    end,
+    io:format("~p~n", [Msg]),
     {noreply, UserList}.
 
 terminate(normal, {users}) ->
@@ -148,14 +142,21 @@ remove_user(UserList) ->
 users(UserList) ->
     gen_server:call(UserList, {users}).
 
-server() ->
+start_listen() ->
     {ok, LSock} = gen_tcp:listen(1337, [binary, {packet, 0}, 
-                                        {active, false}]),
+        {active, false}]),
     {ok, Sock} = gen_tcp:accept(LSock),
     {ok, Bin} = do_recv(Sock, []),
     ok = gen_tcp:close(Sock),
     {ok, UL} = start_link(),
-    UL ! Bin.
+    Bin,
+    if
+        Bin =:= <<"Add user">> ->
+            add_user(UL, "Persnusk"),
+            users(UL);
+        true ->
+            io:format("Don't know that~n")
+    end.
 
 do_recv(Sock, Bs) ->
     case gen_tcp:recv(Sock, 0) of
@@ -170,7 +171,6 @@ do_recv(Sock, Bs) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% EUnit adds the server_handler:test() function to this module. 
-
 %% All functions with names ending wiht _test() or _test_() will be
 %% called automatically by pserver_handler:test()
 

@@ -25,7 +25,6 @@ remove_user({users, []}) ->
 remove_user({users, [H|T]}) -> 
     {H, {users, T}}.
 
-
 %% KONTROLLERAR TOM USER LIST
 empty({users, []}) ->
     true;
