@@ -1,19 +1,35 @@
 -module(server_handler).
--export([new_user_list/0, size/1, add_user/2, remove_user/1, empty/1,users/1]).
+-export([new_user_list/0, size/1, add_user/2, remove_user/1, empty/1, users/1, find/2]).
+
 
 %% To use EUnit we must include this:
 -include_lib("eunit/include/eunit.hrl").
 
+
 %%NEW USER LIST 
 new_user_list() -> {users, []}.
+
 
 %%USER LIST LENGTH
 size({users, In}) ->
     length(In).
 
+
 %%LIST ALL USERS
 users({users, In}) -> 
     {users, In}.
+
+
+%%FIND USER
+find({users, []},_) ->
+    {users, 'no result found'};
+find({users, [X|In]},Namn) ->
+    if X==Namn ->
+            {users, true};
+       true ->
+            find({users,In},Namn)
+            end.
+
 
 %%LÄGG TILL USER
 add_user({users, In}, X) -> 
