@@ -84,7 +84,7 @@
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2,
         code_change/3, start_link/0, size/1, empty/1, add_user/2,
-        remove_user/1, users/1]).
+        remove_user/1, users/1, server/0]).
 
 -include_lib("eunit/include/eunit.hrl").
 
@@ -113,7 +113,7 @@ handle_cast({return}, {users, [_|T]}) ->
 handle_info(Msg, UserList) ->
     %%io:format("Unexpected message: ~p~n",[Msg]),
     if
-        Msg =:= "Add user" ->
+        Msg =:= <<"Add user">> ->
             io:format("Alrighty then~n");
         true ->
             io:format("Don't know that~n")
