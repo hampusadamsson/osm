@@ -1,11 +1,14 @@
 %%%-------------------------------------------------------------------
-%%% File    : server_sup2.erl
+%%% File    : hello_sup.erl
 %%% Author  : root <root@ergo>
 %%% Description : 
 %%%
-%%% Created : 25 Apr 2014 by root <root@ergo>
+%%% Created : 28 Apr 2014 by root <root@ergo>
 %%%-------------------------------------------------------------------
--module(server_sup2).
+-module(hello_sup).
+
+%% To use EUnit we must include this:
+-include_lib("eunit/include/eunit.hrl").
 
 -behaviour(supervisor).
 %%--------------------------------------------------------------------
@@ -55,10 +58,27 @@ start_link() ->
 %%          {error, Reason}   
 %%--------------------------------------------------------------------
 init([]) ->
-    AChild = {'server',{'server',start_link,[]},
-              permanent,2000,worker,['server']},
-    {ok,{{one_for_all,0,1}, ['server']}}.
+    AChild = {hello_server,{hello_server,start_link,[]}, %%Skelleton-code is wrong
+              permanent,2000,worker,['hello_server']},
+    {ok,{{one_for_all,1000,3600}, [AChild] }}.
 
 %%====================================================================
 %% Internal functions
 %%====================================================================
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%% Eunit test cases  %%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% EUnit adds the fifo:test() function to this module. 
+
+%% All functions with names ending wiht _test() or _test_() will be
+%% called automatically by fifo:test()
+
+new_test_() -> 
+    {Tmp,_Tmp_pid} = start_link(),
+    [?_assertEqual(ok,Tmp)]. %% Startup-test, init. the main server-module
+
+%%     ?_assertEqual(0,0)
