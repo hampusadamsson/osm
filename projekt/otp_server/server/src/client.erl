@@ -1,5 +1,5 @@
 -module(client).
--export([client/0, server/0]).
+-export([start/2, start_servers/2, server/1, loop/1, client/2]).
 
 %% To use EUnit we must include this:
 -include_lib("eunit/include/eunit.hrl").
@@ -34,21 +34,30 @@ loop(S) ->
     inet:setopts(S,[{active,once}]),
     receive
         {tcp,S,Data} ->
-            Answer = process(Data), % Not implemented in this example
+%%            Answer = process(Data), % Not implemented in this example
+            Answer = Data,
             gen_tcp:send(S,Answer),
             loop(S);
         {tcp_closed,S} ->
             io:format("Socket ~w closed [~w]~n",[S,self()]),
             ok
     end.
-A simple client could look like this:
+
+%%
+%%
+%%
+%%
+%%
+%%A simple client could look like this:
 
 client(PortNo,Message) ->
     {ok,Sock} = gen_tcp:connect("localhost",PortNo,[{active,false},
                                                     {packet,2}]),
+    io:format("connected...\n"),
     gen_tcp:send(Sock,Message),
     A = gen_tcp:recv(Sock,0),
     gen_tcp:close(Sock),
+    io:format("message: + ~s\n",[A]),
     A.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
