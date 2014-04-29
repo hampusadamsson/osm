@@ -1,6 +1,6 @@
 ==== COURSE ==== 
 
-Operating systems and multicore programming (1DT089) Spring 2014
+Process Oriented Programming (1DT049) Spring 2012
 
 Department of Information Technology 
 Uppsala university
@@ -8,23 +8,22 @@ Uppsala university
 
 ==== GROUP ==== 
 
-3
+Group 3
 
 
 ==== PROJECT NAME ==== 
 
-Nuntii
+NUNTII
 
 
 ==== PROJECT DESCRIPTION ==== 
 
-IRC server and client
-(Add a short description of your project here.) 
+An IRC-client/server
 
 
 ==== GROUP MEMBERS ==== 
 
-930213-0738 John.Davey.7801@student.uu.se
+900921-1492 Hampus.Adamsson.2548@student.uu.se
 YYMMDD-XXXX Firstname.Lastname.1234@student.uu.se
 YYMMDD-XXXX Firstname.Lastname.1234@student.uu.se
 YYMMDD-XXXX Firstname.Lastname.1234@student.uu.se
@@ -32,25 +31,25 @@ YYMMDD-XXXX Firstname.Lastname.1234@student.uu.se
 
 ==== MAY THE SOURCE BE WITH YOU ==== 
 
-https://github.com/hampusadamsson/osm/tree/master/projekt
-
 Everything you need to compile and run the system is included in this
 directory. 
 
 However, you might want to get the most up to date version of this
 directory. 
-
-Add a description here on how to use Subversion, Git or similar to get
-the most up to date version of this directory. 
+           git:
+              http://github.com/hampusadamsson/osm/project
 
 
 ==== ERLANG VERSION ====
-
-This software was developed and tested using Erlang R14B04 and R16B01.
+     
+This software was developed and tested using Erlang R16B01.
      	      	  	    	       
 ==== MAKE IT HAPPEN ==== 
 
 Using the make utility you can perform the following actions:
+
+rebar compile   -> compiles
+rebar clean     -> cleans
 
 make         ==> Compiles the Erlang source files if necessary. 
 make archive ==> Creates a gziped tar archive of this directory. 
@@ -62,21 +61,9 @@ make test    ==> Runs all Eunit tests.
 
 ==== TO COMPILE ==== 
 
-To compile the project, simply type make and press enter.
-
+1- To compile the project, simply type make and press enter.
+2- rebar compile
 
 ==== TO RUN AND TEST THE SYSTEM ==== 
 
-Add a short description on how to run and test your system. Here you
-might give pointers to more details in the doc/final_presentation.pdf
-document. 
-
-If possible, add targets to the Makefile that can be used to start the
-system (make start, make start_server, make start_client or similar as
-necessary). 
-
-==== MORE INFORMATION (optional) ==== 
-
- * How to get more information about your project?
- * Who is the main contact person?
- * Do you have a project home page?
+1- rebar eunit
