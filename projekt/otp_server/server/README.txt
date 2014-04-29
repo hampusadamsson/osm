@@ -8,22 +8,22 @@ Uppsala university
 
 ==== GROUP ==== 
 
-XX (change this to your group number).
+Group 3
 
 
 ==== PROJECT NAME ==== 
 
-Add your catchy project name here.
+NUNTII
 
 
 ==== PROJECT DESCRIPTION ==== 
 
-Add a short description of your project here. 
+An IRC-client/server
 
 
 ==== GROUP MEMBERS ==== 
 
-YYMMDD-XXXX Firstname.Lastname.1234@student.uu.se
+900921-1492 Hampus.Adamsson.2548@student.uu.se
 YYMMDD-XXXX Firstname.Lastname.1234@student.uu.se
 YYMMDD-XXXX Firstname.Lastname.1234@student.uu.se
 YYMMDD-XXXX Firstname.Lastname.1234@student.uu.se
@@ -36,17 +36,20 @@ directory.
 
 However, you might want to get the most up to date version of this
 directory. 
+           git:
+              http://github.com/hampusadamsson/osm/project
 
-Add a description here on how to use Subversion, Git or similar to get
-the most up to date version of this directory. 
 
 ==== ERLANG VERSION ====
-
-This software was developed and tested using Erlang R14B03.
+     
+This software was developed and tested using Erlang R16B01.
      	      	  	    	       
 ==== MAKE IT HAPPEN ==== 
 
 Using the make utility you can perform the following actions:
+
+rebar compile   -> compiles
+rebar clean     -> cleans
 
 make         ==> Compiles the Erlang source files if necessary. 
 make archive ==> Creates a gziped tar archive of this directory. 
@@ -58,21 +61,9 @@ make test    ==> Runs all Eunit tests.
 
 ==== TO COMPILE ==== 
 
-To compile the project, simply type make and press enter.
-
+1- To compile the project, simply type make and press enter.
+2- rebar compile
 
 ==== TO RUN AND TEST THE SYSTEM ==== 
 
-Add a short description on how to run and test your system. Here you
-might give pointers to more details in the doc/final_presentation.pdf
-document. 
-
-If possible, add targets to the Makefile that can be used to start the
-system (make start, make start_server, make start_client or similar as
-necessary). 
-
-==== MORE INFORMATION (optional) ==== 
-
- * How to get more information about your project?
- * Who is the main contact person?
- * Do you have a project home page?
+1- rebar eunit
