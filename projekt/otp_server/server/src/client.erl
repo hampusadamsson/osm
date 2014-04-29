@@ -16,6 +16,7 @@ start(Num,LPort) ->
 
 start_servers(0,_) ->
     ok;
+
 start_servers(Num,LS) ->
     spawn(?MODULE,server,[LS]),
     start_servers(Num-1,LS).
@@ -54,6 +55,7 @@ loop(S) ->
 connect(IP,PortNo) ->
     {ok,Sock} = gen_tcp:connect(IP,PortNo,[{active,false},
                                                     {packet,2}]),
+    spawn(?MODULE,loop,[Sock]),
     Sock.
     % gen_tcp:send(Sock,Message),
     % A = gen_tcp:recv(Sock,0),

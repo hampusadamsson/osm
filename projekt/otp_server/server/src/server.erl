@@ -49,7 +49,7 @@ handle_cast({'add_user', Name},{State,_Sock}) ->
 %% Port = remote port
 %% ------------------------------------------------------------------
 handle_cast({'connect', IP, Port},{State,_Sock}) ->
-    {ok, Sock} = gen_tcp:connect(IP, Port, [binary, {packet, 0}]),
+    {ok, Sock} = gen_tcp:connect(IP, Port, [binary, {active,false}, {packet, 2}]),
     {noreply, {State, Sock}};
 
 %% ------------------------------------------------------------------
@@ -57,7 +57,7 @@ handle_cast({'connect', IP, Port},{State,_Sock}) ->
 %% Sock = socket created by 'connect'
 %% ------------------------------------------------------------------
 handle_cast({'send', Msg},{State,Sock}) ->
-    ok = gen_tcp:send(Sock, Msg),
+    gen_tcp:send(Sock, Msg),
 %%    ok = gen_tcp:close(Sock),
     {noreply, {State, Sock}}.
 
