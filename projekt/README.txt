@@ -1,6 +1,6 @@
 ==== COURSE ==== 
 
-Process Oriented Programming (1DT049) Spring 2012
+Operating systems and multicore programming (1DT089) Spring 2014
 
 Department of Information Technology 
 Uppsala university
@@ -8,28 +8,31 @@ Uppsala university
 
 ==== GROUP ==== 
 
-XX (change this to your group number).
+3
 
 
 ==== PROJECT NAME ==== 
 
-Add your catchy project name here.
+Nuntii
 
 
 ==== PROJECT DESCRIPTION ==== 
 
-Add a short description of your project here. 
+IRC server and client
+(Add a short description of your project here.) 
 
 
 ==== GROUP MEMBERS ==== 
 
-YYMMDD-XXXX Firstname.Lastname.1234@student.uu.se
+930213-0738 John.Davey.7801@student.uu.se
 YYMMDD-XXXX Firstname.Lastname.1234@student.uu.se
 YYMMDD-XXXX Firstname.Lastname.1234@student.uu.se
 YYMMDD-XXXX Firstname.Lastname.1234@student.uu.se
 
 
 ==== MAY THE SOURCE BE WITH YOU ==== 
+
+https://github.com/hampusadamsson/osm/tree/master/projekt
 
 Everything you need to compile and run the system is included in this
 directory. 
@@ -40,9 +43,10 @@ directory.
 Add a description here on how to use Subversion, Git or similar to get
 the most up to date version of this directory. 
 
+
 ==== ERLANG VERSION ====
 
-This software was developed and tested using Erlang R14B03.
+This software was developed and tested using Erlang R14B04 and R16B01.
      	      	  	    	       
 ==== MAKE IT HAPPEN ==== 
 
