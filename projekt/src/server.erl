@@ -143,9 +143,8 @@ start_listen() ->
         {active, false}]),
     {ok, Sock} = gen_tcp:accept(LSock),
     {ok, Bin} = do_recv(Sock, []),
-    ok = gen_tcp:close(Sock),
+    %ok = gen_tcp:close(Sock),
     {ok, UL} = start_link(),
-    Bin,
     if
         Bin =:= <<"Add user">> ->
             add_user(UL, "Persnusk"),
