@@ -48,6 +48,7 @@ init(Args) ->
 %% ------------------------------------------------------------------
 handle_cast({'connect', IP, Port}, _Sock) ->
     {ok, Sock} = gen_tcp:connect(IP, Port, [binary, {active,false}, {packet, 2}]),
+    spawn(loop(Sock)),
     {noreply, [Sock|_Sock]};
 
 %% ------------------------------------------------------------------
@@ -118,6 +119,7 @@ list_users()->
 send_to_all(_,[])->
     ok;
 send_to_all(Msg,[Sock|Rest])->
+    %%  spawn(?MODULE,send_to_all,[Msg,[Rest]]),
     gen_tcp:send(Sock, Msg),
     send_to_all(Msg,Rest).
 
@@ -142,6 +144,7 @@ server(LS) ->
     case gen_tcp:accept(LS) of
         {ok,S} ->
             gen_server:cast(server, {'add_socket',S}),        %%Add to the list 
+            
             loop(S),
             server(LS);
         Other ->
