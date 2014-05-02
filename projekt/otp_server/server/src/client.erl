@@ -32,18 +32,21 @@ server(LS) ->
     end.
 
 loop(S) ->
-    inet:setopts(S,[{active,once}]),
-    receive
-        {tcp,S,Data} ->
-%%            Answer = process(Data),
-            Answer = Data,
-            gen_tcp:send(S,Answer),
-            io:format("Msg: ~s ~n",[Data]),
-            loop(S);
-        {tcp_closed,S} ->
-            io:format("Socket ~w closed [~w]~n",[S,self()]),
-            ok
-    end.
+    inet:setopts(S,[{active,false}]),
+    {ok,Data} = gen_tcp:recv(S,0),
+    io:format("Msg: ~s \n",[Data]),
+    loop(S).
+    % receive
+%         {tcp,S,Data} ->
+% %%            Answer = process(Data),
+%             Answer = Data,
+%             gen_tcp:send(S,Answer),
+%             io:format("Msg: ~s ~n",[Data]),
+%             loop(S);
+%         {tcp_closed,S} ->
+%             io:format("Socket ~w closed [~w]~n",[S,self()]),
+%             ok
+%     end.
 
 %%
 %%
@@ -56,7 +59,7 @@ loop(S) ->
 connect(IP, Port) ->
     %%IP = "localhost",
     %%Port = 1337,
-    {ok,Sock} = gen_tcp:connect(IP,Port,[{active,false},{packet,2}]),
+    {ok,Sock} = gen_tcp:connect(IP,Port,[{active,true},{packet,2}]),
     spawn(?MODULE,loop,[Sock]),
     Sock.
     % gen_tcp:send(Sock,Message),

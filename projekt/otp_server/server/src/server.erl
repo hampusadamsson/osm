@@ -47,8 +47,8 @@ init(Args) ->
 %% Port = remote port
 %% ------------------------------------------------------------------
 handle_cast({'connect', IP, Port}, _Sock) ->
-    {ok, Sock} = gen_tcp:connect(IP, Port, [binary, {active,false}, {packet, 2}]),
-    spawn(loop(Sock)),
+    {ok, Sock} = gen_tcp:connect(IP, Port, [binary, {active,true}, {packet, 2}]),
+    spawn(?MODULE,loop,[Sock]),
     {noreply, [Sock|_Sock]};
 
 %% ------------------------------------------------------------------
@@ -67,7 +67,7 @@ handle_cast({'add_socket', New_Socket}, Sock) ->
 %%
 %% ------------------------------------------------------------------
 handle_cast({'start_servers'},Socket) ->
-    start(10,1337),
+    start(100,1337),
     {noreply, Socket};
 
 %% ------------------------------------------------------------------
@@ -119,7 +119,6 @@ list_users()->
 send_to_all(_,[])->
     ok;
 send_to_all(Msg,[Sock|Rest])->
-    %%  spawn(?MODULE,send_to_all,[Msg,[Rest]]),
     gen_tcp:send(Sock, Msg),
     send_to_all(Msg,Rest).
 
@@ -153,15 +152,8 @@ server(LS) ->
     end.
 
 loop(S) ->
-    inet:setopts(S,[{active,once}]),
-    receive
-        {tcp,S,Data} ->
-%%            Answer = process(Data),
-            Answer = Data,
-            gen_tcp:send(S,Answer),
-            io:format("Msg: ~s ~n",[Data]),
-            loop(S);
-        {tcp_closed,S} ->
-            io:format("Socket ~w closed [~w]~n",[S,self()]),
-            ok
-    end.
+    inet:setopts(S,[{active,false}]),
+    {ok,Data} = gen_tcp:recv(S,0),
+    io:format("Msg: ~s \n",[Data]),
+    gen_server:cast(server, {'send', Data}),
+    loop(S).
