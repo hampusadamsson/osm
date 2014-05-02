@@ -155,5 +155,5 @@ loop(S) ->
     inet:setopts(S,[{active,false}]),
     {ok,Data} = gen_tcp:recv(S,0),
     io:format("Msg: ~s \n",[Data]),
-    gen_server:cast(server, {'send', Data}),
+    %%gen_server:cast(server, {'send', Data}),
     loop(S).
