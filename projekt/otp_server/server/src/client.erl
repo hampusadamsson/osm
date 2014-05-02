@@ -1,5 +1,5 @@
 -module(client).
--export([start/2, start_servers/2, server/1, loop/1, connect/2, send/2]).
+-export([start/2, start_servers/2, server/1, loop/1, connect/0, send/2]).
 
 %% To use EUnit we must include this:
 -include_lib("eunit/include/eunit.hrl").
@@ -52,8 +52,11 @@ loop(S) ->
 %%
 %%A simple client
 
-connect(IP,PortNo) ->
-    {ok,Sock} = gen_tcp:connect(IP,PortNo,[{active,false},
+%%connect(IP,PortNo) ->
+connect() ->
+    IP = "localhost",
+    Port = 1337,
+    {ok,Sock} = gen_tcp:connect(IP,Port,[{active,false},
                                                     {packet,2}]),
     spawn(?MODULE,loop,[Sock]),
     Sock.
