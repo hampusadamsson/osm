@@ -57,7 +57,7 @@ connect(IP, Port) ->
     %%IP = "localhost",
     %%Port = 1337,
     {ok,Sock} = gen_tcp:connect(IP,Port,[{active,false},{packet,2}]),
-    %%spawn(?MODULE,start,[1,1338]),
+    spawn(?MODULE,loop,[Sock]),
     Sock.
     % gen_tcp:send(Sock,Message),
     % A = gen_tcp:recv(Sock,0),
