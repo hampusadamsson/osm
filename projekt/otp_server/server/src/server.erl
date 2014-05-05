@@ -11,7 +11,8 @@
 %%   Run with: server_sup:start_link().
 %%              server:start_servers().
 %%              
-%%   Client:                
+%%   Client:    comment line 171
+%%             **this will render the server a client instead
 %%
 %% ------------------------------------------------------------------
 %% API Function Exports
@@ -51,7 +52,7 @@ init(Args) ->
 %% Port = remote port
 %% ------------------------------------------------------------------
 handle_cast({'connect', IP, Port}, _Sock) ->
-    {ok, Sock} = gen_tcp:connect(IP, Port, [binary, {active,true}, {packet, line}]),
+    {ok, Sock} = gen_tcp:connect(IP, Port, [binary, {active,true}, {packet, line}]),  % 2=line
     spawn(?MODULE,loop,[Sock]),
     {noreply, [Sock|_Sock]};
 
@@ -62,6 +63,12 @@ handle_cast({'connect', IP, Port}, _Sock) ->
 handle_cast({'add_socket', New_Socket}, Sock) ->
     {noreply, [New_Socket|Sock]};
 
+%% ------------------------------------------------------------------
+%% Remove socket from list after disconnect
+%% Rem_Sock = The one to remove
+%% ------------------------------------------------------------------
+handle_cast({'remove_socket', Rem_Socket}, Sock) ->
+    {noreply, lists:delete(Rem_Socket, Sock)};
 
 %% ------------------------------------------------------------------
 %% Sends a message !IF! connected
@@ -81,7 +88,7 @@ handle_cast({'send', Msg},Sock) ->
 %% ------------------------------------------------------------------
 handle_call({'start_servers'}, _From, Socket) ->
     Port=1337,
-    {reply, start(10, Port), Socket};
+    {reply, start(999, Port), Socket};
 
 %% ------------------------------------------------------------------
 %% Displays current user-list
@@ -124,9 +131,9 @@ list_users()->
 
 %%                 TODO
 %              
-%         lyssnande servern
-%         listan på sockets - update
-%         
+%   ok      lyssnande servern
+%   ok      listan på sockets - update
+%           fixa bra print - inet:i().       
 
 
 send_to_all(_,[])->
@@ -136,7 +143,7 @@ send_to_all(Msg,[Sock|Rest])->
     send_to_all(Msg,Rest).
 
 start(Num,LPort) ->
-    case gen_tcp:listen(LPort,[{active, false},{packet,line}]) of
+    case gen_tcp:listen(LPort,[{active, false},{packet, line}]) of % 2=line
         {ok, ListenSock} ->
             start_servers(Num,ListenSock),
             {ok, Port} = inet:port(ListenSock),
@@ -166,11 +173,17 @@ server(LS) ->
 
 loop(S) ->
     inet:setopts(S,[{active,false}]),
-    {ok,Data} = gen_tcp:recv(S,0),
-    io:format("Msg: ~s \n",[Data]),
-    gen_server:cast(server, {'send', Data}),
-    loop(S).
-
+    case gen_tcp:recv(S,0) of
+        {ok,Data} ->
+            io:format("Msg: ~s \n",[Data]),
+            gen_server:cast(server, {'send', Data}),
+            loop(S);
+        {error,Reason} ->
+            io:format("Disconnect: ~s \n",[Reason]),
+            gen_server:cast(server, {'remove_socket', S})
+    end.
+    
+    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%% Eunit test cases  %%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -195,8 +208,8 @@ start_servers_test_() ->
 %% Starting the servers
     server:start_servers(),
     
-    A=lists:seq(1,10),
-    lists:foreach(fun(_X)->server:connect(localhost,1337) end, A),
+    A=lists:seq(1,150),
+    %lists:foreach(fun(_X)->server:connect(localhost,1337) end, A),
 
     ?_assertEqual(1,1). %%This port (1337) may come to change
     
