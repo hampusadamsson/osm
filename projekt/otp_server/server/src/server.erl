@@ -52,7 +52,7 @@ init(Args) ->
 %% Port = remote port
 %% ------------------------------------------------------------------
 handle_cast({'connect', IP, Port}, _Sock) ->
-    {ok, Sock} = gen_tcp:connect(IP, Port, [binary, {active,true}, {packet, 2}]),
+    {ok, Sock} = gen_tcp:connect(IP, Port, [binary, {active,true}, {packet, line}]),  % 2=line
     spawn(?MODULE,loop,[Sock]),
     {noreply, [Sock|_Sock]};
 
@@ -143,7 +143,7 @@ send_to_all(Msg,[Sock|Rest])->
     send_to_all(Msg,Rest).
 
 start(Num,LPort) ->
-    case gen_tcp:listen(LPort,[{active, false},{packet, 2}]) of
+    case gen_tcp:listen(LPort,[{active, false},{packet, line}]) of % 2=line
         {ok, ListenSock} ->
             start_servers(Num,ListenSock),
             {ok, Port} = inet:port(ListenSock),
