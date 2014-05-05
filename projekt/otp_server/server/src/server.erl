@@ -1,13 +1,17 @@
 -module(server).
 -behaviour(gen_server).
 -define(SERVER, ?MODULE).
-%%
+
+%% To use EUnit we must include this:
+-include_lib("eunit/include/eunit.hrl").
+
+%% ------------------------------------------------------------------
 %%
 %%
 %%   Run with: server_sup:start_link().
-%%              server:add_user("Per").
-%%
-%%
+%%              server:start_servers().
+%%              
+%%   Client:                
 %%
 %% ------------------------------------------------------------------
 %% API Function Exports
@@ -47,7 +51,7 @@ init(Args) ->
 %% Port = remote port
 %% ------------------------------------------------------------------
 handle_cast({'connect', IP, Port}, _Sock) ->
-    {ok, Sock} = gen_tcp:connect(IP, Port, [binary, {active,true}, {packet, 2}]),
+    {ok, Sock} = gen_tcp:connect(IP, Port, [binary, {active,true}, {packet, line}]),
     spawn(?MODULE,loop,[Sock]),
     {noreply, [Sock|_Sock]};
 
@@ -58,17 +62,6 @@ handle_cast({'connect', IP, Port}, _Sock) ->
 handle_cast({'add_socket', New_Socket}, Sock) ->
     {noreply, [New_Socket|Sock]};
 
-%% ------------------------------------------------------------------
-%% Listen for incoming connections 
-%%
-%% start(Arg1,Arg2)
-%% Arg1 = numbers of servers listening
-%% Arg2 = listening port for incoming servers
-%%
-%% ------------------------------------------------------------------
-handle_cast({'start_servers'},Socket) ->
-    start(100,1337),
-    {noreply, Socket};
 
 %% ------------------------------------------------------------------
 %% Sends a message !IF! connected
@@ -77,6 +70,18 @@ handle_cast({'start_servers'},Socket) ->
 handle_cast({'send', Msg},Sock) ->
     send_to_all(Msg, Sock),    %%gen_tcp:send(Sock, Msg),
     {noreply, Sock}.
+
+%% ------------------------------------------------------------------
+%% Listen for incoming connections 
+%%
+%% start(Arg1,Arg2)
+%% Arg1 = numbers of servers listening
+%% Arg2 = listening port for incoming servers
+%%
+%% ------------------------------------------------------------------
+handle_call({'start_servers'}, _From, Socket) ->
+    Port=1337,
+    {reply, start(10, Port), Socket};
 
 %% ------------------------------------------------------------------
 %% Displays current user-list
@@ -105,7 +110,7 @@ send(Msg)->
     gen_server:cast(server, {'send', Msg}).
 
 start_servers()->
-    gen_server:cast(server, {'start_servers'}).
+    gen_server:call(server, {'start_servers'}).
 
 list_users()->
     gen_server:call(server, {'list_users'}).
@@ -114,8 +119,16 @@ list_users()->
 %
 %-
 %----------------------------------------- SERVER-tcp/ip ----
-%-
 %
+%
+
+%%                 TODO
+%              
+%         lyssnande servern
+%         listan på sockets - update
+%         
+
+
 send_to_all(_,[])->
     ok;
 send_to_all(Msg,[Sock|Rest])->
@@ -123,7 +136,7 @@ send_to_all(Msg,[Sock|Rest])->
     send_to_all(Msg,Rest).
 
 start(Num,LPort) ->
-    case gen_tcp:listen(LPort,[{active, false},{packet,2}]) of
+    case gen_tcp:listen(LPort,[{active, false},{packet,line}]) of
         {ok, ListenSock} ->
             start_servers(Num,ListenSock),
             {ok, Port} = inet:port(ListenSock),
@@ -155,5 +168,36 @@ loop(S) ->
     inet:setopts(S,[{active,false}]),
     {ok,Data} = gen_tcp:recv(S,0),
     io:format("Msg: ~s \n",[Data]),
-    %%gen_server:cast(server, {'send', Data}),
+    gen_server:cast(server, {'send', Data}),
     loop(S).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%% Eunit test cases  %%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% EUnit adds the fifo:test() function to this module. 
+
+%% All functions with names ending wiht _test() or _test_() will be
+%% called automatically by fifo:test()
+
+new_test_() ->
+%% Check that server havent been started
+    A=whereis(server),                   
+    _Tmp = ?_assertEqual(undefined,A),
+    
+%% Start server and check existans
+    server:start_link(),
+    B=whereis(server),
+    ?_assertNotEqual(undefined,B).
+    
+
+start_servers_test_() ->
+%% Starting the servers
+    server:start_servers(),
+    
+    A=lists:seq(1,10),
+    lists:foreach(fun(_X)->server:connect(localhost,1337) end, A),
+
+    ?_assertEqual(1,1). %%This port (1337) may come to change
+    
+    
