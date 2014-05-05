@@ -13,12 +13,12 @@
 %% API Function Exports
 %% ------------------------------------------------------------------
 
--export([start_link/0, connect/2, send/1, start_servers/0, list_users/0]).
+-export([start_link/0, connect/2, send/1, start_servers/0, send_to_all/2, list_users/0]).
 
 %% ------------------------------------------------------------------
 %% TCP/IP Sockets Exports
 %% ------------------------------------------------------------------
--export([server/1]). 
+-export([start/2, start_servers/2, server/1, loop/1]). 
 
 %% ------------------------------------------------------------------
 %% gen_server Function Exports
@@ -67,7 +67,7 @@ handle_cast({'add_socket', New_Socket}, Sock) ->
 %%
 %% ------------------------------------------------------------------
 handle_cast({'start_servers'},Socket) ->
-    functions:start(100, 1337, ?MODULE),
+    start(100,1337),
     {noreply, Socket};
 
 %% ------------------------------------------------------------------
@@ -75,7 +75,7 @@ handle_cast({'start_servers'},Socket) ->
 %% Sock = socket created by 'connect'
 %% ------------------------------------------------------------------
 handle_cast({'send', Msg},Sock) ->
-    functions:send_to_all(Msg, Sock),    %%gen_tcp:send(Sock, Msg),
+    send_to_all(Msg, Sock),    %%gen_tcp:send(Sock, Msg),
     {noreply, Sock}.
 
 %% ------------------------------------------------------------------
@@ -116,14 +116,44 @@ list_users()->
 %----------------------------------------- SERVER-tcp/ip ----
 %-
 %
+send_to_all(_,[])->
+    ok;
+send_to_all(Msg,[Sock|Rest])->
+    gen_tcp:send(Sock, Msg),
+    send_to_all(Msg,Rest).
+
+start(Num,LPort) ->
+    case gen_tcp:listen(LPort,[{active, false},{packet,2}]) of
+        {ok, ListenSock} ->
+            start_servers(Num,ListenSock),
+            {ok, Port} = inet:port(ListenSock),
+            Port;
+        {error,Reason} ->
+            {error,Reason}
+    end.
+
+start_servers(0,_) ->
+    ok;
+
+start_servers(Num,LS) ->
+    spawn(?MODULE,server,[LS]),
+    start_servers(Num-1,LS).
+
 server(LS) ->
     case gen_tcp:accept(LS) of
         {ok,S} ->
             gen_server:cast(server, {'add_socket',S}),        %%Add to the list 
-            functions:loop(S),
+            
+            loop(S),
             server(LS);
         Other ->
             io:format("accept returned ~w - goodbye!~n",[Other]),
             ok
     end.
 
+loop(S) ->
+    inet:setopts(S,[{active,false}]),
+    {ok,Data} = gen_tcp:recv(S,0),
+    io:format("Msg: ~s \n",[Data]),
+    %%gen_server:cast(server, {'send', Data}),
+    loop(S).

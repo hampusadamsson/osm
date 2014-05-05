@@ -136,7 +136,7 @@ start_servers(0,_) ->
     ok;
 
 start_servers(Num,LS) ->
-    spawn(?MODULE, server ,[LS]),
+    spawn(?MODULE,server,[LS]),
     start_servers(Num-1,LS).
 
 server(LS) ->
