@@ -1,242 +1,159 @@
-%%-module(server). 
-
-%%-export([new/0, size/1, add_user/2, remove_user/1, empty/1, users/1]).
-
-%% To use EUnit we must include this:
-%%-include_lib("eunit/include/eunit.hrl").
-
-%%new() ->
-%%    spawn(fun() -> loop(server_handler:new_user_list()) end).
-
-%% This is the process loop.
-
-%%loop(User_list) ->
-%%    receive 
-%%        {size, PID} ->
-%%            PID ! {size, server_handler:size(User_list)},
-%%            loop(User_list);
-%%        {users, PID} ->
-%%            PID ! {users, server_handler:users(User_list)},
-%%            loop(User_list); 
-%%        {empty, PID} ->
-%%            PID ! server_handler:empty(User_list),
-%%            loop(User_list);
-%%        {remove_user, PID} ->
-%%            case server_handler:empty(User_list) of
-%%                true ->
-%%                    PID ! {error, 'empty_user-list'},
-%%                    loop(User_list);
-%%                false ->
-%%                    Tmp = server_handler:remove_user(User_list),
-%%                    PID ! Tmp,
-%%                        loop(element(2, Tmp))
-%%            end;
-%%        {add_user, Value, PID} ->
-%%            Tmp = server_handler:add_user(User_list, Value),
-%%            PID ! Tmp,
-%%            loop(Tmp)
-%%end.
-
-%%users(User_list) ->
-%%    User_list ! {users, self()},
-%%    receive 
-%%        {users, List} ->
-%%            List
-%%    end.
-
-%%size(User_list) ->
-%%    User_list ! {size, self()},
-%%    receive 
-%%        {size, Size} ->
-%%            Size
-%%    end.
-
-%%empty(User_list) ->
-%%    User_list ! {empty, self()},
-%%    receive 
-%%        true ->
-%%            true;
-%%        false  ->
-%%            false
-%%    end.
-
-
-%%remove_user(User_list) ->
-%%    User_list ! {remove_user, self()},
-%%    receive
-%%        {Value, {users, _Out}} ->
-%%            Value;
-%%        {error, _Msg} ->
-%%            {error, _Msg}
-%%    end.
-
-
-%%add_user(User_list, Value) ->
-%%    User_list ! {add_user, Value, self()},
-%%    receive
-%%        {users, In} ->
-%%            {users, In}
-                
-%%    end.
-
 -module(server).
 -behaviour(gen_server).
+-define(SERVER, ?MODULE).
+%%
+%%
+%%
+%%   Run with: server_sup:start_link().
+%%              server:add_user("Per").
+%%
+%%
+%%
+%% ------------------------------------------------------------------
+%% API Function Exports
+%% ------------------------------------------------------------------
 
--export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2,
-        code_change/3, start_link/0, size/1, empty/1, add_user/2,
-        remove_user/2, users/1, start_listen/0]).
+-export([start_link/0, connect/2, send/1, start_servers/0, send_to_all/2, list_users/0]).
 
--include_lib("eunit/include/eunit.hrl").
+%% ------------------------------------------------------------------
+%% TCP/IP Sockets Exports
+%% ------------------------------------------------------------------
+-export([start/2, start_servers/2, server/1, loop/1]). 
 
-%% gen_server functions
+%% ------------------------------------------------------------------
+%% gen_server Function Exports
+%% ------------------------------------------------------------------
 
-init(UserList) -> {ok, UserList}.
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2,
+         terminate/2, code_change/3]).
 
-handle_call({size}, _From, UserList) ->
-    {reply, server_handler:size(UserList), UserList};
-handle_call({empty}, _From, UserList) ->
-    {reply, server_handler:empty(UserList), UserList};
-handle_call({users}, _From, UserList) ->
-    {reply, server_handler:users(UserList), UserList};
-handle_call(terminate, _From, UserList) ->
-    {stop, normal, ok, UserList}.
- 
-handle_cast({add, NewUser}, {users, UserList}) ->
-    {noreply, {users, [NewUser|UserList]}};
-handle_cast({delete, User}, {users, UserList}) ->
-    {noreply, {users, lists:delete(User, UserList)}}.
+%% ------------------------------------------------------------------
+%% API Function Definitions
+%% ------------------------------------------------------------------
 
-handle_info(Msg, UserList) ->
-    io:format("~p~n", [Msg]),
-    {noreply, UserList}.
+start_link() ->
+    gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
-terminate(normal, {users}) ->
-    [io:format("EXIT")],
+%% ------------------------------------------------------------------
+%% gen_server Function Definitions
+%% ------------------------------------------------------------------
+
+init(Args) ->
+    {ok, Args}.
+
+%% ------------------------------------------------------------------
+%% Connects to a remote Host (Not. a server function)
+%% IP = remote ip
+%% Port = remote port
+%% ------------------------------------------------------------------
+handle_cast({'connect', IP, Port}, _Sock) ->
+    {ok, Sock} = gen_tcp:connect(IP, Port, [binary, {active,true}, {packet, 2}]),
+    spawn(?MODULE,loop,[Sock]),
+    {noreply, [Sock|_Sock]};
+
+%% ------------------------------------------------------------------
+%% Establish a Socket to an incoming connection
+%% Sock = inc. Socket
+%% ------------------------------------------------------------------
+handle_cast({'add_socket', New_Socket}, Sock) ->
+    {noreply, [New_Socket|Sock]};
+
+%% ------------------------------------------------------------------
+%% Listen for incoming connections 
+%%
+%% start(Arg1,Arg2)
+%% Arg1 = numbers of servers listening
+%% Arg2 = listening port for incoming servers
+%%
+%% ------------------------------------------------------------------
+handle_cast({'start_servers'},Socket) ->
+    start(100,1337),
+    {noreply, Socket};
+
+%% ------------------------------------------------------------------
+%% Sends a message !IF! connected
+%% Sock = socket created by 'connect'
+%% ------------------------------------------------------------------
+handle_cast({'send', Msg},Sock) ->
+    send_to_all(Msg, Sock),    %%gen_tcp:send(Sock, Msg),
+    {noreply, Sock}.
+
+%% ------------------------------------------------------------------
+%% Displays current user-list
+%% ------------------------------------------------------------------
+handle_call({'list_users'},_From, Sock) ->
+    {reply, Sock, Sock}.
+
+handle_info(_Info, State) ->
+    {noreply, State}.
+
+terminate(_Reason, _State) ->
     ok.
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
-%% our functions
+%% ------------------------------------------------------------------
+%% Internal Function Definitions
+%% ------------------------------------------------------------------
 
-start_link() -> gen_server:start_link(?MODULE, {users, []}, []).
 
-size(UserList) ->
-    gen_server:call(UserList, {size}).
+connect(IP,Port)->
+    gen_server:cast(server, {'connect', IP, Port}).
 
-empty(UserList) ->
-    gen_server:call(UserList, {empty}).
+send(Msg)->
+    gen_server:cast(server, {'send', Msg}).
 
-add_user(UserList, NewUser) ->
-    %gen_server:call(UserList, {add_user, NewUser}),
-    gen_server:cast(UserList, {add, NewUser}).
+start_servers()->
+    gen_server:cast(server, {'start_servers'}).
 
-remove_user(UserList, User) ->
-    %gen_server:call(UserList, {remove_user, User}),
-    gen_server:cast(UserList, {delete, User}).
+list_users()->
+    gen_server:call(server, {'list_users'}).
 
-users(UserList) ->
-    gen_server:call(UserList, {users}).
 
-start_listen() ->
-    {ok, LSock} = gen_tcp:listen(1337, [binary, {packet, 0}, 
-        {active, false}]),
-    {ok, Sock} = gen_tcp:accept(LSock),
-    {ok, Bin} = do_recv(Sock, []),
-    ok = gen_tcp:close(Sock),
-    {ok, UL} = start_link(),
-    Bin,
-    if
-        Bin =:= <<"Add user">> ->
-            add_user(UL, "Persnusk"),
-            users(UL);
-        true ->
-            io:format("Don't know that~n")
+%
+%-
+%----------------------------------------- SERVER-tcp/ip ----
+%-
+%
+send_to_all(_,[])->
+    ok;
+send_to_all(Msg,[Sock|Rest])->
+    gen_tcp:send(Sock, Msg),
+    send_to_all(Msg,Rest).
+
+start(Num,LPort) ->
+    case gen_tcp:listen(LPort,[{active, false},{packet,2}]) of
+        {ok, ListenSock} ->
+            start_servers(Num,ListenSock),
+            {ok, Port} = inet:port(ListenSock),
+            Port;
+        {error,Reason} ->
+            {error,Reason}
     end.
 
-do_recv(Sock, Bs) ->
-    case gen_tcp:recv(Sock, 0) of
-        {ok, B} ->
-            do_recv(Sock, [Bs, B]);
-        {error, closed} ->
-            {ok, list_to_binary(Bs)}
+start_servers(0,_) ->
+    ok;
+
+start_servers(Num,LS) ->
+    spawn(?MODULE,server,[LS]),
+    start_servers(Num-1,LS).
+
+server(LS) ->
+    case gen_tcp:accept(LS) of
+        {ok,S} ->
+            gen_server:cast(server, {'add_socket',S}),        %%Add to the list 
+            
+            loop(S),
+            server(LS);
+        Other ->
+            io:format("accept returned ~w - goodbye!~n",[Other]),
+            ok
     end.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%                         EUnit Test Cases                                  %%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% EUnit adds the server_handler:test() function to this module. 
-%% All functions with names ending wiht _test() or _test_() will be
-%% called automatically by pserver_handler:test()
-
-%%common_test_() ->
-%%    {ok, A} = start_link(),
-%%    [?_assertMatch(true,empty(A)),
-%%     ?_assertMatch({users,[ett]},add_user(A,ett)),
-%%     ?_assertMatch({users,[tva,ett]},add_user(A,tva)),
-%%     ?_assertMatch({users,[tre,tva,ett]},add_user(A,tre)),
-%%     ?_assertMatch(false,empty(A)),
-%%     ?_assertMatch(tre,remove_user(A)),
-%%     ?_assertMatch(tva,remove_user(A)),
-%%     ?_assertMatch(ett,remove_user(A)),
-%%     ?_assertMatch(true,empty(A))].
-
-%common_test_() ->
-%    {ok, A} = start_link(),
-%    [?_assertMatch(true,empty(A)),
-%     ?_assertMatch(ok,add_user(A,ett)),
-%     ?_assertMatch(ok,add_user(A,tva)),
-%     ?_assertMatch(ok,add_user(A,tre)),
-%     ?_assertMatch({users, [tre, tva, ett]},users(A)),
-%     ?_assertMatch(false,empty(A)),
-%     ?_assertMatch(ok,remove_user(A)),
-%     ?_assertMatch(ok,remove_user(A)),
-%     ?_assertMatch(ok,remove_user(A)),
-%     ?_assertMatch(true,empty(A))].
-
-%users_test_() ->
-%    {ok, A} = start_link(),
-%    [?_assertMatch(true,empty(A)),
-%     ?_assertMatch({users,[]},users(A)),
-%     ?_assertMatch(ok,add_user(A,ett)),
-%     ?_assertMatch({users,[ett]},users(A)),
-%     ?_assertMatch(ok,add_user(A,tva)),
-%     ?_assertMatch({users,[tva,ett]},users(A)),
-%     ?_assertMatch(ok,add_user(A,tre)),
-%     ?_assertMatch({users,[tre,tva,ett]},users(A))].
-
-%%start_test_() ->
-%%    [?_assertMatch(true, is_pid(new())),
-%%     ?_assertMatch(0, server:size(new())),
-%%     ?_assertMatch(true, empty(new())),
-%%     ?_assertMatch({error, 'empty_user-list'}, remove_user(new()))].
-
-%empty_test() ->
-%    {ok, F} = start_link(),
-%    ?assertMatch(true, empty(F)),
-%    add_user(F, foo),
-%    ?assertMatch(false, empty(F)),
-%    remove_user(F),
-%    ?assertMatch(true, empty(F)).
-		  
-%add_user_remove_user_test_() ->
-%    {ok, F} = start_link(),
-%    add_user(F, foo),
-%    add_user(F, bar),
-%    add_user(F, luz),
-%    [?_assertMatch({users,[luz,bar,foo]},users(F)),
-%    ?_assertMatch(false, empty(F)),
-%    ?_assertMatch(ok, remove_user(F)),
-%    ?_assertMatch(ok, remove_user(F)),
-%    ?_assertMatch(ok, remove_user(F)),
-%    ?_assertMatch(true, empty(F))].
-
-		 
-    
-    
-    
-    
-    
-    
-    
+loop(S) ->
+    inet:setopts(S,[{active,false}]),
+    {ok,Data} = gen_tcp:recv(S,0),
+    io:format("Msg: ~s \n",[Data]),
+    %%gen_server:cast(server, {'send', Data}),
+    loop(S).
