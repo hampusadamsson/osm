@@ -88,8 +88,8 @@ temp = StringVar()
 
 sockSend = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 #sockSend.connect(('46.246.18.140', 1337))
-#sockSend.connect(('130.243.209.116', 1337))
-sockSend.connect(('localhost', 1337))
+sockSend.connect(('130.243.209.116', 1337))
+#sockSend.connect(('localhost', 1337))
 #sockSend.setblocking(0)
 
 ###################################################
