@@ -175,7 +175,7 @@ loop(S) ->
     case gen_tcp:recv(S,0) of
         {ok,Data} ->
             io:format("Msg: ~s \n",[Data]),
-            %%gen_server:cast(server, {'send', Data}),
+            gen_server:cast(server, {'send', Data}),
             loop(S);
         {error,Reason} ->
             io:format("Disconnect: ~s \n",[Reason]),
