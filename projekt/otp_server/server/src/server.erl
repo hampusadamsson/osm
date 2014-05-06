@@ -23,7 +23,7 @@
 %% ------------------------------------------------------------------
 %% TCP/IP Sockets Exports
 %% ------------------------------------------------------------------
--export([start/2, start_servers/2, server/1, loop/1]). 
+-export([start/1, start_servers/1, server/1, loop/1]). 
 
 %% ------------------------------------------------------------------
 %% gen_server Function Exports
@@ -52,7 +52,7 @@ init(Args) ->
 %% Port = remote port
 %% ------------------------------------------------------------------
 handle_cast({'connect', IP, Port}, _Sock) ->
-    {ok, Sock} = gen_tcp:connect(IP, Port, [binary, {active,true}, {packet, line}]),  % 2=line
+    {ok, Sock} = gen_tcp:connect(IP, Port, [binary, {active,true}, {packet, line}]), % 2-line kan behöva bytas 
     spawn(?MODULE,loop,[Sock]),
     {noreply, [Sock|_Sock]};
 
@@ -75,26 +75,28 @@ handle_cast({'remove_socket', Rem_Socket}, Sock) ->
 %% Sock = socket created by 'connect'
 %% ------------------------------------------------------------------
 handle_cast({'send', Msg},Sock) ->
+    %New_Msg = string:concat(Msg,"\n"),
     send_to_all(Msg, Sock),    %%gen_tcp:send(Sock, Msg),
     {noreply, Sock}.
+
+%% ------------------------------------------------------------------
+%% Displays current user-list
+%% ------------------------------------------------------------------
+handle_call({'list_users'}, _From, Sock) ->
+    io:format("~s \n",[inet:i()]),
+    io:format("Connections: "),
+    {reply, length(Sock), Sock};
 
 %% ------------------------------------------------------------------
 %% Listen for incoming connections 
 %%
 %% start(Arg1,Arg2)
-%% Arg1 = numbers of servers listening
-%% Arg2 = listening port for incoming servers
+%% Arg1 = listening port for incoming servers
 %%
 %% ------------------------------------------------------------------
 handle_call({'start_servers'}, _From, Socket) ->
     Port=1337,
-    {reply, start(999, Port), Socket};
-
-%% ------------------------------------------------------------------
-%% Displays current user-list
-%% ------------------------------------------------------------------
-handle_call({'list_users'},_From, Sock) ->
-    {reply, Sock, Sock}.
+    {reply, start(Port), Socket}.
 
 handle_info(_Info, State) ->
     {noreply, State}.
@@ -142,34 +144,31 @@ send_to_all(Msg,[Sock|Rest])->
     gen_tcp:send(Sock, Msg),
     send_to_all(Msg,Rest).
 
-start(Num,LPort) ->
+start(LPort) ->
     case gen_tcp:listen(LPort,[{active, false},{packet, line}]) of % 2=line
         {ok, ListenSock} ->
-            start_servers(Num,ListenSock),
+            start_servers(ListenSock),
             {ok, Port} = inet:port(ListenSock),
             Port;
         {error,Reason} ->
             {error,Reason}
     end.
 
-start_servers(0,_) ->
-    ok;
-
-start_servers(Num,LS) ->
-    spawn(?MODULE,server,[LS]),
-    start_servers(Num-1,LS).
+start_servers(LS) ->
+    spawn(?MODULE,server,[LS]).
 
 server(LS) ->
     case gen_tcp:accept(LS) of
         {ok,S} ->
             gen_server:cast(server, {'add_socket',S}),        %%Add to the list 
-            
+            start_servers(LS),
             loop(S),
             server(LS);
         Other ->
             io:format("accept returned ~w - goodbye!~n",[Other]),
-            ok
+            start_servers(LS)
     end.
+
 
 loop(S) ->
     inet:setopts(S,[{active,false}]),
@@ -208,9 +207,9 @@ start_servers_test_() ->
 %% Starting the servers
     server:start_servers(),
     
-    A=lists:seq(1,150),
-    %lists:foreach(fun(_X)->server:connect(localhost,1337) end, A),
-
+    _A=lists:seq(1,150),
+    lists:foreach(fun(_X)->server:connect(localhost,1337) end, _A),
+    
     ?_assertEqual(1,1). %%This port (1337) may come to change
     
     

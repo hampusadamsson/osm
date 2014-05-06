@@ -6,10 +6,15 @@ import sys
 from threading import Thread
 import select
 import threading
+from multiprocessing import Process
+import queue
+from time import sleep
 
 ###################################################
 #Importerar nuvarande tiden och returnerar den
 ###################################################
+
+queue = queue.Queue()
 
 def GetTime():
     return "<" + time.strftime("%H:%M")+">: "
@@ -21,14 +26,22 @@ def GetTime():
 #chathistoriken
 ##########################################################
 
-
 def getRespons():
-        threading.Timer(0.1,getRespons).start()
-        r = select.select([sockSend], [], [], 0.1)
-        if r[0]:
-            data = sockSend.recv(4096)
-            respons = str(data, encoding='UTF-8')
-            chatHistory.insert(INSERT,GetTime() + respons)
+
+    data = sockSend.recv(512)
+    respons = str(data,encoding='UTF-8')
+    queue.put(respons)
+    getRespons()
+
+def checkQueue():
+    if (queue.empty()):
+        pane.after(50,checkQueue)
+    else: 
+        respons = queue.get()
+        chatHistory.config(state=NORMAL)
+        chatHistory.insert(INSERT,GetTime() + respons)
+        chatHistory.config(state=DISABLED)
+        pane.after(50,checkQueue)
 
 ##################################################################
 #Hämtar texten från entryfältet och skickar den i bytearray-format
@@ -41,8 +54,7 @@ def sendMessage(event):
     if (mtext1 != ""):
         mtext = mtext1+'\n'
         msg = mtext.encode('UTF-8')
-        #msg = bytearray(mtext,'UTF-8')
-        sockSend.sendall(msg)
+        sockSend.send(msg)
         message.delete(0,END)
 
 ##################################################################
@@ -55,13 +67,14 @@ def sendMessageButton():
     mtext1 = temp.get()
     if (mtext1 != ""):
         mtext = mtext1+'\n'
-        msg = bytearray(mtext,'UTF-8')
+        msg = mtext.encode('UTF-8')
         sockSend.send(msg)
         message.delete(0,END)
 
 ###################################################
 #Initierar huvudframen för GUI:t och sätter titeln
 ###################################################
+        
 pane = tkinter.Tk()
 pane.geometry("600x500")
 pane.title("Nuntii IRC")
@@ -72,7 +85,7 @@ pane.title("Nuntii IRC")
 
 scrollBar = Scrollbar(pane)
 scrollBar.pack(side = RIGHT, fill = Y)
-chatHistory = Text(pane, yscrollcommand=scrollBar.set)
+chatHistory = Text(pane, yscrollcommand=scrollBar.set,state=DISABLED)
 chatHistory.pack(side = TOP, fill=BOTH)
 scrollBar.config(command=chatHistory.yview)
 
@@ -90,7 +103,7 @@ sockSend = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 #sockSend.connect(('46.246.18.140', 1337))
 sockSend.connect(('130.243.209.116', 1337))
 #sockSend.connect(('localhost', 1337))
-#sockSend.setblocking(0)
+
 
 ###################################################
 #Lägger till en send-knapp
@@ -112,10 +125,18 @@ message.bind('<Return>',sendMessage)
 #vi har fått nytt meddelande
 ##########################################################
 
-getRespons()
+sleep(0.05)
+thread = Thread(target=getRespons)
+thread.start()
+checkQueue()
+print("Funkar nog inte")
+#recButton = tkinter.Button(pane,text = "Rec", command = checkQueue)
+#recButton.pack(side = BOTTOM)
 
 ###################################################
 #Startar GUI:t
 ###################################################
 
 pane.mainloop()
+
+
