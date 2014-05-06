@@ -140,7 +140,7 @@ list_users()->
 send_to_all(_,[])->
     ok;
 send_to_all(Msg,[Sock|Rest])->
-    gen_tcp:send(Sock, Msg),
+    gen_tcp:send(Sock, lists:concat(Msg,"\n")),
     send_to_all(Msg,Rest).
 
 start(LPort) ->
