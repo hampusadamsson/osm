@@ -71,19 +71,20 @@ handle_cast({'remove_socket', Rem_Socket}, Sock) ->
     {noreply, lists:delete(Rem_Socket, Sock)};
 
 %% ------------------------------------------------------------------
-%% Displays current user-list
-%% ------------------------------------------------------------------
-handle_cast({'list_users'}, Sock) ->
-    io:format("howdy \n"),
-    {noreply, Sock};
-
-%% ------------------------------------------------------------------
 %% Sends a message !IF! connected
 %% Sock = socket created by 'connect'
 %% ------------------------------------------------------------------
 handle_cast({'send', Msg},Sock) ->
     send_to_all(Msg, Sock),    %%gen_tcp:send(Sock, Msg),
     {noreply, Sock}.
+
+%% ------------------------------------------------------------------
+%% Displays current user-list
+%% ------------------------------------------------------------------
+handle_call({'list_users'}, _From, Sock) ->
+    io:format("~s \n",[inet:i()]),
+    io:format("Connections: "),
+    {reply, length(Sock), Sock};
 
 %% ------------------------------------------------------------------
 %% Listen for incoming connections 
@@ -139,7 +140,7 @@ list_users()->
 send_to_all(_,[])->
     ok;
 send_to_all(Msg,[Sock|Rest])->
-    spawn(gen_tcp:send(Sock, Msg)),
+    gen_tcp:send(Sock, Msg),
     send_to_all(Msg,Rest).
 
 start(LPort) ->
