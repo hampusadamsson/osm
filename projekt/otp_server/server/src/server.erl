@@ -75,7 +75,8 @@ handle_cast({'remove_socket', Rem_Socket}, Sock) ->
 %% Sock = socket created by 'connect'
 %% ------------------------------------------------------------------
 handle_cast({'send', Msg},Sock) ->
-    send_to_all(Msg, Sock),    %%gen_tcp:send(Sock, Msg),
+    New_Msg = string:concat(Msg,"\n"),
+    send_to_all(New_Msg, Sock),    %%gen_tcp:send(Sock, Msg),
     {noreply, Sock}.
 
 %% ------------------------------------------------------------------
@@ -140,7 +141,8 @@ list_users()->
 send_to_all(_,[])->
     ok;
 send_to_all(Msg,[Sock|Rest])->
-    gen_tcp:send(Sock, lists:concat(Msg,"\n")),
+
+    gen_tcp:send(Sock, Msg),
     send_to_all(Msg,Rest).
 
 start(LPort) ->
