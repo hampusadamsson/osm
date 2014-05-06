@@ -75,8 +75,8 @@ handle_cast({'remove_socket', Rem_Socket}, Sock) ->
 %% Sock = socket created by 'connect'
 %% ------------------------------------------------------------------
 handle_cast({'send', Msg},Sock) ->
-    New_Msg = string:concat(Msg,"\n"),
-    send_to_all(New_Msg, Sock),    %%gen_tcp:send(Sock, Msg),
+    %New_Msg = string:concat(Msg,"\n"),
+    send_to_all(Msg, Sock),    %%gen_tcp:send(Sock, Msg),
     {noreply, Sock}.
 
 %% ------------------------------------------------------------------
