@@ -75,8 +75,8 @@ handle_cast({'remove_socket', Rem_Socket}, Sock) ->
 %% Sock = socket created by 'connect'
 %% ------------------------------------------------------------------
 handle_cast({'send', Msg},Sock) ->
-    New_Msg = string:concat(Msg,"\n"),
-    send_to_all(New_Msg, Sock),    %%gen_tcp:send(Sock, Msg),
+    %%New_Msg = string:concat(Msg,"\n"),
+    send_to_all(Msg, Sock),    %%gen_tcp:send(Sock, Msg),
     {noreply, Sock}.
 
 %% ------------------------------------------------------------------
@@ -141,7 +141,6 @@ list_users()->
 send_to_all(_,[])->
     ok;
 send_to_all(Msg,[Sock|Rest])->
-
     gen_tcp:send(Sock, Msg),
     send_to_all(Msg,Rest).
 
@@ -176,7 +175,7 @@ loop(S) ->
     case gen_tcp:recv(S,0) of
         {ok,Data} ->
             io:format("Msg: ~s \n",[Data]),
-            gen_server:cast(server, {'send', Data}),
+            %%gen_server:cast(server, {'send', Data}),
             loop(S);
         {error,Reason} ->
             io:format("Disconnect: ~s \n",[Reason]),
