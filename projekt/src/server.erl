@@ -32,11 +32,16 @@
          terminate/2, code_change/3]).
 
 %% ------------------------------------------------------------------
+%% Room Function Exports
+%% ------------------------------------------------------------------
+-export([addToRoom/4, getRoomName/1]).
+
+%% ------------------------------------------------------------------
 %% API Function Definitions
 %% ------------------------------------------------------------------
 
 start_link() ->
-    gen_server:start_link({local, ?SERVER}, ?MODULE, [{global, []}], []).
+    gen_server:start_link({local, ?SERVER}, ?MODULE, [{"Global", []}], []).
 
 %% ------------------------------------------------------------------
 %% gen_server Function Definitions
@@ -62,22 +67,32 @@ init(Args) ->
 %%handle_cast({'add_socket', NewSocket}, AllRooms) ->
 %%    {noreply, [NewSocket|AllRooms]};
 
-handle_cast({'add_socket', NewSock}, [{RoomName, SockList}|AllRooms]) ->
-    {noreply, [{RoomName, [NewSock|SockList]}|AllRooms]};
+%%handle_cast({'add_socket', NewSock}, AllRooms) ->
+%%    {noreply, addToRoom("Global", NewSock, AllRooms, AllRooms)};
 
 %% ------------------------------------------------------------------
 %% Sends a message !IF! connected
 %% Sock = socket created by 'connect'
 %% ------------------------------------------------------------------
-handle_cast({'send', Msg}, AllRooms) ->
-    {RoomNumber, SockList} = hd(AllRooms),
-    case Msg of
-        <<"New room">> ->
-            {noreply, [{RoomNumber+1, SockList}|AllRooms]};
-        _ ->
-            send_to_all(Msg, SockList),      %%gen_tcp:send(Sock, Msg),
-            {noreply, AllRooms}
-    end.
+handle_cast({'send', Room, Sock, Msg}, AllRooms1) ->
+    SockList = findRoom(AllRooms1, Room),
+    if
+        SockList =:= [] ->
+            AllRooms2 = addToRoom(Room, Sock, AllRooms1, AllRooms1),
+            [{_, NewSockList}|_] = AllRooms2,
+            send_to_all(Msg, NewSockList),
+            {noreply, AllRooms2};
+        true ->
+            send_to_all(Msg, SockList),
+            {noreply, AllRooms1}
+    end;
+
+%% ------------------------------------------------------------------
+%% Sends a message !IF! connected
+%% Sock = socket created by 'connect'
+%% ------------------------------------------------------------------
+handle_cast({'add_to_room', RoomName, Sock}, AllRooms) ->
+    {noreply, addToRoom(RoomName, Sock, AllRooms, AllRooms)}.
 
 %% ------------------------------------------------------------------
 %% Listen for incoming connections 
@@ -153,7 +168,7 @@ start(Num,LPort) ->
             {error,Reason}
     end.
 
-start_servers(0,_) ->
+start_servers(0, _) ->
     ok;
 start_servers(Num,LS) ->
     spawn(?MODULE,server,[LS]),
@@ -162,7 +177,7 @@ start_servers(Num,LS) ->
 server(LS) ->
     case gen_tcp:accept(LS) of
         {ok,S} ->
-            gen_server:cast(server, {'add_socket',S}),        %%Add to the list 
+            gen_server:cast(server, {'add_to_room', "Global", S}),        %%Add to the list 
             loop(S),
             server(LS);
         Other ->
@@ -174,8 +189,38 @@ loop(S) ->
     inet:setopts(S,[{active,false}]),
     {ok,Data} = gen_tcp:recv(S,0),
     io:format("Msg: ~s \n",[Data]),
-    gen_server:cast(server, {'send', Data}),
+    Room = getRoomName(Data),
+    Length = string:len(Room),
+    Msg = string:substr(Data, Length+2),
+    gen_server:cast(server, {'send', Room, S, Msg}),
     loop(S).
+
+getRoomName(Msg) ->
+    string:sub_word(Msg, 1).
+
+addToRoom(RoomName1, Sock, [], AllRooms2) ->
+    [{RoomName1, [Sock]}|AllRooms2];
+addToRoom(RoomName1, Sock, AllRooms1, AllRooms2) ->
+    [H|T] = AllRooms1,
+    {RoomName2, SockList} = H,
+    if
+        RoomName1 =:= RoomName2 ->
+            [{RoomName2, [Sock|SockList]}|T];
+        true ->
+            [H|addToRoom(RoomName1, Sock, T, AllRooms2)]
+    end.
+
+findRoom([], _) ->
+    [];
+findRoom(AllRooms, RoomName1) ->
+    [H|T] = AllRooms,
+    {RoomName2, SockList} = H,
+    if
+        RoomName1 =:= RoomName2 ->
+            SockList;
+        true ->
+            findRoom(T, RoomName1)
+    end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%% Eunit test cases  %%%%%%%%%%%%%%%%%%%%
