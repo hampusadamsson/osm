@@ -78,14 +78,14 @@ init([]) ->
 %% All functions with names ending wiht _test() or _test_() will be
 %% called automatically by fifo:test()
 
-% new_test_() ->
-%     server_sup:start_link(),
-%     server:add_user("tom"),
-%     server:add_user("max"),
-%     server:add_user("peter"),
-%     server:add_user("karl"),
+new_test_() ->
+    server_sup:start_link(),
+    server:add_user("tom"),
+    server:add_user("max"),
+    server:add_user("peter"),
+    server:add_user("karl"),
 
-%     [?_assertEqual(["karl","peter","max","tom"],server:list_user())].
+    [?_assertEqual(["karl","peter","max","tom"],server:list_user())].
 
 
 
