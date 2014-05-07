@@ -32,11 +32,6 @@
          terminate/2, code_change/3]).
 
 %% ------------------------------------------------------------------
-%% Room Function Exports
-%% ------------------------------------------------------------------
--export([addToRoom/4, getRoomName/1]).
-
-%% ------------------------------------------------------------------
 %% API Function Definitions
 %% ------------------------------------------------------------------
 
@@ -51,40 +46,26 @@ init(Args) ->
     {ok, Args}.
 
 %% ------------------------------------------------------------------
-%% Connects to a remote Host (Not. a server function)
-%% IP = remote ip
-%% Port = remote port
-%% ------------------------------------------------------------------
-%%handle_cast({'connect', IP, Port}, _Sock) ->
-%%    {ok, Sock} = gen_tcp:connect(IP, Port, [binary, {active,true}, {packet, line}]),
-%%    spawn(?MODULE,loop,[Sock]),
-%%    {noreply, [Sock|_Sock]};
-
-%% ------------------------------------------------------------------
-%% Establish a Socket to an incoming connection
-%% Sock = inc. Socket
-%% ------------------------------------------------------------------
-%%handle_cast({'add_socket', NewSocket}, AllRooms) ->
-%%    {noreply, [NewSocket|AllRooms]};
-
-%%handle_cast({'add_socket', NewSock}, AllRooms) ->
-%%    {noreply, addToRoom("Global", NewSock, AllRooms, AllRooms)};
-
-%% ------------------------------------------------------------------
 %% Sends a message !IF! connected
 %% Sock = socket created by 'connect'
 %% ------------------------------------------------------------------
 handle_cast({'send', Room, Sock, Msg}, AllRooms1) ->
-    SockList = findRoom(AllRooms1, Room),
+    SockList = room:findRoom(AllRooms1, Room),
     if
         SockList =:= [] ->
-            AllRooms2 = addToRoom(Room, Sock, AllRooms1, AllRooms1),
-            [{_, NewSockList}|_] = AllRooms2,
+            AllRooms2 = room:addToRoom(Room, Sock, AllRooms1, AllRooms1),
+            NewSockList = room:findRoom(AllRooms2, Room),
             send_to_all(Msg, NewSockList),
             {noreply, AllRooms2};
         true ->
-            send_to_all(Msg, SockList),
-            {noreply, AllRooms1}
+            case lists:member(Sock, SockList) of
+                true ->
+                    send_to_all(Msg, SockList),
+                    {noreply, AllRooms1};
+                false ->
+                    send_error({Sock, "You can't enter this room without an invite~n"}),
+                    {noreply, AllRooms1}
+            end
     end;
 
 %% ------------------------------------------------------------------
@@ -92,7 +73,7 @@ handle_cast({'send', Room, Sock, Msg}, AllRooms1) ->
 %% Sock = socket created by 'connect'
 %% ------------------------------------------------------------------
 handle_cast({'add_to_room', RoomName, Sock}, AllRooms) ->
-    {noreply, addToRoom(RoomName, Sock, AllRooms, AllRooms)}.
+    {noreply, room:addToRoom(RoomName, Sock, AllRooms, AllRooms)}.
 
 %% ------------------------------------------------------------------
 %% Listen for incoming connections 
@@ -125,13 +106,6 @@ code_change(_OldVsn, State, _Extra) ->
 %% Internal Function Definitions
 %% ------------------------------------------------------------------
 
-
-%%connect(IP,Port)->
-%%    gen_server:cast(server, {'connect', IP, Port}).
-
-%%send(Msg)->
-%%    gen_server:cast(server, {'send', Msg}).
-
 start_servers()->
     gen_server:call(server, {'start_servers'}).
 
@@ -157,6 +131,9 @@ send_to_all(_,[])->
 send_to_all(Msg,[Sock|Rest])->
     gen_tcp:send(Sock, Msg),
     send_to_all(Msg,Rest).
+
+send_error({Sock, Reason}) ->
+    gen_tcp:send(Sock, Reason).
 
 start(Num,LPort) ->
     case gen_tcp:listen(LPort,[{active, false},{packet,line}]) of
@@ -189,38 +166,11 @@ loop(S) ->
     inet:setopts(S,[{active,false}]),
     {ok,Data} = gen_tcp:recv(S,0),
     io:format("Msg: ~s \n",[Data]),
-    Room = getRoomName(Data),
+    Room = room:getRoomName(Data),
     Length = string:len(Room),
     Msg = string:substr(Data, Length+2),
     gen_server:cast(server, {'send', Room, S, Msg}),
     loop(S).
-
-getRoomName(Msg) ->
-    string:sub_word(Msg, 1).
-
-addToRoom(RoomName1, Sock, [], AllRooms2) ->
-    [{RoomName1, [Sock]}|AllRooms2];
-addToRoom(RoomName1, Sock, AllRooms1, AllRooms2) ->
-    [H|T] = AllRooms1,
-    {RoomName2, SockList} = H,
-    if
-        RoomName1 =:= RoomName2 ->
-            [{RoomName2, [Sock|SockList]}|T];
-        true ->
-            [H|addToRoom(RoomName1, Sock, T, AllRooms2)]
-    end.
-
-findRoom([], _) ->
-    [];
-findRoom(AllRooms, RoomName1) ->
-    [H|T] = AllRooms,
-    {RoomName2, SockList} = H,
-    if
-        RoomName1 =:= RoomName2 ->
-            SockList;
-        true ->
-            findRoom(T, RoomName1)
-    end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%% Eunit test cases  %%%%%%%%%%%%%%%%%%%%
