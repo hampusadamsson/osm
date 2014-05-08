@@ -179,7 +179,8 @@ loop(S) ->
             loop(S);
         {error,Reason} ->
             io:format("Disconnect: ~s \n",[Reason]),
-            gen_server:cast(server, {'remove_socket', S})
+            gen_server:cast(server, {'remove_socket', S}),
+            gen_tcp:close(S)
     end.
     
     
