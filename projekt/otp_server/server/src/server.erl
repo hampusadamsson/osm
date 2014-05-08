@@ -18,7 +18,7 @@
 %% API Function Exports
 %% ------------------------------------------------------------------
 
--export([start_link/0, connect/2, send/1, start_servers/0, send_to_all/2, list_users/0]).
+-export([start_link/0, connect/2, send/2, start_servers/0, send_to_all/2, list_users/0]).
 
 %% ------------------------------------------------------------------
 %% TCP/IP Sockets Exports
@@ -60,23 +60,24 @@ handle_cast({'connect', IP, Port}, _Sock) ->
 %% Establish a Socket to an incoming connection
 %% Sock = inc. Socket
 %% ------------------------------------------------------------------
-handle_cast({'add_socket', New_Socket}, Sock) ->
-    {noreply, [New_Socket|Sock]};
+
+
+handle_cast({'add_socket', Room, New_Socket}, Sock) ->
+    {noreply, room:insert(Room, Sock, New_Socket)};
 
 %% ------------------------------------------------------------------
 %% Remove socket from list after disconnect
 %% Rem_Sock = The one to remove
 %% ------------------------------------------------------------------
-handle_cast({'remove_socket', Rem_Socket}, Sock) ->
-    {noreply, lists:delete(Rem_Socket, Sock)};
+handle_cast({'remove_socket', Room, Rem_Socket}, Sock) ->
+    {noreply, room:remove(Room, Sock, Rem_Socket)};
 
 %% ------------------------------------------------------------------
 %% Sends a message !IF! connected
 %% Sock = socket created by 'connect'
 %% ------------------------------------------------------------------
-handle_cast({'send', Msg},Sock) ->
-    %New_Msg = string:concat(Msg,"\n"),
-    send_to_all(Msg, Sock),    %%gen_tcp:send(Sock, Msg),
+handle_cast({'send', Room, Msg},Sock) ->
+    send_to_all(Msg, room:receivers(Room,Sock)),
     {noreply, Sock}.
 
 %% ------------------------------------------------------------------
@@ -84,8 +85,8 @@ handle_cast({'send', Msg},Sock) ->
 %% ------------------------------------------------------------------
 handle_call({'list_users'}, _From, Sock) ->
     io:format("~s \n",[inet:i()]),
-    io:format("Connections: "),
-    {reply, length(Sock), Sock};
+    io:format("Connections: ~w\n",[length(Sock)]),
+    {reply, Sock, Sock};
 
 %% ------------------------------------------------------------------
 %% Listen for incoming connections 
@@ -115,8 +116,8 @@ code_change(_OldVsn, State, _Extra) ->
 connect(IP,Port)->
     gen_server:cast(server, {'connect', IP, Port}).
 
-send(Msg)->
-    gen_server:cast(server, {'send', Msg}).
+send(Room, Msg)->
+    gen_server:cast(server, {'send', Room, Msg}).
 
 start_servers()->
     gen_server:call(server, {'start_servers'}).
@@ -160,7 +161,7 @@ start_servers(LS) ->
 server(LS) ->
     case gen_tcp:accept(LS) of
         {ok,S} ->
-            gen_server:cast(server, {'add_socket',S}),        %%Add to the list 
+            gen_server:cast(server, {'add_socket', "global", S}),        %%Add to the list 
             start_servers(LS),
             loop(S),
             server(LS);
@@ -175,42 +176,42 @@ loop(S) ->
     case gen_tcp:recv(S,0) of
         {ok,Data} ->
             io:format("Msg: ~s \n",[Data]),
-            gen_server:cast(server, {'send', Data}),
+            parser:handle(Data, S),
             loop(S);
         {error,Reason} ->
             io:format("Disconnect: ~s \n",[Reason]),
-            gen_server:cast(server, {'remove_socket', S}),
+            gen_server:cast(server, {'remove_socket', global, S}), %global byts mot alla
             gen_tcp:close(S)
     end.
-    
-    
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%% Eunit test cases  %%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% EUnit adds the fifo:test() function to this module. 
+% %% EUnit adds the fifo:test() function to this module. 
 
-%% All functions with names ending wiht _test() or _test_() will be
-%% called automatically by fifo:test()
+% %% All functions with names ending wiht _test() or _test_() will be
+% %% called automatically by fifo:test()
 
-new_test_() ->
-%% Check that server havent been started
-    A=whereis(server),                   
-    _Tmp = ?_assertEqual(undefined,A),
+% new_test_() ->
+% %% Check that server havent been started
+%     A=whereis(server),                   
+%     _Tmp = ?_assertEqual(undefined,A),
     
-%% Start server and check existans
-    server:start_link(),
-    B=whereis(server),
-    ?_assertNotEqual(undefined,B).
+% %% Start server and check existans
+%     server:start_link(),
+%     B=whereis(server),
+%     ?_assertNotEqual(undefined,B).
     
 
-start_servers_test_() ->
-%% Starting the servers
-    server:start_servers(),
+% start_servers_test_() ->
+% %% Starting the servers
+%     server:start_servers(),
     
-    _A=lists:seq(1,150),
-    lists:foreach(fun(_X)->server:connect(localhost,1337) end, _A),
+%     _A=lists:seq(1,150),
+%     lists:foreach(fun(_X)->server:connect(localhost,1337) end, _A),
     
-    ?_assertEqual(1,1). %%This port (1337) may come to change
+%     ?_assertEqual(1,1). %%This port (1337) may come to change
     
     
