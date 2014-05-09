@@ -14,8 +14,9 @@
 %--------------------------------------------------------------------------
 receivers(Room, List) ->
     case lists:keyfind(Room, 1, List) of
-        {Room, Sock_List}->
-            New_List=Sock_List;
+        {Room, Tuple_List}->
+            lists:foreach(fun({X, _}) -> X end, Tuple_List),
+            New_List=Tuple_List;
         false ->
             New_List = []
     end,
@@ -33,10 +34,10 @@ insert(Room, List, Socket)->
     case lists:keyfind(Room, 1, List) of
         {Room, Sock_List}->
             Tmp_List = lists:keydelete(Room, 1, List),
-            New_List = [{Room, [Socket|Sock_List]}|Tmp_List];
+            New_List = [{Room, [{Socket, ""}|Sock_List]}|Tmp_List];
     
         false ->
-            New_List = [{Room, [Socket]}|List]
+            New_List = [{Room, [{Socket, ""}]}|List]
     end,
     New_List.
 
@@ -51,7 +52,7 @@ remove(Room, List, Socket)->
     case lists:keyfind(Room, 1, List) of
         {Room, Sock_List}->
             Tmp_List = lists:keydelete(Room, 1, List),
-            Sock_List2 = lists:delete(Socket, Sock_List),
+            Sock_List2 = lists:keydelete(Socket, 1, Sock_List),
             if 
                 length(Sock_List2)==0 ->
                     New_List = Tmp_List;

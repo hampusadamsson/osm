@@ -141,7 +141,7 @@ list_users()->
 
 send_to_all(_,[])->
     ok;
-send_to_all(Msg,[Sock|Rest])->
+send_to_all(Msg,[{Sock, _}|Rest])->
     gen_tcp:send(Sock, Msg),
     send_to_all(Msg,Rest).
 
