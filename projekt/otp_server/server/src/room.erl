@@ -15,8 +15,7 @@
 receivers(Room, List) ->
     case lists:keyfind(Room, 1, List) of
         {Room, Tuple_List}->
-            lists:foreach(fun({X, _}) -> X end, Tuple_List),
-            New_List=Tuple_List;
+            New_List = lists:foreach(fun({X, _}) -> X end, Tuple_List);
         false ->
             New_List = []
     end,
