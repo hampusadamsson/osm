@@ -69,10 +69,11 @@ class GUI(object):
 #Öppnar socketen till servern på adressen, på port 1337
 #########################################################################
 
-        self.sockSend = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        #self.sockSend.connect(('46.246.18.140', 1337))
-        #self.sockSend.connect(('130.243.209.116', 1337))
-        self.sockSend.connect(('localhost', 1337))
+sockSend = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#sockSend.connect(('46.246.18.140', 1337))
+#sockSend.connect(('130.243.209.116', 1337))
+sockSend.connect(('localhost', 1337))
+
 
 ###################################################
 #Lägger till en send-knapp
