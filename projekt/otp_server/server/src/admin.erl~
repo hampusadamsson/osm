@@ -1,0 +1,16 @@
+-module(admin)..
+
+%% To use EUnit we must include this:
+-include_lib("eunit/include/eunit.hrl").
+
+%% ------------------------------------------------------------------
+%%
+%%
+%%   Run with: server_sup:start_link().
+%%              server:start_servers().
+%%              
+%%   Client:                
+%%
+%% ------------------------------------------------------------------
+%% API Function Exports
+%% ------------------------------------------------------------------

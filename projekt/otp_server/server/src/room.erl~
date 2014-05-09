@@ -1,0 +1,6 @@
+-module(room).
+
+%% To use EUnit we must include this:
+-include_lib("eunit/include/eunit.hrl").
+
+-export([start_link/0, connect/2, send/1, start_servers/0, send_to_all/2, list_users/0]).
