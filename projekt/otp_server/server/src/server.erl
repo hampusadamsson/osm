@@ -62,15 +62,15 @@ handle_cast({'connect', IP, Port}, _Sock) ->
 %% ------------------------------------------------------------------
 
 
-handle_cast({'add_socket', Room, New_Socket}, Sock) ->
-    {noreply, room:insert(Room, Sock, New_Socket)};
+handle_cast({'add_socket', Room, New_Socket, Name}, Sock) ->
+    {noreply, room:insert(Room, Sock, New_Socket, Name)};
 
 %% ------------------------------------------------------------------
 %% Remove socket from list after disconnect
 %% Rem_Sock = The one to remove
 %% ------------------------------------------------------------------
-handle_cast({'remove_socket', Room, Rem_Socket}, Sock) ->
-    {noreply, room:remove(Room, Sock, Rem_Socket)};
+handle_cast({'remove_socket', Rem_Socket}, Sock) ->
+    {noreply, room:removeFromAll(Sock, Rem_Socket)};
 
 %% ------------------------------------------------------------------
 %% Sends a message !IF! connected
@@ -161,7 +161,10 @@ start_servers(LS) ->
 server(LS) ->
     case gen_tcp:accept(LS) of
         {ok,S} ->
-            gen_server:cast(server, {'add_socket', "global", S}),        %%Add to the list 
+            {ok, Data} = gen_tcp:recv(S, 0),
+            Length = string:len(Data),
+            Name = string:substr(Data, 1, Length-1),
+            gen_server:cast(server, {'add_socket', "global", S, Name}),        %%Add to the list 
             start_servers(LS),
             loop(S),
             server(LS);
@@ -180,7 +183,7 @@ loop(S) ->
             loop(S);
         {error,Reason} ->
             io:format("Disconnect: ~s \n",[Reason]),
-            gen_server:cast(server, {'remove_socket', global, S}), %global byts mot alla
+            gen_server:cast(server, {'remove_socket', S}), %global byts mot alla
             gen_tcp:close(S)
     end.
 

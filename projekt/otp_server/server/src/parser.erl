@@ -20,13 +20,13 @@ handle(Data, Socket)->
             [Request|[Namn|_]]=Body,
             [Namn2] = string:tokens(Namn,"\n"),
             Namn1=string:concat(Namn2,""),
-
+            
             case Request of
                 "/join" ->
                     gen_server:cast(server, {'add_socket', Namn1, Socket});
 
                 "/exit" ->
-                    gen_server:cast(server, {'remove_socket', Namn1, Socket});
+                    gen_server:cast(server, {'remove_socket', Socket});
                 
                 _ ->
                     gen_server:cast(server, {'send', Room1, Msg})   
