@@ -29,7 +29,7 @@
 %% gen_server Function Exports
 %% ------------------------------------------------------------------
 
--export([init/1, handle_call/3, handle_cast/2, handle_info/2,
+-export([init/1, handle_call/2, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
 %% ------------------------------------------------------------------
@@ -60,9 +60,15 @@ handle_cast({'connect', IP, Port}, _Sock) ->
 %% Establish a Socket to an incoming connection
 %% Sock = inc. Socket
 %% ------------------------------------------------------------------
+handle_cast({'init_socket', Room, New_Socket, Name}, Sock) ->
+    {noreply, room:initSock(Room, Sock, New_Socket, Name)};
 
-
-handle_cast({'add_socket', Room, New_Socket, Name}, Sock) ->
+%% ------------------------------------------------------------------
+%% Add socket with name when writing /join
+%% Sock = inc. Socket
+%% ------------------------------------------------------------------
+handle_cast({'add_socket', Room, New_Socket}, Sock) ->
+    Name = room:findName(New_Socket, Sock),
     {noreply, room:insert(Room, Sock, New_Socket, Name)};
 
 %% ------------------------------------------------------------------
@@ -79,6 +85,12 @@ handle_cast({'remove_socket', Rem_Socket}, Sock) ->
 handle_cast({'send', Room, Msg},Sock) ->
     send_to_all(Msg, room:receivers(Room,Sock)),
     {noreply, Sock}.
+
+%% ------------------------------------------------------------------
+%% Find name connected to Sock
+%% ------------------------------------------------------------------
+handle_call({'find_name', Socket}, AllRooms) ->
+    {reply, room:findName(Socket, AllRooms), AllRooms}. 
 
 %% ------------------------------------------------------------------
 %% Displays current user-list
@@ -164,7 +176,7 @@ server(LS) ->
             {ok, Data} = gen_tcp:recv(S, 0),
             Length = string:len(Data),
             Name = string:substr(Data, 1, Length-1),
-            gen_server:cast(server, {'add_socket', "global", S, Name}),        %%Add to the list 
+            gen_server:cast(server, {'init_socket', "global", S, Name}),        %%Add to the list 
             start_servers(LS),
             loop(S),
             server(LS);
