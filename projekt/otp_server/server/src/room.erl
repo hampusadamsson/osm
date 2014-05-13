@@ -116,7 +116,12 @@ removeFromAll([], _) ->
     [];
 removeFromAll([H|T], Sock) ->
     {Room, SockList} = H,
-    [{Room, lists:keydelete(Sock, 1, SockList)}|removeFromAll(T, Sock)].
+    case lists:keydelete(Sock, 1, SockList) of
+        [] ->
+            removeFromAll(T, Sock);
+        NewSockList ->
+            [{Room, NewSockList}|removeFromAll(T, Sock)]
+    end.
 
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
@@ -129,7 +134,7 @@ findSock(Name, List) ->
     case lists:keyfind(Name, 2, SockList) of
         false ->
             findSock(Name, tl(List));
-        Sock ->
+        {Sock, _} ->
             Sock
     end.
 

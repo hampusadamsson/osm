@@ -69,7 +69,17 @@ handle_cast({'init_socket', Room, New_Socket, Name}, Sock) ->
 %% ------------------------------------------------------------------
 handle_cast({'add_socket', Room, New_Socket}, Sock) ->
     Name = room:findName(New_Socket, Sock),
-    {noreply, room:insert(Room, Sock, New_Socket, Name)};
+    case lists:keyfind(Room, 1, Sock) of
+        {_, SockList} ->
+            case lists:keyfind(Name, 2, SockList) of
+                false ->
+                    {noreply, room:insert(Room, Sock, New_Socket, Name)};
+                _ ->
+                    {noreply, Sock}
+            end;
+        false ->
+            {noreply, room:insert(Room, Sock, New_Socket, Name)}
+    end;
 
 %% ------------------------------------------------------------------
 %% Remove socket from list after disconnect
