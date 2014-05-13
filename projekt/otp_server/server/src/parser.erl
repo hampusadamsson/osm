@@ -13,7 +13,6 @@
 %% ------------------------------------------------------------------
 handle(Data, Socket)->   
     [Room|Body] = string:tokens(Data, " "),
-    Msg=string:substr(Data, length(Room)+1, length(Data)),
     Room1=string:concat(Room,""),
     
     if length(Body)>1 ->
@@ -23,16 +22,16 @@ handle(Data, Socket)->
             
             case Request of
                 "/join" ->
-                    gen_server:cast(server, {'add_socket', Namn1, Socket});
+                    gen_server:cast(server, {'add_socket', Namn1, Socket, Socket});
 
                 "/exit" ->
                     gen_server:cast(server, {'remove_socket', Socket});
                 
                 _ ->
-                    gen_server:cast(server, {'send', Room1, Msg})   
+                    gen_server:cast(server, {'send', Room1, Data})   
             end;
        true ->
-            gen_server:cast(server, {'send', Room1, Msg})
+            gen_server:cast(server, {'send', Room1, Data})
     end.
 
 

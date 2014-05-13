@@ -95,8 +95,8 @@ class GUI(object):
 
         self.sockSend = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         #self.sockSend.connect(('46.246.18.140', 1337))
-        #self.sockSend.connect(('localhost', 1337))
-        self.sockSend.connect(('130.243.207.26', 1337))
+        self.sockSend.connect(('localhost', 1337))
+        #self.sockSend.connect(('130.243.207.26', 1337))
 
         self.master.protocol('WM_DELETE_WINDOW', self.closeConnection)
 
@@ -246,6 +246,6 @@ if __name__ == "__main__":
     m.welcome()    
     root.deiconify()
     m.Start()
-
+    root.mainloop()	
 
 

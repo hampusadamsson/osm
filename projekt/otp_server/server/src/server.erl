@@ -18,7 +18,7 @@
 %% API Function Exports
 %% ------------------------------------------------------------------
 
--export([start_link/0, connect/2, send/2, start_servers/0, send_to_all/2, list_users/0]).
+-export([start_link/0, connect/2, send/2, start_servers/0, send_to_all/2, list_users/0, print/0]).
 
 %% ------------------------------------------------------------------
 %% TCP/IP Sockets Exports
@@ -125,6 +125,8 @@ start_servers()->
 list_users()->
     gen_server:call(server, {'list_users'}).
 
+print()->
+io:format("HAMPUS\n").
 
 %
 %-
