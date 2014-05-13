@@ -1,142 +1,252 @@
+from tkinter import *
+import tkinter.ttk as ttk
 import tkinter
 import socket
 from tkinter import *
 import time
 import sys
 from threading import Thread
-import select
 import threading
-from multiprocessing import Process
-import queue
-from time import sleep
+from RecvThread import StoppableThread
+
+##########################################################
+#Klass för att skriva in användarnamnet
+##########################################################
+
+class popupWindow(object):
+    def __init__(self,master):
+        top=self.top=Toplevel(master)
+        self.l=Label(top,text="Ange användarnamn")
+        self.l.pack()
+        self.e=Entry(top)
+        self.e.pack()
+        self.b=Button(top,text='Ok',command=self.cleanup)
+        self.b.pack()
+    def cleanup(self):
+        self.value=self.e.get()
+        if (self.value != ""):
+            self.top.destroy()
+        else:
+            pass
+
+##########################################################
+#Initierar GUI:t
+##########################################################    
+
+class GUI(object):
+
+    def __init__(self,master):
+
+        self.master = master
+        
+##########################################################
+#Initierar Notebook widgeten
+########################################################## 
+
+        self.nb = ttk.Notebook(master)
+        self.nb.place(x=130, y=0)
+        #self.nb.pack(side=RIGHT
+
+##########################################################
+#Userlist där alla användarna i ett rum ska listas
+########################################################## 
+
+        self.userList = Text(master, width=20,state=DISABLED)
+        self.userList.place(x=0,y=23)
+
+##########################################################################
+#Stringvariablel som används för att få tillbaka texten från Entryfältet
+##########################################################################
+
+        self.temp = StringVar()
+
+#########################################################################
+#Initierar Entryfältet där användaren skriver in sina meddelanden
+#########################################################################
+
+        self.message = Entry(master,width=40,textvariable = self.temp)
+        self.message.place(x=260,y=400)
+        self.message.bind('<Return>',self.sendMessage)
+
+############################################################################
+#Initierar ett dictionary för att hålla koll på alla fönsternamn som skapas
+############################################################################
+
+        self.windowList = {}
+        
+#################################
+#Användarnamnet
+#################################
+        
+        self.userName = ""
+
+#######################################################################################
+#Sparar namnt för det aktiva rummet och appendar det varje gång ett meddelande skickas
+#Detta för att slippa skriva ut ex "global Hejsan" varje gång        
+#######################################################################################
+
+        self.currentTab = "global"
+        self.nb.bind_all("<<NotebookTabChanged>>", self.tabChangedEvent)
+
+
+#####################################################################
+#Initierar och ansluter socketen till servern     
+#####################################################################        
+
+        self.sockSend = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        #self.sockSend.connect(('46.246.18.140', 1337))
+        self.sockSend.connect(('localhost', 1337))
+        #self.sockSend.connect(('130.243.207.26', 1337))
+
+        self.master.protocol('WM_DELETE_WINDOW', self.closeConnection)
+
+        self.globalRoom = Text(master,state=DISABLED)
+        self.nb.add(self.globalRoom, text='global')
+        self.windowList["global"] = self.globalRoom
+
+#######################################################################################
+#Skapar ett nytt fönster och tab och lägger till dem i dictionaryt över fönster      
+#######################################################################################
+        
+    def addTab(self,name):
+        tab = Text(self.master,state=DISABLED)
+        self.windowList[name] = tab
+        self.nb.add(tab, text=name)    
 
 ###################################################
 #Importerar nuvarande tiden och returnerar den
 ###################################################
 
-queue = queue.Queue()
-
-def GetTime():
-    return "<" + time.strftime("%H:%M")+">: "
-
-##########################################################
-#Kollar om det finns något nytt att hämta på socketen
-#Om det inte gör det kommer körningen outtimas efter 0.1
-#sekunder, annars genomförs hämtningen och läggs till i
-#chathistoriken
-##########################################################
-
-def getRespons():
-
-    data = sockSend.recv(512)
-    respons = str(data,encoding='UTF-8')
-    queue.put(respons)
-    getRespons()
-
-def checkQueue():
-    if (queue.empty()):
-        pane.after(50,checkQueue)
-    else: 
-        respons = queue.get()
-        chatHistory.config(state=NORMAL)
-        chatHistory.insert(INSERT,GetTime() + respons)
-        chatHistory.config(state=DISABLED)
-        pane.after(50,checkQueue)
+    def GetTime(self):
+        return "<" + time.strftime("%H:%M")+">: "
 
 ##################################################################
 #Hämtar texten från entryfältet och skickar den i bytearray-format
 #till socketen. Tömmer sedan entryfältet
 ##################################################################
 
-def sendMessage(event):
+    def sendMessage(self,event):
      
-    mtext1 = temp.get()
-    if (mtext1 != ""):
-        mtext = mtext1+'\n'
-        msg = mtext.encode('UTF-8')
-        sockSend.send(msg)
-        message.delete(0,END)
+        mtext1 = self.temp.get()
+        if (mtext1 != ""):
+            argumentString = self.messageSplitLocal(mtext1)
+         
+            
+            if (argumentString[0] == "/join"):
+                self.addTab(argumentString[1])
+                msg_temp = self.currentTab + " " + mtext1+'\n'
+                msg = msg_temp.encode('UTF-8')
+                self.sockSend.send(msg)
+                self.message.delete(0,END)
+            elif (argumentString[0] == "/exit"):
+                self.nb.index(argumentString[1])
+                msg_temp = self.currentTab + " " + mtext1+'\n'
+                msg = msg_temp.encode('UTF-8')
+                self.sockSend.send(msg)
+                self.message.delete(0,END)
+            else:
+                mtext = self.currentTab + " " + mtext1+'\n'
+                msg = mtext.encode('UTF-8')
+                self.sockSend.send(msg)
+                self.message.delete(0,END)
 
 ##################################################################
-#Samma som ovan, men utan event-argumentet då detta ej behövs
-#vid command = sendMessage på knapppen
+#Stänger ner connectionen när man trycker krysset
 ##################################################################
 
-def sendMessageButton():
-     
-    mtext1 = temp.get()
-    if (mtext1 != ""):
-        mtext = mtext1+'\n'
-        msg = mtext.encode('UTF-8')
-        sockSend.send(msg)
-        message.delete(0,END)
-
-###################################################
-#Initierar huvudframen för GUI:t och sätter titeln
-###################################################
+    def closeConnection(self):
+        self.sockSend.shutdown(socket.SHUT_RDWR)
+        self.sockSend.close()
+        print("Nu drar mainthread, see ya suckerzzzzzz!")
+        self.thread.stop()
+        self.master.destroy()
+        sys.exit(0)
         
-pane = tkinter.Tk()
-pane.geometry("600x500")
-pane.title("Nuntii IRC")
-
-###################################################
-#Lägger till ett textfält och scrollbar
-###################################################
-
-scrollBar = Scrollbar(pane)
-scrollBar.pack(side = RIGHT, fill = Y)
-chatHistory = Text(pane, yscrollcommand=scrollBar.set,state=DISABLED)
-chatHistory.pack(side = TOP, fill=BOTH)
-scrollBar.config(command=chatHistory.yview)
-
-#########################################################################
-#Stringvariabel so används för att hämta texten från inmatningsfältet
-#########################################################################
-
-temp = StringVar()
-
-#########################################################################
-#Öppnar socketen till servern på adressen, på port 1337
-#########################################################################
-
-sockSend = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#sockSend.connect(('46.246.18.140', 1337))
-#sockSend.connect(('130.243.209.116', 1337))
-sockSend.connect(('localhost', 1337))
-
-
-###################################################
-#Lägger till en send-knapp
-###################################################
-
-sendButton = tkinter.Button(pane,text = "Skicka", command = sendMessageButton)
-sendButton.pack(side = BOTTOM)
-
-##################################################################
-#Lägger till ett inmatningsfält, och binder Enterknappen till det
-##################################################################
-
-message = Entry(textvariable = temp,width=40)
-message.pack(side = BOTTOM)
-message.bind('<Return>',sendMessage)
-
 ##########################################################
 #Startar bakgrundsfunktionen som kontinuerligt kollar om
 #vi har fått nytt meddelande
 ##########################################################
 
-sleep(0.05)
-thread = Thread(target=getRespons)
-thread.start()
-checkQueue()
-print("Funkar nog inte")
-#recButton = tkinter.Button(pane,text = "Rec", command = checkQueue)
-#recButton.pack(side = BOTTOM)
+    def Start(self):
+        self.thread = StoppableThread(self.sockSend)
+        self.thread.daemon = True
+        self.thread.start()
+        self.checkQueue()
 
-###################################################
-#Startar GUI:t
-###################################################
+##########################################################
+#Kollar om det finns något nytt meddelande att hämta
+##########################################################
 
-pane.mainloop()
+    def checkQueue(self):
+    
+        respons = self.thread.returnQueue()
+        if (respons == "empty"):
+            self.master.after(50,self.checkQueue)
+        else:
+            argumentString = self.messageSplitLocal(respons)
+            print(argumentString)
+            self.windowList[argumentString[0]].config(state=NORMAL)
+            self.windowList[argumentString[0]].insert(INSERT,self.GetTime() + argumentString[1])
+            self.windowList[argumentString[0]].config(state=DISABLED)
+            self.master.after(50,self.checkQueue)
+
+##########################################################
+#Startar upp popupfönster för att ange användarnamn
+##########################################################
+
+    def enterUserName(self):
+        self.popup = popupWindow(self.master)
+        self.master.wait_window(self.popup.top)
+
+    def welcome(self):
+        self.globalRoom.config(state=NORMAL)
+        self.globalRoom.insert(END,"Välkommen tillbaka "+self.userName +"!\n")
+        self.globalRoom.insert(END,"----------------------------------------\n")
+        self.globalRoom.config(state=DISABLED)
+
+##########################################################
+#Returnerar det angivna användarnamnet
+##########################################################
+
+    def getUserName(self):
+        return self.popup.value
+
+##########################################################
+#Skickar vårt användarnamn till servern
+##########################################################
+
+    def sendUserName(self):
+        userName = self.userName
+        temp = userName+'\n'
+        msg = temp.encode('UTF-8')
+        self.sockSend.send(msg)
+
+########################################################################################
+#Uppdaterar self.currentTab till den nya aktuella taben varje gång användaren byter tab
+########################################################################################
+
+    def tabChangedEvent(self,event):
+        self.currentTab = event.widget.tab(event.widget.index("current"),"text")
+        
+    def messageSplitLocal(self,input):
+        index = input.find(" ")
+        
+        message = (input[0:index],input[index+1:len(input)])
+        return message
+
+if __name__ == "__main__":
+    root=Tk()
+    root.geometry("700x500")
+    root.title("Nuntii IRC")
+    m=GUI(root)
+    root.withdraw()
+    m.enterUserName()
+    m.userName = m.getUserName()
+    m.sendUserName()
+    m.welcome()    
+    root.deiconify()
+    m.Start()
+    root.mainloop()	
+
 
 
