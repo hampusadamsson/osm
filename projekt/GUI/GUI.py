@@ -95,8 +95,8 @@ class GUI(object):
 
         self.sockSend = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         #self.sockSend.connect(('46.246.18.140', 1337))
-        #self.sockSend.connect(('localhost', 1337))
-        self.sockSend.connect(('130.243.207.26', 1337))
+        self.sockSend.connect(('localhost', 1337))
+        #self.sockSend.connect(('130.243.207.26', 1337))
 
         self.master.protocol('WM_DELETE_WINDOW', self.closeConnection)
 
@@ -133,13 +133,21 @@ class GUI(object):
          
             
             if (argumentString[0] == "/join"):
-                self.addTab(argumentString[1])
-                msg_temp = self.currentTab + " " + mtext1+'\n'
-                msg = msg_temp.encode('UTF-8')
-                self.sockSend.send(msg)
-                self.message.delete(0,END)
+                if self.noDuplicate(argumentString[1]):
+                    self.addTab(argumentString[1])
+                    msg_temp = self.currentTab + " " + mtext1+'\n'
+                    msg = msg_temp.encode('UTF-8')
+                    self.sockSend.send(msg)
+                    self.message.delete(0,END)
+                else:
+                    self.windowList[self.currentTab].config(state=NORMAL)
+                    self.windowList[self.currentTab].insert(INSERT,"Du är redan med i rummet!\n")
+                    self.windowList[self.currentTab].config(state=DISABLED)
+                    self.message.delete(0,END)
+                    
             elif (argumentString[0] == "/exit"):
-                self.nb.index(argumentString[1])
+                self.deleteTab(argumentString[1])
+                self.windowList.pop(argumentString[1],None)
                 msg_temp = self.currentTab + " " + mtext1+'\n'
                 msg = msg_temp.encode('UTF-8')
                 self.sockSend.send(msg)
@@ -234,6 +242,15 @@ class GUI(object):
         message = (input[0:index],input[index+1:len(input)])
         return message
 
+    def deleteTab(self,name):
+        self.nb.forget(self.windowList[name])
+
+    def noDuplicate(self,name):
+        if name in self.windowList:
+            return 0
+        else:
+            return 1
+
 if __name__ == "__main__":
     root=Tk()
     root.geometry("700x500")
@@ -246,6 +263,7 @@ if __name__ == "__main__":
     m.welcome()    
     root.deiconify()
     m.Start()
+    root.mainloop()
 
 
 
