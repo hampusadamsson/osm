@@ -1,6 +1,0 @@
--module(parser).
-
-%% To use EUnit we must include this:
--include_lib("eunit/include/eunit.hrl").
-
--export([]).
