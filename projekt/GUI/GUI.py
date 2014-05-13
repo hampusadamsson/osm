@@ -88,13 +88,7 @@ class GUI(object):
         self.currentTab = "global"
         self.nb.bind_all("<<NotebookTabChanged>>", self.tabChangedEvent)
 
-#######################################################################################
-#Tillfällig knapp för att testa mekaniken att skapa tabs dynamiskt       
-#######################################################################################
 
-        self.tabButton = tkinter.Button(master,text="Skapa ny Tab", command = self.addTab)
-        self.tabButton.place(x=365, y=430)
-        
 #####################################################################
 #Initierar och ansluter socketen till servern     
 #####################################################################        
@@ -108,13 +102,13 @@ class GUI(object):
 
         self.globalRoom = Text(master,state=DISABLED)
         self.nb.add(self.globalRoom, text='global')
+        self.windowList["global"] = self.globalRoom
 
 #######################################################################################
 #Skapar ett nytt fönster och tab och lägger till dem i dictionaryt över fönster      
 #######################################################################################
         
-    def addTab(self):
-        name = self.temp.get()
+    def addTab(self,name):
         tab = Text(self.master,state=DISABLED)
         self.windowList[name] = tab
         self.nb.add(tab, text=name)    
@@ -135,10 +129,26 @@ class GUI(object):
      
         mtext1 = self.temp.get()
         if (mtext1 != ""):
-            mtext = self.currentTab + " " + mtext1+'\n'
-            msg = mtext.encode('UTF-8')
-            self.sockSend.send(msg)
-            self.message.delete(0,END)
+            argumentString = self.messageSplitLocal(mtext1)
+         
+            
+            if (argumentString[0] == "/join"):
+                self.addTab(argumentString[1])
+                msg_temp = self.currentTab + " " + mtext1+'\n'
+                msg = msg_temp.encode('UTF-8')
+                self.sockSend.send(msg)
+                self.message.delete(0,END)
+            elif (argumentString[0] == "/exit"):
+                self.nb.index(argumentString[1])
+                msg_temp = self.currentTab + " " + mtext1+'\n'
+                msg = msg_temp.encode('UTF-8')
+                self.sockSend.send(msg)
+                self.message.delete(0,END)
+            else:
+                mtext = self.currentTab + " " + mtext1+'\n'
+                msg = mtext.encode('UTF-8')
+                self.sockSend.send(msg)
+                self.message.delete(0,END)
 
 ##################################################################
 #Stänger ner connectionen när man trycker krysset
@@ -173,9 +183,11 @@ class GUI(object):
         if (respons == "empty"):
             self.master.after(50,self.checkQueue)
         else:
-            self.globalRoom.config(state=NORMAL)
-            self.globalRoom.insert(INSERT,self.GetTime() + respons)
-            self.globalRoom.config(state=DISABLED)
+            argumentString = self.messageSplitLocal(respons)
+            print(argumentString)
+            self.windowList[argumentString[0]].config(state=NORMAL)
+            self.windowList[argumentString[0]].insert(INSERT,self.GetTime() + argumentString[1])
+            self.windowList[argumentString[0]].config(state=DISABLED)
             self.master.after(50,self.checkQueue)
 
 ##########################################################
@@ -204,9 +216,10 @@ class GUI(object):
 ##########################################################
 
     def sendUserName(self):
-        userName = "USER "+self.userName
-        msg = userName.encode('UTF-8')
-        self.sockSend(msg)
+        userName = self.userName
+        temp = userName+'\n'
+        msg = temp.encode('UTF-8')
+        self.sockSend.send(msg)
 
 ########################################################################################
 #Uppdaterar self.currentTab till den nya aktuella taben varje gång användaren byter tab
@@ -214,8 +227,13 @@ class GUI(object):
 
     def tabChangedEvent(self,event):
         self.currentTab = event.widget.tab(event.widget.index("current"),"text")
-
         
+    def messageSplitLocal(self,input):
+        index = input.find(" ")
+        
+        message = (input[0:index],input[index+1:len(input)])
+        return message
+
 if __name__ == "__main__":
     root=Tk()
     root.geometry("700x500")
@@ -224,7 +242,7 @@ if __name__ == "__main__":
     root.withdraw()
     m.enterUserName()
     m.userName = m.getUserName()
-    #m.sendUserName()
+    m.sendUserName()
     m.welcome()    
     root.deiconify()
     m.Start()
