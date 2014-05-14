@@ -24,7 +24,6 @@ class StoppableThread(threading.Thread):
                 sys.exit(0)
             else:
                 data = self.serverSocket.readline()
-                print(data)
                 self.messageQueue.put(data)
         
 
