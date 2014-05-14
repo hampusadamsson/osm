@@ -51,8 +51,8 @@ class GUI(object):
 #Userlist där alla användarna i ett rum ska listas
 ########################################################## 
 
-        self.userList = Text(master, width=20,state=DISABLED)
-        self.userList.place(x=0,y=23)
+        self.userWindow = Text(master, width=20,state=DISABLED)
+        self.userWindow.place(x=0,y=23)
 
 ##########################################################################
 #Stringvariablel som används för att få tillbaka texten från Entryfältet
@@ -73,6 +73,7 @@ class GUI(object):
 ############################################################################
 
         self.windowList = {}
+        self.userList = {}
         
 #################################
 #Användarnamnet
@@ -94,9 +95,9 @@ class GUI(object):
 #####################################################################        
 
         self.sockSend = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sockSend.connect(('46.246.19.138', 1337))
+        #self.sockSend.connect(('46.246.18.140', 1337))
         #self.sockSend.connect(('localhost', 1337))
-        #self.sockSend.connect(('130.243.207.26', 1337))
+        self.sockSend.connect(('130.243.207.26', 1337))
 
         self.master.protocol('WM_DELETE_WINDOW', self.closeConnection)
 
@@ -146,19 +147,12 @@ class GUI(object):
                     self.message.delete(0,END)
                     
             elif (argumentString[0] == "/exit"):
-                if (argumentString[1] == "global"):
-                    self.windowList[self.currentTab].config(state=NORMAL)
-                    self.windowList[self.currentTab].insert(INSERT,"Du kan inte gå ut ur global!\n")
-                    self.windowList[self.currentTab].config(state=DISABLED)
-                    self.message.delete(0,END)
-
-                else:    
-                    self.deleteTab(argumentString[1])
-                    self.windowList.pop(argumentString[1],None)
-                    msg_temp = self.currentTab + " " + mtext1+'\n'
-                    msg = msg_temp.encode('UTF-8')
-                    self.sockSend.send(msg)
-                    self.message.delete(0,END)
+                self.deleteTab(argumentString[1])
+                self.windowList.pop(argumentString[1],None)
+                msg_temp = self.currentTab + " " + mtext1+'\n'
+                msg = msg_temp.encode('UTF-8')
+                self.sockSend.send(msg)
+                self.message.delete(0,END)
             else:
                 mtext = self.currentTab + " " + mtext1+'\n'
                 msg = mtext.encode('UTF-8')
@@ -197,12 +191,25 @@ class GUI(object):
         respons = self.thread.returnQueue()
         if (respons == "empty"):
             self.master.after(50,self.checkQueue)
+        elif(respons[0][0] == "{"):
+            temp = respons[1:len(respons)-1]
+            roomUsers = self.messageSplitLocal(temp)
+            userList[roomUsers[0]] = roomUsers[1]
         else:
             argumentString = self.messageSplitLocal(respons)
+            print(argumentString)
             self.windowList[argumentString[0]].config(state=NORMAL)
             self.windowList[argumentString[0]].insert(INSERT,self.GetTime() + argumentString[1])
             self.windowList[argumentString[0]].config(state=DISABLED)
             self.master.after(50,self.checkQueue)
+
+
+    def fillUserList(self,roomName):
+        self.userWindow.config(state = NORMAL)
+        for userName in self.userList[roomName]:     
+            self.userWindow.insert(END,userName)
+        self.userWindow.config(state = DISABLED)
+
 
 ##########################################################
 #Startar upp popupfönster för att ange användarnamn
@@ -260,7 +267,7 @@ class GUI(object):
 if __name__ == "__main__":
     root=Tk()
     root.geometry("700x500")
-    root.title("Nuntii")
+    root.title("Nuntii IRC")
     m=GUI(root)
     root.withdraw()
     m.enterUserName()
