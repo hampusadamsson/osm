@@ -3,7 +3,7 @@
 %% To use EUnit we must include this:
 -include_lib("eunit/include/eunit.hrl").
 
--export([remove/3, removeFromAll/2, insert/4, receivers/2, findSock/2,
+-export([remove/3, removeFromAll/2, insert/4, receivers/3, findSock/2,
         findName/2, initSock/4]).
 
 %--------------------------------------------------------------------------
@@ -13,8 +13,8 @@
 % ex. [{room_name, [sock1,sock2,sock3]}]
 %
 %--------------------------------------------------------------------------
-receivers(Room, List) ->
-    case lists:keyfind(Room, 1, List) of
+receivers(Room, List, N) ->
+    case lists:keyfind(Room, N, List) of
         {Room, Tuple_List}->
             New_List = lists:map(fun({X, _}) -> X end, Tuple_List);
         false ->
@@ -91,19 +91,10 @@ remove(Room, List, Socket)->
 % ------------------------------------------------------------------
 % Find name connected to Sock
 % ------------------------------------------------------------------
-findName(Sock, [Last]) ->
-    {_, SockList} = Last,    
+findName(Sock, List) ->
+    {_, SockList} = lists:keyfind("global", 1, List),
     {_, Name} = lists:keyfind(Sock, 1, SockList),
-    Name;
-findName(Sock, [H|T]) ->
-    {Room, SockList} = H,    
-    if
-        Room =:= "global" ->
-            {_, Name} = lists:keyfind(Sock, 1, SockList),
-            Name;
-        true ->
-            findName(Sock, T)
-    end.
+    Name.
 
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
@@ -156,8 +147,8 @@ rooms_test_() ->
     E1 = remove(rum123, D, s1),
     ____=?_assertEqual(E1,[{rum1,[s3,s1]},{rum2,[s2]}]),
     
-    ____1=?_assertEqual(receivers(rum1,E1),[s3,s1]), 
-    ____2=?_assertEqual(receivers(rumqwe1,E1),[]), 
+    ____1=?_assertEqual(receivers(rum1,E1,1),[s3,s1]), 
+    ____2=?_assertEqual(receivers(rumqwe1,E1,1),[]), 
 
     E = remove(rum1, D, s1),
     _____=?_assertEqual(E,[{rum1,[s3]},{rum2,[s2]}]),
