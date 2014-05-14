@@ -118,7 +118,7 @@ class GUI(object):
 ###################################################
 
     def GetTime(self):
-        return "<" + time.strftime("%H:%M")+">: "
+        return "<" + time.strftime("%H:%M")+" "
 
 ##################################################################
 #Hämtar texten från entryfältet och skickar den i bytearray-format

@@ -99,9 +99,10 @@ handle_cast({'remove_from_room', Room, Rem_Socket}, Sock) ->
 %% Sends a message !IF! connected
 %% Sock = socket created by 'connect'
 %% ------------------------------------------------------------------
-handle_cast({'send', Room, Msg},Sock) ->
-    send_to_all(Msg, room:receivers(Room,Sock)),
-    {noreply, Sock}.
+handle_cast({'send', Room, Msg, Sock}, List) ->
+    NameMsg = parser:getString(Msg, Sock, List),
+    send_to_all(NameMsg, room:receivers(Room, List, 1)),
+    {noreply, List}.
 
 %% ------------------------------------------------------------------
 %% Find name connected to Sock
