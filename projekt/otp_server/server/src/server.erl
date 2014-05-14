@@ -85,8 +85,15 @@ handle_cast({'add_socket', Room, New_Socket}, Sock) ->
 %% Remove socket from list after disconnect
 %% Rem_Sock = The one to remove
 %% ------------------------------------------------------------------
-handle_cast({'remove_socket', Rem_Socket}, Sock) ->
+handle_cast({'remove', Rem_Socket}, Sock) ->
     {noreply, room:removeFromAll(Sock, Rem_Socket)};
+
+%% ------------------------------------------------------------------
+%% Remove socket from certain room in list
+%% Rem_Sock = The one to remove
+%% ------------------------------------------------------------------
+handle_cast({'remove_from_room', Room, Rem_Socket}, Sock) ->
+    {noreply, room:remove(Room, Sock, Rem_Socket)};
 
 %% ------------------------------------------------------------------
 %% Sends a message !IF! connected
@@ -205,7 +212,7 @@ loop(S) ->
             loop(S);
         {error,Reason} ->
             io:format("Disconnect: ~s \n",[Reason]),
-            gen_server:cast(server, {'remove_socket', S}), %global byts mot alla
+            gen_server:cast(server, {'remove', S}), %global byts mot alla
             gen_tcp:close(S)
     end.
 
