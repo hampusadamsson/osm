@@ -74,6 +74,9 @@ class GUI(object):
 
         self.windowList = {}
         self.userList = {}
+
+        self.userList["global"] = ['Erik']
+        
         
 #################################
 #Användarnamnet
@@ -95,9 +98,9 @@ class GUI(object):
 #####################################################################        
 
         self.sockSend = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        #self.sockSend.connect(('46.246.18.140', 1337))
-        #self.sockSend.connect(('localhost', 1337))
-        self.sockSend.connect(('130.243.207.26', 1337))
+        #self.sockSend.connect(('46.246.19.138', 1337))
+        self.sockSend.connect(('localhost', 1337))
+        #self.sockSend.connect(('130.243.207.26', 1337))
 
         self.master.protocol('WM_DELETE_WINDOW', self.closeConnection)
 
@@ -119,7 +122,7 @@ class GUI(object):
 ###################################################
 
     def GetTime(self):
-        return "<" + time.strftime("%H:%M")+">: "
+        return "<" + time.strftime("%H:%M")+" "
 
 ##################################################################
 #Hämtar texten från entryfältet och skickar den i bytearray-format
@@ -136,7 +139,7 @@ class GUI(object):
             if (argumentString[0] == "/join"):
                 if self.noDuplicate(argumentString[1]):
                     self.addTab(argumentString[1])
-                    msg_temp = self.currentTab + " " + mtext1+'\n'
+                    msg_temp = argumentString[1] + " " + mtext1+'\n'
                     msg = msg_temp.encode('UTF-8')
                     self.sockSend.send(msg)
                     self.message.delete(0,END)
@@ -149,7 +152,7 @@ class GUI(object):
             elif (argumentString[0] == "/exit"):
                 self.deleteTab(argumentString[1])
                 self.windowList.pop(argumentString[1],None)
-                msg_temp = self.currentTab + " " + mtext1+'\n'
+                msg_temp = self.globalWindow + " " + mtext1+'\n'
                 msg = msg_temp.encode('UTF-8')
                 self.sockSend.send(msg)
                 self.message.delete(0,END)
@@ -192,12 +195,12 @@ class GUI(object):
         if (respons == "empty"):
             self.master.after(50,self.checkQueue)
         elif(respons[0][0] == "{"):
-            temp = respons[1:len(respons)-1]
+            temp = respons[1:len(respons)-2]
             roomUsers = self.messageSplitLocal(temp)
-            userList[roomUsers[0]] = roomUsers[1]
+            self.userList[roomUsers[0]] = roomUsers[1].split(",")
+            self.master.after(50,self.checkQueue)
         else:
-            argumentString = self.messageSplitLocal(respons)
-            print(argumentString)
+            argumentString = self.messageSplitLocal(respons)          
             self.windowList[argumentString[0]].config(state=NORMAL)
             self.windowList[argumentString[0]].insert(INSERT,self.GetTime() + argumentString[1])
             self.windowList[argumentString[0]].config(state=DISABLED)
@@ -206,8 +209,9 @@ class GUI(object):
 
     def fillUserList(self,roomName):
         self.userWindow.config(state = NORMAL)
+        self.userWindow.delete(1.0,END)
         for userName in self.userList[roomName]:     
-            self.userWindow.insert(END,userName)
+            self.userWindow.insert(END,userName+'\n')
         self.userWindow.config(state = DISABLED)
 
 
@@ -248,6 +252,7 @@ class GUI(object):
 
     def tabChangedEvent(self,event):
         self.currentTab = event.widget.tab(event.widget.index("current"),"text")
+        self.fillUserList(self.currentTab)
         
     def messageSplitLocal(self,input):
         index = input.find(" ")
@@ -277,6 +282,3 @@ if __name__ == "__main__":
     root.deiconify()
     m.Start()
     root.mainloop()
-
-
-
