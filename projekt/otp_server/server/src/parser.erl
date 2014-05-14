@@ -13,26 +13,32 @@
 %% ------------------------------------------------------------------
 handle(Data, Socket)->   
     [Room|Body] = string:tokens(Data, " "),
-    Msg=string:substr(Data, length(Room)+1, length(Data)),
+    %%Msg=string:substr(Data, length(Room)+1, length(Data)),
     Room1=string:concat(Room,""),
     
     if length(Body)>1 ->
-            [Request|[Namn|_]]=Body,
-            [Namn2] = string:tokens(Namn,"\n"),
-            Namn1=string:concat(Namn2,""),
+        [Request|[Namn|_]]=Body,
+        [Namn2] = string:tokens(Namn,"\n"),
+        Namn1=string:concat(Namn2,""),
+        
+        case Request of
+            "/join" ->
+                gen_server:cast(server, {'add_socket', Namn1, Socket});
 
-            case Request of
-                "/join" ->
-                    gen_server:cast(server, {'add_socket', Namn1, Socket});
-
-                "/exit" ->
-                    gen_server:cast(server, {'remove_socket', Namn1, Socket});
-                
-                _ ->
-                    gen_server:cast(server, {'send', Room1, Msg})   
-            end;
-       true ->
-            gen_server:cast(server, {'send', Room1, Msg})
+            "/exit" ->
+                gen_server:cast(server, {'remove_from_room', Namn1, Socket});
+            
+            _ ->
+                gen_server:cast(server, {'send', Room1, Data})   
+        end;
+    true ->
+        Request = Body,
+        case Request of
+            "/exit" ->
+                gen_server:cast(server, {'remove', Socket});
+            _ ->
+                gen_server:cast(server, {'send', Room1, Data})   
+        end
     end.
 
 

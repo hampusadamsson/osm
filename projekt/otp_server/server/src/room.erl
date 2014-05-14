@@ -3,7 +3,8 @@
 %% To use EUnit we must include this:
 -include_lib("eunit/include/eunit.hrl").
 
--export([remove/3, insert/3, receivers/2]).
+-export([remove/3, removeFromAll/2, insert/4, receivers/2, findSock/2,
+        findName/2, initSock/4]).
 
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
@@ -15,11 +16,36 @@
 receivers(Room, List) ->
     case lists:keyfind(Room, 1, List) of
         {Room, Tuple_List}->
-            New_List = lists:foreach(fun({X, _}) -> X end, Tuple_List);
+            New_List = lists:map(fun({X, _}) -> X end, Tuple_List);
         false ->
             New_List = []
     end,
     New_List.
+
+%--------------------------------------------------------------------------
+%--------------------------------------------------------------------------
+% initial insert into the List of rooms
+% 
+% ex. [{room_name, [sock1,sock2,sock3]}]
+%
+%--------------------------------------------------------------------------
+
+initSock(Room, List, Socket, Name)->
+    case findSock(Name, List) of
+        false ->
+            case lists:keyfind(Room, 1, List) of
+                {Room, Sock_List}->
+                    Tmp_List = lists:keydelete(Room, 1, List),
+                    New_List = [{Room, [{Socket, Name}|Sock_List]}|Tmp_List];
+            
+                false ->
+                    New_List = [{Room, [{Socket, Name}]}|List]
+            end,
+            New_List;
+        _ ->
+            NewName = string:concat(Name, "_"),
+            insert(Room, List, Socket, NewName)
+    end.
 
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
@@ -28,15 +54,14 @@ receivers(Room, List) ->
 % ex. [{room_name, [sock1,sock2,sock3]}]
 %
 %--------------------------------------------------------------------------
-
-insert(Room, List, Socket)->
+insert(Room, List, Socket, Name) ->
     case lists:keyfind(Room, 1, List) of
         {Room, Sock_List}->
             Tmp_List = lists:keydelete(Room, 1, List),
-            New_List = [{Room, [{Socket, ""}|Sock_List]}|Tmp_List];
+            New_List = [{Room, [{Socket, Name}|Sock_List]}|Tmp_List];
     
         false ->
-            New_List = [{Room, [{Socket, ""}]}|List]
+            New_List = [{Room, [{Socket, Name}]}|List]
     end,
     New_List.
 
@@ -58,12 +83,60 @@ remove(Room, List, Socket)->
                 true ->  
                     New_List = [{Room, Sock_List2}|Tmp_List]
             end;
-            false ->
-                                 New_List = List
-                         end,
+        false ->
+            New_List = List
+    end,
     New_List.
 
+% ------------------------------------------------------------------
+% Find name connected to Sock
+% ------------------------------------------------------------------
+findName(Sock, [Last]) ->
+    {_, SockList} = Last,    
+    {_, Name} = lists:keyfind(Sock, 1, SockList),
+    Name;
+findName(Sock, [H|T]) ->
+    {Room, SockList} = H,    
+    if
+        Room =:= "global" ->
+            {_, Name} = lists:keyfind(Sock, 1, SockList),
+            Name;
+        true ->
+            findName(Sock, T)
+    end.
 
+%--------------------------------------------------------------------------
+%--------------------------------------------------------------------------
+% remove the List of rooms
+% 
+% ex. [{room_name, [sock1,sock2,sock3]}]
+%
+%--------------------------------------------------------------------------
+removeFromAll([], _) ->
+    [];
+removeFromAll([H|T], Sock) ->
+    {Room, SockList} = H,
+    case lists:keydelete(Sock, 1, SockList) of
+        [] ->
+            removeFromAll(T, Sock);
+        NewSockList ->
+            [{Room, NewSockList}|removeFromAll(T, Sock)]
+    end.
+
+%--------------------------------------------------------------------------
+%--------------------------------------------------------------------------
+% find socket with name Name in List
+%--------------------------------------------------------------------------
+findSock(_, []) ->
+    false;
+findSock(Name, List) ->
+    {_, SockList} = hd(List),
+    case lists:keyfind(Name, 2, SockList) of
+        false ->
+            findSock(Name, tl(List));
+        {Sock, _} ->
+            Sock
+    end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%% Eunit test cases  %%%%%%%%%%%%%%%%%%%%
@@ -71,13 +144,13 @@ remove(Room, List, Socket)->
 
 rooms_test_() ->
     A = [],
-    B = insert(rum1, A, s1),
+    B = insert(rum1, A, s1, "Tommy"),
     _=?_assertEqual(B,[{rum1,[s1]}]),
         
-    C = insert(rum2, B, s2),
+    C = insert(rum2, B, s2, "Timmy"),
     __=?_assertEqual(C,[{rum2,[s2]},{rum1,[s1]}]),
 
-    D = insert(rum1, C, s3),
+    D = insert(rum1, C, s3, "Tommy"),
     ___=?_assertEqual(D,[{rum1,[s3,s1]},{rum2,[s2]}]),
 
     E1 = remove(rum123, D, s1),
