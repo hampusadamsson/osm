@@ -18,7 +18,7 @@
 %% API Function Exports
 %% ------------------------------------------------------------------
 
--export([start_link/0, connect/2, send/2, start_servers/0, send_to_all/2, list_users/0]).
+-export([start_link/0, connect/2, send/2, start_servers/0, send_to_all/2, list_users/0, list_room_users/0]).
 
 %% ------------------------------------------------------------------
 %% TCP/IP Sockets Exports
@@ -85,8 +85,15 @@ handle_cast({'add_socket', Room, New_Socket}, Sock) ->
 %% Remove socket from list after disconnect
 %% Rem_Sock = The one to remove
 %% ------------------------------------------------------------------
-handle_cast({'remove_socket', Rem_Socket}, Sock) ->
+handle_cast({'remove', Rem_Socket}, Sock) ->
     {noreply, room:removeFromAll(Sock, Rem_Socket)};
+
+%% ------------------------------------------------------------------
+%% Remove socket from certain room in list
+%% Rem_Sock = The one to remove
+%% ------------------------------------------------------------------
+handle_cast({'remove_from_room', Room, Rem_Socket}, Sock) ->
+    {noreply, room:remove(Room, Sock, Rem_Socket)};
 
 %% ------------------------------------------------------------------
 %% Sends a message !IF! connected
@@ -94,6 +101,13 @@ handle_cast({'remove_socket', Rem_Socket}, Sock) ->
 %% ------------------------------------------------------------------
 handle_cast({'send', Room, Msg},Sock) ->
     send_to_all(Msg, room:receivers(Room,Sock)),
+    {noreply, Sock};
+
+%% ------------------------------------------------------------------
+%% Returns users in a room.
+%% ------------------------------------------------------------------
+handle_cast({'list_room_users', Room},Sock) ->
+    send_to_all(room:users_in_room(Room,Sock), room:receivers(Room,Sock)),
     {noreply, Sock}.
 
 %% ------------------------------------------------------------------
@@ -146,6 +160,9 @@ start_servers()->
 
 list_users()->
     gen_server:call(server, {'list_users'}).
+
+list_room_users()->
+    gen_server:call(server, {'list_room_users'}).
 
 
 %
@@ -205,7 +222,7 @@ loop(S) ->
             loop(S);
         {error,Reason} ->
             io:format("Disconnect: ~s \n",[Reason]),
-            gen_server:cast(server, {'remove_socket', S}), %global byts mot alla
+            gen_server:cast(server, {'remove', S}), %global byts mot alla
             gen_tcp:close(S)
     end.
 
@@ -238,5 +255,3 @@ loop(S) ->
 %     lists:foreach(fun(_X)->server:connect(localhost,1337) end, _A),
     
 %     ?_assertEqual(1,1). %%This port (1337) may come to change
-    
-    

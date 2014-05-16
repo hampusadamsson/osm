@@ -4,7 +4,7 @@
 -include_lib("eunit/include/eunit.hrl").
 
 -export([remove/3, removeFromAll/2, insert/4, receivers/2, findSock/2,
-        findName/2, initSock/4]).
+        findName/2, initSock/4, users_in_room/2]).
 
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
@@ -138,6 +138,23 @@ findSock(Name, List) ->
             Sock
     end.
 
+%--------------------------------------------------------------------------
+%--------------------------------------------------------------------------
+% Lists users in a room
+%--------------------------------------------------------------------------
+
+% Helper function to users_in_room
+users_helper([H|[]], S) ->
+    S ++ element(2,H);
+users_helper([H|T], S) ->
+    users_helper(T, S ++ element(2,H) ++ " ").	
+
+users_in_room(Room ,List) ->
+    Users = lists:keyfind(Room, 1, List),
+    
+	
+    "{"++ Room ++ " " ++ users_helper(element(2,Users),"") ++ "}\n".
+    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%% Eunit test cases  %%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

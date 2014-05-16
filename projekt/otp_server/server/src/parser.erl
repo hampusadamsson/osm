@@ -17,22 +17,34 @@ handle(Data, Socket)->
     Room1=string:concat(Room,""),
     
     if length(Body)>1 ->
-            [Request|[Namn|_]]=Body,
-            [Namn2] = string:tokens(Namn,"\n"),
-            Namn1=string:concat(Namn2,""),
-            
-            case Request of
-                "/join" ->
-                    gen_server:cast(server, {'add_socket', Namn1, Socket});
+        [Request|[Namn|_]]=Body,
+        [Namn2] = string:tokens(Namn,"\n"),
+        Namn1=string:concat(Namn2,""),
+        
+        case Request of
+            "/join" ->
+                gen_server:cast(server, {'add_socket', Namn1, Socket}),
+		gen_server:cast(server, {'list_room_users', Room1});
 
-                "/exit" ->
-                    gen_server:cast(server, {'remove_socket', Socket});
-                
-                _ ->
-                    gen_server:cast(server, {'send', Room1, Data})   
-            end;
+            "/exit" ->
+                gen_server:cast(server, {'remove_from_room', Namn1, Socket}),
+		gen_server:cast(server, {'list_room_users', Room1});
+            
+	    "/list" ->
+		gen_server:cast(server, {'list_room_users', Room1});
+	    
+            _ ->
+                gen_server:cast(server, {'send', Room1, Data})   
+        end;
        true ->
-            gen_server:cast(server, {'send', Room1, Data})
+	    Request = Body,
+	    case Request of
+		"/exit" ->
+		    gen_server:cast(server, {'remove', Socket});
+		
+		_ ->
+		    gen_server:cast(server, {'send', Room1, Data})   
+	    end
     end.
 
 
@@ -47,5 +59,3 @@ handle(Data, Socket)->
 rooms_test_() ->
 ok.
 
-
-    
