@@ -11,6 +11,7 @@ from RecvThread import StoppableThread
 import errno
 import os
 from time import sleep
+from Connect import connectToServer
 
 ##########################################################
 #Klass för att skriva in användarnamnet
@@ -104,7 +105,7 @@ class GUI(object):
 #Den senast angivna IP adressen   
 #####################################################################
 
-        self.ipAdress = 'localhost'
+        self.ipAdress = 'arne'
         #self.ipAdress = '46.246.19.138'
         #self.ipAdress = '130.243.207.26'
 
@@ -156,8 +157,12 @@ class GUI(object):
         argumentString = self.messageSplit(mtext1)
 
         if (argumentString[0] == "/connect"):
-            self.reconnect()
-            self.message.delete(0,END)
+            if(self.socketStatus == "disconnected"):
+               self.ipAdress = argumentString[1]
+               self.reconnect()
+            else:
+               self.message.delete(0,END)
+            
                     
         elif (self.socketStatus != "ok"):
             self.writeMessage("Du är inte ansluten till en server, anslut med /connect IP")
@@ -334,45 +339,40 @@ class GUI(object):
 #Försöker ansluta till den angivna servern
 ##########################################################
 
-    def connectToServer(self,ipAdress):
-        success = 1
-        try:
-            self.sockSend.connect((ipAdress, 1337))
-        except Exception as e:
-            success = 0
-        if success == 1:
-            return 1          
-        else:
-            return 0
+    
 
 ##########################################################
 #Upprepar periodiska anslutningsförsök 5 gånger och utför
 #lite stuff beroende på om den lyckas eller inte
 ##########################################################
 
-    def reconnect(self):
-        self.message.config(state=DISABLED)
-        
-        i = 5
-        success = 0
-        while i > 0:
-            connectSuccess = self.connectToServer(self.ipAdress)
-            if connectSuccess == 1:
-                self.message.config(state=NORMAL)
-                self.socketStatus = "ok"
-                success = 1
-                self.writeMessage("Du är nu ansluten till " + self.ipAdress + "!")
-                self.Start()
-                m.sendUserName()
-                break
-            else:
-                i -=1
-                self.writeMessage("Inget svar från servern... Försöker igen om 5 sekunder. " + str(i) + " försök kvar")
-                sleep(2)
-                
-        if success == 0:
+    def checkConnectQueue(self,thread):
+        result = thread.returnQueue()
+        if (result == "empty"):
+            self.master.after(500,self.checkConnectQueue,thread)
+        elif (result == "Connected"):
+            self.message.config(state=NORMAL)
+            self.socketStatus = "ok"
+            self.writeMessage("Du är nu ansluten till " + self.ipAdress + "!")
+            self.Start()
+            self.sendUserName()
+            thread.kill()
+        elif (result == "Failed"):
             self.writeMessage("Återanslutning misslyckades, anslut manuellt med /connect IP")
             self.message.config(state=NORMAL)
+            thread.kill()
+        else:
+            self.writeMessage("Inget svar från servern... Försöker igen om 5 sekunder. " + str(result) + " försök kvar")
+            self.master.after(2000,self.checkConnectQueue,thread)
+    
+    def reconnect(self):
+        self.message.delete(0,END)
+        self.message.config(state=DISABLED)
+        thread = connectToServer(self.sockSend,self.ipAdress)
+        thread.daemon = True
+        thread.start()
+        self.checkConnectQueue(thread)
+        self.message.delete(0,END)
 
 ##########################################################
 #Skriver ut ett meddelande i det aktiva fönstret
