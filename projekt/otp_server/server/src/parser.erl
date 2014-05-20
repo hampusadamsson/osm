@@ -3,7 +3,8 @@
 %% To use EUnit we must include this:
 -include_lib("eunit/include/eunit.hrl").
 
--export([handle/2, getString/3, getParts/1, sendBack/4, sendBack/5, sendBack/6]).
+-export([handle/2, getString/3, getParts/1, sendBack/4, sendBack/5,
+        sendBack/6]).
 
 removeNewLine([]) ->
     [];
@@ -11,7 +12,12 @@ removeNewLine(Str) ->
     Len = string:len(Str),
     case string:substr(Str, Len) of
         "\n" ->
-            [Clean] = string:tokens(Str, "\n");
+            if
+                Len>1 ->
+                    [Clean] = string:tokens(Str, "\n");
+                true ->
+                    Clean = string:tokens(Str, "\n")
+            end;
         _ ->
             Clean = Str
     end,
@@ -87,7 +93,6 @@ getString(FromParser, Sock, List) ->
     Name = room:findName(Sock, List),
     NameMsg = string:join([Room, string:concat(Name, ">"), Msg], " "),
     NameMsg.
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%% Eunit test cases  %%%%%%%%%%%%%%%%%%%%
