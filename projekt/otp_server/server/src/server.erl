@@ -67,34 +67,61 @@ handle_cast({'init_socket', Room, New_Socket, Name}, Sock) ->
 %% Add socket with name when writing /join
 %% Sock = inc. Socket
 %% ------------------------------------------------------------------
-handle_cast({'add_socket', Room, New_Socket}, Sock) ->
+handle_cast({'add_socket', Room, New_Socket, Secrecy}, Sock) ->
     Name = room:findName(New_Socket, Sock),
     case lists:keyfind(Room, 1, Sock) of
-        {_, SockList} ->
+        {_, SockList, _} ->
             case lists:keyfind(Name, 2, SockList) of
                 false ->
-                    {noreply, room:insert(Room, Sock, New_Socket, Name)};
+                    {noreply, room:insert(Room, Sock, New_Socket, Name, Secrecy)};
                 _ ->
                     {noreply, Sock}
             end;
         false ->
-            {noreply, room:insert(Room, Sock, New_Socket, Name)}
+            {noreply, room:insert(Room, Sock, New_Socket, Name, Secrecy)}
+    end;
+
+%% ------------------------------------------------------------------
+%% Invite user Name to room Room
+%% ------------------------------------------------------------------
+handle_cast({'invite', Name, Room}, List) ->
+    case room:findSock(Name, List) of
+        false ->
+            {noreply, List};
+        Sock ->
+            {noreply, room:insert(Room, List, Sock, Name, true)}
     end;
 
 %% ------------------------------------------------------------------
 %% Remove socket from list after disconnect
 %% Rem_Sock = The one to remove
 %% ------------------------------------------------------------------
-handle_cast({'remove_socket', Rem_Socket}, Sock) ->
+handle_cast({'remove', Rem_Socket}, Sock) ->
     {noreply, room:removeFromAll(Sock, Rem_Socket)};
+
+%% ------------------------------------------------------------------
+%% Remove socket from certain room in list
+%% Rem_Sock = The one to remove
+%% ------------------------------------------------------------------
+handle_cast({'remove_from_room', Room, Rem_Socket}, Sock) ->
+    {noreply, room:remove(Room, Sock, Rem_Socket)};
 
 %% ------------------------------------------------------------------
 %% Sends a message !IF! connected
 %% Sock = socket created by 'connect'
 %% ------------------------------------------------------------------
-handle_cast({'send', Room, Msg},Sock) ->
-    send_to_all(Msg, room:receivers(Room,Sock)),
+handle_cast({'send', Room, Msg, Sock}, List) ->
+    NameMsg = parser:getString(Msg, Sock, List),
+    send_to_all(NameMsg, room:receivers(Room, List, 1)),
+    {noreply, List};
+
+%% ------------------------------------------------------------------
+%% Returns users in a room.
+%% ------------------------------------------------------------------
+handle_cast({'list_room_users', Room},Sock) ->
+    send_to_all(room:users_in_room(Room,Sock), room:receivers(Room,Sock)),
     {noreply, Sock}.
+
 
 %% ------------------------------------------------------------------
 %% Find name connected to Sock
@@ -207,7 +234,7 @@ loop(S) ->
             loop(S);
         {error,Reason} ->
             io:format("Disconnect: ~s \n",[Reason]),
-            gen_server:cast(server, {'remove_socket', S}), %global byts mot alla
+            gen_server:cast(server, {'remove', S}), %global byts mot alla
             gen_tcp:close(S)
     end.
 

@@ -118,7 +118,11 @@ class GUI(object):
 ###################################################
 
     def GetTime(self):
+<<<<<<< HEAD
         return "<" + time.strftime("%H:%M")+">: "
+=======
+        return "<" + time.strftime("%H:%M")+" "
+>>>>>>> persnusk
 
 ##################################################################
 #Hämtar texten från entryfältet och skickar den i bytearray-format
@@ -133,6 +137,7 @@ class GUI(object):
          
             
             if (argumentString[0] == "/join"):
+<<<<<<< HEAD
                 self.addTab(argumentString[1])
                 msg_temp = self.currentTab + " " + mtext1+'\n'
                 msg = msg_temp.encode('UTF-8')
@@ -140,6 +145,23 @@ class GUI(object):
                 self.message.delete(0,END)
             elif (argumentString[0] == "/exit"):
                 self.nb.index(argumentString[1])
+=======
+                if self.noDuplicate(argumentString[1]):
+                    self.addTab(argumentString[1])
+                    msg_temp = self.currentTab + " " + mtext1+'\n'
+                    msg = msg_temp.encode('UTF-8')
+                    self.sockSend.send(msg)
+                    self.message.delete(0,END)
+                else:
+                    self.windowList[self.currentTab].config(state=NORMAL)
+                    self.windowList[self.currentTab].insert(INSERT,"Du är redan med i rummet!\n")
+                    self.windowList[self.currentTab].config(state=DISABLED)
+                    self.message.delete(0,END)
+                    
+            elif (argumentString[0] == "/exit"):
+                self.deleteTab(argumentString[1])
+                self.windowList.pop(argumentString[1],None)
+>>>>>>> persnusk
                 msg_temp = self.currentTab + " " + mtext1+'\n'
                 msg = msg_temp.encode('UTF-8')
                 self.sockSend.send(msg)
@@ -149,11 +171,19 @@ class GUI(object):
                 msg = mtext.encode('UTF-8')
                 self.sockSend.send(msg)
                 self.message.delete(0,END)
+<<<<<<< HEAD
 
 ##################################################################
 #Stänger ner connectionen när man trycker krysset
 ##################################################################
 
+=======
+
+##################################################################
+#Stänger ner connectionen när man trycker krysset
+##################################################################
+
+>>>>>>> persnusk
     def closeConnection(self):
         self.sockSend.shutdown(socket.SHUT_RDWR)
         self.sockSend.close()
@@ -176,6 +206,7 @@ class GUI(object):
 ##########################################################
 #Kollar om det finns något nytt meddelande att hämta
 ##########################################################
+<<<<<<< HEAD
 
     def checkQueue(self):
     
@@ -247,5 +278,88 @@ if __name__ == "__main__":
     root.deiconify()
     m.Start()
     root.mainloop()	
+=======
+
+    def checkQueue(self):
+    
+        respons = self.thread.returnQueue()
+        if (respons == "empty"):
+            self.master.after(50,self.checkQueue)
+        else:
+            argumentString = self.messageSplitLocal(respons)
+            print(argumentString)
+            self.windowList[argumentString[0]].config(state=NORMAL)
+            self.windowList[argumentString[0]].insert(INSERT,self.GetTime() + argumentString[1])
+            self.windowList[argumentString[0]].config(state=DISABLED)
+            self.master.after(50,self.checkQueue)
+
+##########################################################
+#Startar upp popupfönster för att ange användarnamn
+##########################################################
+
+    def enterUserName(self):
+        self.popup = popupWindow(self.master)
+        self.master.wait_window(self.popup.top)
+
+    def welcome(self):
+        self.globalRoom.config(state=NORMAL)
+        self.globalRoom.insert(END,"Välkommen tillbaka "+self.userName +"!\n")
+        self.globalRoom.insert(END,"----------------------------------------\n")
+        self.globalRoom.config(state=DISABLED)
+
+##########################################################
+#Returnerar det angivna användarnamnet
+##########################################################
+
+    def getUserName(self):
+        return self.popup.value
+
+##########################################################
+#Skickar vårt användarnamn till servern
+##########################################################
+
+    def sendUserName(self):
+        userName = self.userName
+        temp = userName+'\n'
+        msg = temp.encode('UTF-8')
+        self.sockSend.send(msg)
+
+########################################################################################
+#Uppdaterar self.currentTab till den nya aktuella taben varje gång användaren byter tab
+########################################################################################
+
+    def tabChangedEvent(self,event):
+        self.currentTab = event.widget.tab(event.widget.index("current"),"text")
+        
+    def messageSplitLocal(self,input):
+        index = input.find(" ")
+        
+        message = (input[0:index],input[index+1:len(input)])
+        return message
+
+    def deleteTab(self,name):
+        self.nb.forget(self.windowList[name])
+
+    def noDuplicate(self,name):
+        if name in self.windowList:
+            return 0
+        else:
+            return 1
+
+if __name__ == "__main__":
+    root=Tk()
+    root.geometry("700x500")
+    root.title("Nuntii IRC")
+    m=GUI(root)
+    root.withdraw()
+    m.enterUserName()
+    m.userName = m.getUserName()
+    m.sendUserName()
+    m.welcome()    
+    root.deiconify()
+    m.Start()
+    root.mainloop()
+
+>>>>>>> persnusk
 
 
