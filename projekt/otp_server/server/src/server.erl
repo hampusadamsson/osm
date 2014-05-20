@@ -202,8 +202,7 @@ server(LS) ->
             loop(S),
             server(LS);
         Other ->
-            io:format("accept returned ~w - goodbye!~n",[Other]),
-            start_servers(LS)
+            io:format("accept returned ~w - goodbye!~n",[Other])
     end.
 
 
