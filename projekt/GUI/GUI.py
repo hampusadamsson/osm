@@ -105,7 +105,7 @@ class GUI(object):
 #Den senast angivna IP adressen   
 #####################################################################
 
-        self.ipAdress = 'arne'
+        self.ipAdress = 'localhost'
         #self.ipAdress = '46.246.19.138'
         #self.ipAdress = '130.243.207.26'
 
@@ -170,11 +170,20 @@ class GUI(object):
             
         elif (argumentString[0] == "/join"):
             if self.noDuplicate(argumentString[1]):
-                self.addTab(argumentString[1])
-                msg_temp = argumentString[1] + " " + mtext1+'\n'
-                msg = msg_temp.encode('UTF-8')
-                self.sockSend.send(msg)
-                self.message.delete(0,END)
+                if (" " in argumentString[1]):
+                    argumentString2 = self.messageSplit(argumentString[1])
+                    print(argumentString2[0])
+                    self.addTab(argumentString2[0])
+                    msg_temp = argumentString[1] + " " + mtext1+'\n'
+                    msg = msg_temp.encode('UTF-8')
+                    self.sockSend.send(msg)
+                    self.message.delete(0,END)
+                else:
+                    self.addTab(argumentString[1])
+                    msg_temp = argumentString[1] + " " + mtext1+'\n'
+                    msg = msg_temp.encode('UTF-8')
+                    self.sockSend.send(msg)
+                    self.message.delete(0,END)
             else:
                 self.writeMessage("Du är redan med i det angivna rummet!")
                 self.message.delete(0,END)
