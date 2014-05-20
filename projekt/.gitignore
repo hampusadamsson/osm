@@ -4,4 +4,4 @@ deps
 *.plt
 erl_crash.dump
 *rebar
-.erl~
+*.erl~
