@@ -61,14 +61,15 @@ init([]) ->
     Child = {'server',{'server',start_link,[]},
               permanent,2000,worker,['server']},
       
-    _One_for_one = {one_for_one,5,60},
-    _One_for_all = {one_for_all,5,60},
-    _Rest_for_one = {rest_for_one,5,60},
-    _Simple_one_for_one = {simple_one_for_one,5,60},
+    One_for_one = {one_for_one,5,60},
+    One_for_all = {one_for_all,5,60},
+    Rest_for_one = {rest_for_one,5,60},
+    Simple_one_for_one = {simple_one_for_one,5,60},
  
-    Restart_strategy = _Simple_one_for_one,
+    Restart_strategy = One_for_one,
         
-    {ok,{Restart_strategy, [Child]}}.
+      {ok,{Restart_strategy, [Child]}}.
+%   {ok,{{'one_for_all',5000,6000}, [Child]}}.
 
 
 %%====================================================================

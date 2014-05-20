@@ -52,7 +52,7 @@ init(Args) ->
 %% Port = remote port
 %% ------------------------------------------------------------------
 handle_cast({'connect', IP, Port}, _Sock) ->
-    {ok, Sock} = gen_tcp:connect(IP, Port, [binary, {active,true}, {packet, line}]), % 2-line kan behöva bytas 
+    {ok, Sock} = gen_tcp:connect(IP, Port, [binary, {active,true}, {packet, line}]),
     spawn(?MODULE,loop,[Sock]),
     {noreply, [Sock|_Sock]};
 
@@ -214,8 +214,7 @@ server(LS) ->
             loop(S),
             server(LS);
         Other ->
-            io:format("accept returned ~w - goodbye!~n",[Other]),
-            start_servers(LS)
+            io:format("accept returned ~w - goodbye!~n",[Other])
     end.
 
 
