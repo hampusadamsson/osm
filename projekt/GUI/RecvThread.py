@@ -7,25 +7,23 @@ class StoppableThread(threading.Thread):
 
     def __init__(self,serverSocket):
         super(StoppableThread, self).__init__()
-        self.stopSignal = threading.Event()
         self.serverSocket = serverSocket.makefile()
         self.messageQueue = queue.Queue()
 
-    def stop(self):
-        self.stopSignal.set()
-
-    def stopped(self):
-        return self.stopSignal.isSet()
-
     def run(self):
-         while True:
-            if (self.stopped()):
-                print("Nu sticker tråden med, toodlezzz")
-                sys.exit(0)
-            else:
-                data = self.serverSocket.readline()
-                print(data)
-                self.messageQueue.put(data)
+        while True:
+            data = self.serverSocket.readline()
+
+            #Om vi bara får bullshit från socketen avslutas tråden och GUI:t
+            #informeras att detta har hänt med "Disconnect" meddelandet
+
+            if not data:
+                #Avbryt loopen
+                break
+            self.messageQueue.put(data)
+        print("Nu dog servern, ahahahahahahaha\n")
+        self.messageQueue.put("Disconnected")
+        sys.exit(0)
         
 
     def returnQueue(self):
@@ -33,4 +31,3 @@ class StoppableThread(threading.Thread):
             return "empty"
         else:
             return self.messageQueue.get()
-
