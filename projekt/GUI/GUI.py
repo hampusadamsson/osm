@@ -172,9 +172,9 @@ class GUI(object):
             if self.noDuplicate(argumentString[1]):
                 if (" " in argumentString[1]):
                     argumentString2 = self.messageSplit(argumentString[1])
-                    print(argumentString2[0])
                     self.addTab(argumentString2[0])
-                    msg_temp = argumentString[1] + " " + mtext1+'\n'
+                    msg_temp = argumentString2[0] + " " + mtext1+'\n'
+                    
                     msg = msg_temp.encode('UTF-8')
                     self.sockSend.send(msg)
                     self.message.delete(0,END)
