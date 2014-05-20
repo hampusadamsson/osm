@@ -60,37 +60,21 @@ handle_cast({'connect', IP, Port}, _Sock) ->
 %% Establish a Socket to an incoming connection
 %% Sock = inc. Socket
 %% ------------------------------------------------------------------
-handle_cast({'init_socket', Room, New_Socket, Name}, Sock) ->
-    {noreply, room:initSock(Room, Sock, New_Socket, Name)};
+handle_cast({'init_socket', Room, NewSock, Name}, List) ->
+    {noreply, room:initSock(Room, List, NewSock, Name)};
 
 %% ------------------------------------------------------------------
 %% Add socket with name when writing /join
 %% Sock = inc. Socket
 %% ------------------------------------------------------------------
-handle_cast({'add_socket', Room, New_Socket, Secrecy}, Sock) ->
-    Name = room:findName(New_Socket, Sock),
-    case lists:keyfind(Room, 1, Sock) of
-        {_, SockList, _} ->
-            case lists:keyfind(Name, 2, SockList) of
-                false ->
-                    {noreply, room:insert(Room, Sock, New_Socket, Name, Secrecy)};
-                _ ->
-                    {noreply, Sock}
-            end;
-        false ->
-            {noreply, room:insert(Room, Sock, New_Socket, Name, Secrecy)}
-    end;
+handle_cast({'add_socket', Room, NewSock, Secrecy}, List) ->
+    {noreply, room:add_socket(NewSock, Room, List, Secrecy)};
 
 %% ------------------------------------------------------------------
 %% Invite user Name to room Room
 %% ------------------------------------------------------------------
 handle_cast({'invite', Name, Room}, List) ->
-    case room:findSock(Name, List) of
-        false ->
-            {noreply, List};
-        Sock ->
-            {noreply, room:insert(Room, List, Sock, Name, true)}
-    end;
+    {noreply, room:invite(Name, Room, List)};
 
 %% ------------------------------------------------------------------
 %% Remove socket from list after disconnect

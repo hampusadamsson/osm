@@ -4,7 +4,8 @@
 -include_lib("eunit/include/eunit.hrl").
 
 -export([remove/3, removeFromAll/2, insert/5, receivers/3, findSock/2,
-        findName/2, initSock/4, isSecret/2, users_in_room/2]).
+        findName/2, initSock/4, isSecret/2, users_in_room/2, invite/3,
+        add_socket/4]).
 
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
@@ -140,6 +141,36 @@ users_in_room(Room ,List) ->
     {_, SockList, _} = lists:keyfind(Room, 1, List),
     "{"++ Room ++ " " ++ users_helper(SockList,"") ++ "}\n".
     
+%--------------------------------------------------------------------------
+%--------------------------------------------------------------------------
+% Find the invited socket, if it exists
+%--------------------------------------------------------------------------
+invite(Name, Room, List) ->
+    case room:findSock(Name, List) of
+        false ->
+            List;
+        Sock ->
+            room:insert(Room, List, Sock, Name, true)
+    end.
+
+%--------------------------------------------------------------------------
+%--------------------------------------------------------------------------
+% Check things before we add a new socket
+%--------------------------------------------------------------------------
+add_socket(NewSock, Room, List, Secrecy) ->
+    Name = room:findName(NewSock, List),
+    case lists:keyfind(Room, 1, List) of
+        {_, SockList, _} ->
+            case lists:keyfind(Name, 2, SockList) of
+                false ->
+                    room:insert(Room, List, NewSock, Name, Secrecy);
+                _ ->
+                    List
+            end;
+        false ->
+            room:insert(Room, List, NewSock, Name, Secrecy)
+    end.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%% Eunit test cases  %%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
