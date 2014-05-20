@@ -33,7 +33,3 @@ class StoppableThread(threading.Thread):
             return "empty"
         else:
             return self.messageQueue.get()
-<<<<<<< HEAD
-=======
-
->>>>>>> persnusk

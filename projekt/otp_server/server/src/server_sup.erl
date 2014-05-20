@@ -58,9 +58,18 @@ start_link() ->
 %%          {error, Reason}   
 %%--------------------------------------------------------------------
 init([]) ->
-    AChild = {'server',{'server',start_link,[]},
+    Child = {'server',{'server',start_link,[]},
               permanent,2000,worker,['server']},
-    {ok,{{one_for_all,0,1}, [AChild]}}.
+      
+    _One_for_one = {one_for_one,5,60},
+    _One_for_all = {one_for_all,5,60},
+    _Rest_for_one = {rest_for_one,5,60},
+    _Simple_one_for_one = {simple_one_for_one,5,60},
+ 
+    Restart_strategy = _Simple_one_for_one,
+        
+    {ok,{Restart_strategy, [Child]}}.
+
 
 %%====================================================================
 %% Internal functions

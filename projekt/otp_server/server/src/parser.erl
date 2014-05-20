@@ -70,27 +70,7 @@ sendBack(Request, RoomName, Secrecy, Data, Socket, Room) ->
 %% ------------------------------------------------------------------
 handle(Data, Socket)->   
     [Room|Body] = string:tokens(Data, " "),
-<<<<<<< HEAD
-    Room1=string:concat(Room,""),
-    
-    if length(Body)>1 ->
-            [Request|[Namn|_]]=Body,
-            [Namn2] = string:tokens(Namn,"\n"),
-            Namn1=string:concat(Namn2,""),
-            
-            case Request of
-                "/join" ->
-                    gen_server:cast(server, {'add_socket', Namn1, Socket, Socket});
 
-                "/exit" ->
-                    gen_server:cast(server, {'remove_socket', Socket});
-                
-                _ ->
-                    gen_server:cast(server, {'send', Room1, Data})   
-            end;
-       true ->
-            gen_server:cast(server, {'send', Room1, Data})
-=======
     BodyStr = string:join(Body, " "),
     case getParts(BodyStr) of
         {[], [], []} ->
@@ -101,7 +81,6 @@ handle(Data, Socket)->
             sendBack(Request, Name, Data, Socket, Room);
         {Request, Name, Secrecy} ->
             sendBack(Request, Name, Secrecy, Data, Socket, Room)
->>>>>>> persnusk
     end.
 
 %% ------------------------------------------------------------------

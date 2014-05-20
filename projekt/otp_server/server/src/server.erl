@@ -183,12 +183,6 @@ io:format("HAMPUS\n").
 %
 %
 
-%%                 TODO
-%              
-%   ok      lyssnande servern
-%   ok      listan på sockets - update
-%           fixa bra print - inet:i().       
-
 
 send_to_all(_,[])->
     ok;
