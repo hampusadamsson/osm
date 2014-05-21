@@ -92,6 +92,7 @@ class GUI(object):
 ###########################################
 
         self.socketStatus = "disconnected"
+        self.config = ()
 
 #######################################################################################
 #Anger den nu aktiva taben. Ändras automatiskt när man byter tab     
@@ -244,12 +245,14 @@ class GUI(object):
         if (respons == "empty"):
             1+1
         elif(respons == "Disconnected"):
-            #self.sockSend.shutdown(socket.SHUT_RDWR)
-            #self.sockSend.close()
             self.socketStatus = "disconnected"
-            self.writeMessage("Tappade anslutningen, försöker återansluta automatiskt")
             stopSign = 0
-            self.reconnect()
+            if self.config[0] == 'auto':
+                self.writeMessage("Tappade anslutningen, försöker återansluta automatiskt")
+                self.reconnect()
+            else:
+                 self.writeMessage("Tappade anslutningen till servern, anslut manuellt med /connect IP")
+                
             
         elif(respons[0][0] == "{"):
                 temp = respons[1:len(respons)-2]
@@ -365,19 +368,16 @@ class GUI(object):
             self.writeMessage("Du är nu ansluten till " + self.ipAdress + "!")
             self.Start()
             self.sendUserName()
-            thread.kill()
         elif (result == "Failed"):
             self.writeMessage("Återanslutning misslyckades, anslut manuellt med /connect IP")
             self.message.config(state=NORMAL)
-            thread.kill()
         else:
             self.writeMessage("Inget svar från servern... Försöker igen om 5 sekunder. " + str(result) + " försök kvar")
             self.master.after(2000,self.checkConnectQueue,thread)
     
     def reconnect(self):
-        self.message.delete(0,END)
         self.message.config(state=DISABLED)
-        thread = connectToServer(self.sockSend,self.ipAdress)
+        thread = connectToServer(self.sockSend,self.ipAdress,self.config[1])
         thread.daemon = True
         thread.start()
         self.checkConnectQueue(thread)
@@ -392,6 +392,20 @@ class GUI(object):
         self.windowList[self.currentTab].insert(INSERT,message+'\n')
         self.windowList[self.currentTab].config(state=DISABLED)
 
+###########################################################################################
+#Initierar den angivna konfigurationen från configFilen mha hjälpfunktionen parseConfig
+###########################################################################################
+
+    def initiateConfig(self):
+        self.config = [self.parseConfig(line) for line in open('configFile')]
+        print(self.config)
+
+    def parseConfig(self,configString):
+        index = configString.find("=")
+        message = configString[index+1:len(configString)-1]
+        return message
+        
+
 ##########################################################
 #Startar mainfunktionen
 ##########################################################
@@ -402,11 +416,12 @@ if __name__ == "__main__":
     root.title("Nuntii IRC")
     m=GUI(root)
     root.withdraw()
+    m.initiateConfig()
     m.welcome()    
     m.enterUserName()
     m.userName = m.getUserName()
     root.deiconify()
-    root.after(50,m.reconnect)
+    m.reconnect()
     root.mainloop()
        
     
