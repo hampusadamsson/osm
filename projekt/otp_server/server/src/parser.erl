@@ -3,7 +3,7 @@
 %% To use EUnit we must include this:
 -include_lib("eunit/include/eunit.hrl").
 
--export([handle/2]).
+-export([handle/2, getString/3]).
 
 %% ------------------------------------------------------------------
 %% Incomming Data - Data being a string
@@ -23,33 +23,31 @@ handle(Data, Socket)->
         
         case Request of
             "/join" ->
-                gen_server:cast(server, {'add_socket', Namn1, Socket}),
-		gen_server:cast(server, {'list_room_users', Room1});
+                gen_server:cast(server, {'add_socket', Namn1, Socket});
 
             "/exit" ->
-                gen_server:cast(server, {'remove_from_room', Namn1, Socket}),
-		gen_server:cast(server, {'list_room_users', Room1});
+                gen_server:cast(server, {'remove_from_room', Namn1, Socket});
             
-	    "/list" ->
-		gen_server:cast(server, {'list_room_users', Room1});
-	    
             _ ->
-                gen_server:cast(server, {'send', Room1, Data})   
+                gen_server:cast(server, {'send', Room1, Data, Socket})   
         end;
-       true ->
-	    Request = Body,
-	    case Request of
-		"/exit" ->
-		    gen_server:cast(server, {'remove', Socket});
-		
-		_ ->
-		    gen_server:cast(server, {'send', Room1, Data})   
-	    end
+    true ->
+        Request = Body,
+        case Request of
+            "/exit" ->
+                gen_server:cast(server, {'remove', Socket});
+            _ ->
+                gen_server:cast(server, {'send', Room1, Data, Socket})   
+        end
     end.
 
-
-
-
+getString(FromParser, Sock, List) ->
+    Room = string:sub_word(FromParser, 1),
+    Len = string:len(Room),
+    Msg = string:substr(FromParser, Len+1),
+    Name = room:findName(Sock, List),
+    NameMsg = string:join([Room, string:concat(Name, ">"), Msg], " "),
+    NameMsg.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -59,3 +57,5 @@ handle(Data, Socket)->
 rooms_test_() ->
 ok.
 
+
+    
