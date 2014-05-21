@@ -23,7 +23,7 @@
 %% ------------------------------------------------------------------
 %% TCP/IP Sockets Exports
 %% ------------------------------------------------------------------
--export([start/1, start_servers/1, server/1, loop/1]). 
+-export([start_servers/1, server/1]). 
 
 %% ------------------------------------------------------------------
 %% gen_server Function Exports
@@ -60,26 +60,21 @@ handle_cast({'connect', IP, Port}, _Sock) ->
 %% Establish a Socket to an incoming connection
 %% Sock = inc. Socket
 %% ------------------------------------------------------------------
-handle_cast({'init_socket', Room, New_Socket, Name}, Sock) ->
-    {noreply, room:initSock(Room, Sock, New_Socket, Name)};
+handle_cast({'init_socket', Room, NewSock, Name}, List) ->
+    {noreply, room:initSock(Room, List, NewSock, Name)};
 
 %% ------------------------------------------------------------------
 %% Add socket with name when writing /join
 %% Sock = inc. Socket
 %% ------------------------------------------------------------------
-handle_cast({'add_socket', Room, New_Socket}, Sock) ->
-    Name = room:findName(New_Socket, Sock),
-    case lists:keyfind(Room, 1, Sock) of
-        {_, SockList} ->
-            case lists:keyfind(Name, 2, SockList) of
-                false ->
-                    {noreply, room:insert(Room, Sock, New_Socket, Name)};
-                _ ->
-                    {noreply, Sock}
-            end;
-        false ->
-            {noreply, room:insert(Room, Sock, New_Socket, Name)}
-    end;
+handle_cast({'add_socket', Room, NewSock, Secrecy}, List) ->
+    {noreply, room:add_socket(NewSock, Room, List, Secrecy)};
+
+%% ------------------------------------------------------------------
+%% Invite user Name to room Room
+%% ------------------------------------------------------------------
+handle_cast({'invite', Name, Room}, List) ->
+    {noreply, room:invite(Name, Room, List)};
 
 %% ------------------------------------------------------------------
 %% Remove socket from list after disconnect
@@ -102,7 +97,15 @@ handle_cast({'remove_from_room', Room, Rem_Socket}, Sock) ->
 handle_cast({'send', Room, Msg, Sock}, List) ->
     NameMsg = parser:getString(Msg, Sock, List),
     send_to_all(NameMsg, room:receivers(Room, List, 1)),
-    {noreply, List}.
+    {noreply, List};
+
+%% ------------------------------------------------------------------
+%% Returns users in a room.
+%% ------------------------------------------------------------------
+handle_cast({'list_room_users', Room},Sock) ->
+    send_to_all(room:users_in_room(Room,Sock), room:receivers(Room,Sock)),
+    {noreply, Sock}.
+
 
 %% ------------------------------------------------------------------
 %% Find name connected to Sock
@@ -127,7 +130,7 @@ handle_call({'list_users'}, _From, Sock) ->
 %% ------------------------------------------------------------------
 handle_call({'start_servers'}, _From, Socket) ->
     Port=1337,
-    {reply, start(Port), Socket}.
+    {reply, tcp_handler:start(Port), Socket}.
 
 handle_info(_Info, State) ->
     {noreply, State}.
@@ -175,48 +178,12 @@ send_to_all(Msg,[Sock|Rest])->
     gen_tcp:send(Sock, Msg),
     send_to_all(Msg,Rest).
 
-start(LPort) ->
-    case gen_tcp:listen(LPort,[{active, false},{packet, line}]) of % 2=line
-        {ok, ListenSock} ->
-            start_servers(ListenSock),
-            {ok, Port} = inet:port(ListenSock),
-            Port;
-        {error,Reason} ->
-            {error,Reason}
-    end.
 
 start_servers(LS) ->
     spawn(?MODULE,server,[LS]).
 
 server(LS) ->
-    case gen_tcp:accept(LS) of
-        {ok,S} ->
-            {ok, Data} = gen_tcp:recv(S, 0),
-            Length = string:len(Data),
-            Name = string:substr(Data, 1, Length-1),
-            gen_server:cast(server, {'init_socket', "global", S, Name}),        %%Add to the list 
-            start_servers(LS),
-            loop(S),
-            server(LS);
-        Other ->
-            io:format("accept returned ~w - goodbye!~n",[Other]),
-            start_servers(LS)
-    end.
-
-
-loop(S) ->
-    inet:setopts(S,[{active,false}]),
-    case gen_tcp:recv(S,0) of
-        {ok,Data} ->
-            io:format("Msg: ~s \n",[Data]),
-            parser:handle(Data, S),
-            loop(S);
-        {error,Reason} ->
-            io:format("Disconnect: ~s \n",[Reason]),
-            gen_server:cast(server, {'remove', S}), %global byts mot alla
-            gen_tcp:close(S)
-    end.
-
+    tcp_handler:server(LS).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%% Eunit test cases  %%%%%%%%%%%%%%%%%%%%
