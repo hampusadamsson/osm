@@ -315,8 +315,10 @@ class GUI(object):
 ########################################################################################
 
     def tabChangedEvent(self,event):
+        print("Försöker byta tab")
         self.currentTab = event.widget.tab(event.widget.index("current"),"text")
         self.fillUserList(self.currentTab)
+        print("Lyckades byta tab")
 
 ##########################################################
 #Splittar upp en mottagen sträng från servern
@@ -365,17 +367,16 @@ class GUI(object):
             self.writeMessage("Du är nu ansluten till " + self.ipAdress + "!")
             self.Start()
             self.sendUserName()
-            thread.kill()
+           # thread.kill()
         elif (result == "Failed"):
             self.writeMessage("Återanslutning misslyckades, anslut manuellt med /connect IP")
             self.message.config(state=NORMAL)
-            thread.kill()
+           # thread.kill()
         else:
             self.writeMessage("Inget svar från servern... Försöker igen om 5 sekunder. " + str(result) + " försök kvar")
             self.master.after(2000,self.checkConnectQueue,thread)
     
     def reconnect(self):
-        self.message.delete(0,END)
         self.message.config(state=DISABLED)
         thread = connectToServer(self.sockSend,self.ipAdress)
         thread.daemon = True
@@ -406,7 +407,7 @@ if __name__ == "__main__":
     m.enterUserName()
     m.userName = m.getUserName()
     root.deiconify()
-    root.after(50,m.reconnect)
+    m.reconnect()
     root.mainloop()
        
     
