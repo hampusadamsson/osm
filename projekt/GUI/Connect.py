@@ -12,16 +12,18 @@ class connectToServer(threading.Thread):
         self.messageQueue = queue.Queue()
         self.ipAdress = ipAdress
         self.tries = 5
-        self.delay = delay
+        self.delay = float(delay)
 
     def run(self):
         
         try:
             self.socket.connect((self.ipAdress,1337))
             self.messageQueue.put("Connected")
+            self.tries = 0
         except Exception as e:
-            self.tries -=1
-            self.messageQueue.put(self.tries)
+                print(e)
+                self.tries -=1
+                self.messageQueue.put(self.tries)
             
         if(self.tries > 1):
             sleep(self.delay)
