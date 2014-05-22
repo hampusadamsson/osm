@@ -94,9 +94,9 @@ handle_cast({'send', Room, Msg, Sock}, List) ->
 %% ------------------------------------------------------------------
 %% Returns users in a room.
 %% ------------------------------------------------------------------
-handle_cast({'list_room_users', Room},Sock) ->
-    send_to_all(room:users_in_room(Room,Sock), room:receivers(Room,Sock)),
-    {noreply, Sock}.
+handle_cast({'list_room_users', Room},List) ->
+    send_to_all(room:users_in_room(Room,List), room:receivers(Room,List,1)),
+    {noreply, List}.
 
 
 %% ------------------------------------------------------------------

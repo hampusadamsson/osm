@@ -47,7 +47,8 @@ initSock(Room, List, Socket, Name)->
         _ ->
             NewName = string:concat(Name, "_"),
             initSock(Room, List, Socket, NewName)
-    end.
+    end,
+    gen_server:cast(server, {'list_room_users', Room}).
 
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
@@ -140,7 +141,7 @@ findSock(Name, List) ->
 users_helper([H|[]], S) ->
     S ++ element(2,H);
 users_helper([H|T], S) ->
-    users_helper(T, S ++ element(2,H) ++ " ").	
+    users_helper(T, S ++ element(2,H) ++ ",").	
 
 users_in_room(Room ,List) ->
     {_, SockList, _} = lists:keyfind(Room, 1, List),
@@ -156,7 +157,8 @@ invite(Name, Room, List) ->
             List;
         Sock ->
             room:insert(Room, List, Sock, Name, true)
-    end.
+    end,
+    gen_server:cast(server, {'list_room_users', Room}).
 
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
@@ -170,17 +172,20 @@ add_socket(NewSock, Room, List, Secrecy1) ->
                 false ->
                     case Secrecy2 of
                         false ->
+                            gen_tcp:send(NewSock, "{success " ++ Room ++ "}"),
                             insert(Room, List, NewSock, Name, Secrecy2);
                         true ->
-                            gen_tcp:send(NewSock, "error"),
+                            gen_tcp:send(NewSock, "{error " ++ Room ++ "}"),
                             List
                     end;
                 _ ->
                     List
             end;
         false ->
+            gen_tcp:send(NewSock, "{success " ++ Room ++ "}"),
             room:insert(Room, List, NewSock, Name, Secrecy1)
-    end.
+    end,
+    gen_server:cast(server, {'list_room_users', Room}).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%% Eunit test cases  %%%%%%%%%%%%%%%%%%%%
@@ -303,28 +308,13 @@ findName_test() ->
     ?assertEqual(findName(s4, L5), "Jenny"),
     ?assertEqual(findName(s5, L5), "Ronny").
 
-initSock_test() ->
-    I1 = initSock("global", [], s1, "Tom"),
-    I2 = initSock("global", I1, s2, "Tom"),
-    I3 = initSock("global", I2, s3, "Tom"),
-    I4 = initSock("global", I3, s4, "Tom"),
-    I5 = initSock("global", I4, s5, "Tom"),
-    ?assertEqual(findName(s1, I5), "Tom"), 
-    ?assertEqual(findName(s2, I5), "Tom_"), 
-    ?assertEqual(findName(s3, I5), "Tom__"), 
-    ?assertEqual(findName(s4, I5), "Tom___"), 
-    ?assertEqual(findName(s5, I5), "Tom____").
-    
-add_socket_test() ->
+users_in_room_test() ->
     L1 = insert("global", [], s1, "Tommy", false),
     L2 = insert("global", L1, s2, "Timmy", false),
     L3 = insert("global", L2, s3, "Kenny", false),
     L4 = insert("global", L3, s4, "Jenny", false),
     L5 = insert("global", L4, s5, "Ronny", false),
-    L6 = add_socket(s1, "Room1", L5, false),
-    L7 = add_socket(s2, "Room1", L6, false),
-    L8 = add_socket(s3, "Room1", L7, false),
-    L9 = add_socket(s4, "Room1", L8, false),
-    ?assertEqual(receivers("Room1", L9, 2), ["Jenny","Kenny","Timmy","Tommy"]).
-    
+    CorrectStr = "{global Ronny,Jenny,Kenny,Timmy,Tommy}\n",
+    ?assertEqual(users_in_room("global", L5), CorrectStr).
+
 %%-endif.
