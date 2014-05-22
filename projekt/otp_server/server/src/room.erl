@@ -181,17 +181,17 @@ add_socket(NewSock, Room, List, Secrecy1) ->
                         false ->
                             case Secrecy2 of
                                 false ->
-                                    gen_tcp:send(NewSock, "{success " ++ Room ++ "}"),
+                                    gen_tcp:send(NewSock, "{success " ++ Room ++ "}\n"),
                                     NewList = insert(Room, List, NewSock, Name, Secrecy2);
                                 true ->
-                                    gen_tcp:send(NewSock, "{error " ++ Room ++ "}"),
+                                    gen_tcp:send(NewSock, "{error " ++ Room ++ "}\n"),
                                     NewList = List
                             end;
                         _ ->
                             NewList = List
                     end;
                 false ->
-                    gen_tcp:send(NewSock, "{success " ++ Room ++ "}"),
+                    gen_tcp:send(NewSock, "{success " ++ Room ++ "}\n"),
                     NewList = insert(Room, List, NewSock, Name, Secrecy1)
             end
     end,
