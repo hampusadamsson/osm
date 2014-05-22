@@ -4,7 +4,7 @@
 -include_lib("eunit/include/eunit.hrl").
 
 -export([handle/2, getString/3, getParts/1, sendBack/4, sendBack/5,
-        sendBack/6]).
+        sendBack/6, removeNewLine/1]).
 
 removeNewLine([]) ->
     [];
@@ -99,8 +99,8 @@ getString(FromParser, Sock, List) ->
 %%%%%%%%%%%%%%%%%%%% Eunit test cases  %%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-rooms_test_() ->
-ok.
+%rooms_test_() ->
+%ok.
 
 
     
