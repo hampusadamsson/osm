@@ -95,12 +95,3 @@ getString(FromParser, Sock, List) ->
     NameMsg = string:join([Room, string:concat(Name, ">"), Msg], " "),
     NameMsg.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%% Eunit test cases  %%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%rooms_test_() ->
-%ok.
-
-
-    
