@@ -184,6 +184,7 @@ class GUI(object):
                     msg = msg_temp.encode('UTF-8')
                     self.sockSend.send(msg)
                     self.message.delete(0,END)
+
             else:
                 self.writeMessage("Du är redan med i det angivna rummet!")
                 self.message.delete(0,END)
@@ -402,7 +403,7 @@ if __name__ == "__main__":
     root.geometry("700x500")
     root.title("Nuntii IRC")
     m=GUI(root)
-    root.withdraw()
+    root.withraw()
     m.welcome()    
     m.enterUserName()
     m.userName = m.getUserName()
