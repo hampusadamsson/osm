@@ -43,12 +43,13 @@ receivers(Room, List, N) ->
 initSock(Room, List, Socket, Name)->
     case findSock(Name, List) of
         false ->
-            insert(Room, List, Socket, Name, false);
+            NewList = insert(Room, List, Socket, Name, false);
         _ ->
             NewName = string:concat(Name, "_"),
-            initSock(Room, List, Socket, NewName)
+            NewList = initSock(Room, List, Socket, NewName)
     end,
-    gen_server:cast(server, {'list_room_users', Room}).
+    gen_server:cast(server, {'list_room_users', Room}),
+    NewList.
 
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
@@ -95,9 +96,13 @@ remove(Room, List, Socket)->
 % Find name connected to Sock
 % ------------------------------------------------------------------
 findName(Sock, List) ->
-    {_, SockList, _} = lists:keyfind("global", 1, List),
-    {_, Name} = lists:keyfind(Sock, 1, SockList),
-    Name.
+    case lists:keyfind("global", 1, List) of
+        {_, SockList, _} ->
+            {_, Name} = lists:keyfind(Sock, 1, SockList),
+            Name;
+        false ->
+            false
+    end.
 
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
@@ -154,38 +159,44 @@ users_in_room(Room ,List) ->
 invite(Name, Room, List) ->
     case room:findSock(Name, List) of
         false ->
-            List;
+            NewList = List;
         Sock ->
-            room:insert(Room, List, Sock, Name, true)
+            NewList = room:insert(Room, List, Sock, Name, true)
     end,
-    gen_server:cast(server, {'list_room_users', Room}).
+    gen_server:cast(server, {'list_room_users', Room}),
+    NewList.
 
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % Check things before we add a new socket
 %--------------------------------------------------------------------------
 add_socket(NewSock, Room, List, Secrecy1) ->
-    Name = findName(NewSock, List),
-    case lists:keyfind(Room, 1, List) of
-        {_, SockList, Secrecy2} ->
-            case lists:keyfind(Name, 2, SockList) of
-                false ->
-                    case Secrecy2 of
-                        false ->
-                            gen_tcp:send(NewSock, "{success " ++ Room ++ "}"),
-                            insert(Room, List, NewSock, Name, Secrecy2);
-                        true ->
-                            gen_tcp:send(NewSock, "{error " ++ Room ++ "}"),
-                            List
-                    end;
-                _ ->
-                    List
-            end;
+    case findName(NewSock, List) of
         false ->
-            gen_tcp:send(NewSock, "{success " ++ Room ++ "}"),
-            room:insert(Room, List, NewSock, Name, Secrecy1)
+            NewList = List;
+        Name ->
+            case lists:keyfind(Room, 1, List) of
+                {_, SockList, Secrecy2} ->
+                    case lists:keyfind(Name, 2, SockList) of
+                        false ->
+                            case Secrecy2 of
+                                false ->
+                                    gen_tcp:send(NewSock, "{success " ++ Room ++ "}"),
+                                    NewList = insert(Room, List, NewSock, Name, Secrecy2);
+                                true ->
+                                    gen_tcp:send(NewSock, "{error " ++ Room ++ "}"),
+                                    NewList = List
+                            end;
+                        _ ->
+                            NewList = List
+                    end;
+                false ->
+                    gen_tcp:send(NewSock, "{success " ++ Room ++ "}"),
+                    NewList = insert(Room, List, NewSock, Name, Secrecy1)
+            end
     end,
-    gen_server:cast(server, {'list_room_users', Room}).
+    gen_server:cast(server, {'list_room_users', Room}),
+    NewList.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%% Eunit test cases  %%%%%%%%%%%%%%%%%%%%
