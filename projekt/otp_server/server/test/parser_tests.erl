@@ -3,8 +3,6 @@
 %% To use EUnit:
 -include_lib("eunit/include/eunit.hrl").
 
--export([]).
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%% Eunit test cases  %%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -22,7 +20,6 @@ removeNewLine_test() ->
     ?assertEqual("Hej\nVad görs?",parser:removeNewLine("Hej\nVad görs?")),
     ?assertEqual("En lite längre sträng En lite längre sträng En lite längre sträng En lite längre sträng En lite längre sträng En lite längre sträng En lite längre sträng En lite längre sträng",
 		 parser:removeNewLine("En lite längre sträng En lite längre sträng En lite längre sträng En lite längre sträng En lite längre sträng En lite längre sträng En lite längre sträng En lite längre sträng\n")).
-
 
 
 %%%%%%%%%%%%%%%%%%% Tests for getParts  %%%%%%%%%%%%%%%%%%%
@@ -50,8 +47,7 @@ getString_test() ->
     S3 = parser:getString("global du är en tratt",s3,[{"global",[{s3,"john3"},{s2,"john2"},{s1,"john1"}],false}]),
     S4 = parser:getString("global Glass är gott",s1,[{"global",[{s3,"john3"},{s2,"john2"},{s1,"john1"}],true}]),
     S5 = parser:getString("global Glass är gott",s2,[{"global",[{s3,"john3"},{s2,"john2"},{s1,"john1"}],true}]),
-    S6 = parser:getString("global Glass är gott",s3,[{"global",[{s3,"john3"},{s2,"john2"},{s1,"john1"}],true}]),
-    
+    S6 = parser:getString("global Glass är gott",s3,[{"global",[{s3,"john3"},{s2,"john2"},{s1,"john1"}],true}]), 
     S7 = parser:getString("global Stockholm är en förort till Uppsala",s1,[{"global",[{s6,"maria"},{s5,"pelle"},{s4,"hampus"},{s3,"john"},{s2,"erik"},{s1,"pa"}],false},{"coolroom",[{s4,"hampus"},{s6,"maria"},{s5,"pelle"}],false}]),
     S8 = parser:getString("global Stockholm är en förort till Uppsala",s2,[{"global",[{s6,"maria"},{s5,"pelle"},{s4,"hampus"},{s3,"john"},{s2,"erik"},{s1,"pa"}],false},{"coolroom",[{s4,"hampus"},{s6,"maria"},{s5,"pelle"}],false}]),
     S9 = parser:getString("global Stockholm är en förort till Uppsala",s3,[{"global",[{s6,"maria"},{s5,"pelle"},{s4,"hampus"},{s3,"john"},{s2,"erik"},{s1,"pa"}],false},{"coolroom",[{s4,"hampus"},{s6,"maria"},{s5,"pelle"}],false}]),
@@ -68,7 +64,6 @@ getString_test() ->
     ?assertEqual(S4,"global john1>  Glass är gott"),
     ?assertEqual(S5,"global john2>  Glass är gott"),
     ?assertEqual(S6,"global john3>  Glass är gott"),
-
     ?assertEqual(S7,"global pa>  Stockholm är en förort till Uppsala"),
     ?assertEqual(S8,"global erik>  Stockholm är en förort till Uppsala"),
     ?assertEqual(S9,"global john>  Stockholm är en förort till Uppsala"),
