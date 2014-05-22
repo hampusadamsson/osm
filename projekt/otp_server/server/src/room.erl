@@ -1,10 +1,13 @@
 -module(room).
 
+-export([remove/3, removeFromAll/2, insert/5, receivers/3, findSock/2,
+        findName/2, initSock/4, users_in_room/2, invite/3,
+        add_socket/4]).
+
+%%-ifdef(TEST).
 %% To use EUnit we must include this:
 -include_lib("eunit/include/eunit.hrl").
-
--export([remove/3, removeFromAll/2, insert/5, receivers/3, findSock/2,
-        findName/2, initSock/4, isSecret/2, users_in_room/2]).
+%%-endif.
 
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
@@ -14,9 +17,16 @@
 %
 %--------------------------------------------------------------------------
 receivers(Room, List, N) ->
-    case lists:keyfind(Room, N, List) of
+    case lists:keyfind(Room, 1, List) of
         {Room, Tuple_List, _}->
-            New_List = lists:map(fun({X, _}) -> X end, Tuple_List);
+            case N of
+                1 ->
+                    New_List = lists:map(fun({X, _}) -> X end, Tuple_List);
+                2 ->
+                    New_List = lists:map(fun({_, X}) -> X end, Tuple_List);
+                _ ->
+                    New_List = []
+            end;
         false ->
             New_List = []
     end,
@@ -36,7 +46,7 @@ initSock(Room, List, Socket, Name)->
             insert(Room, List, Socket, Name, false);
         _ ->
             NewName = string:concat(Name, "_"),
-            insert(Room, List, Socket, NewName, false)
+            initSock(Room, List, Socket, NewName)
     end.
 
 %--------------------------------------------------------------------------
@@ -121,10 +131,6 @@ findSock(Name, List) ->
             Sock
     end.
 
-isSecret(Room, List) ->
-    {_, _, Secrecy} = lists:keyfind(Room, 1, List),
-    Secrecy.
-
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % Lists users in a room
@@ -140,33 +146,185 @@ users_in_room(Room ,List) ->
     {_, SockList, _} = lists:keyfind(Room, 1, List),
     "{"++ Room ++ " " ++ users_helper(SockList,"") ++ "}\n".
     
+%--------------------------------------------------------------------------
+%--------------------------------------------------------------------------
+% Find the invited socket, if it exists
+%--------------------------------------------------------------------------
+invite(Name, Room, List) ->
+    case room:findSock(Name, List) of
+        false ->
+            List;
+        Sock ->
+            room:insert(Room, List, Sock, Name, true)
+    end.
+
+%--------------------------------------------------------------------------
+%--------------------------------------------------------------------------
+% Check things before we add a new socket
+%--------------------------------------------------------------------------
+add_socket(NewSock, Room, List, Secrecy1) ->
+    Name = findName(NewSock, List),
+    case lists:keyfind(Room, 1, List) of
+        {_, SockList, Secrecy2} ->
+            case lists:keyfind(Name, 2, SockList) of
+                false ->
+                    case Secrecy2 of
+                        false ->
+                            insert(Room, List, NewSock, Name, Secrecy2);
+                        true ->
+                            gen_tcp:send(NewSock, "error"),
+                            List
+                    end;
+                _ ->
+                    List
+            end;
+        false ->
+            room:insert(Room, List, NewSock, Name, Secrecy1)
+    end.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%% Eunit test cases  %%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%-ifdef(TEST).
+receivers_test() ->
+    List1 = [
+        {"global",[
+            {s1, "Maria"},
+            {s2, "Erik"},
+            {s3, "Hampus"},
+            {s4, "John"},
+            {s5, "Per Albin"}
+        ], false}
+    ],
+    List2 = [
+        {"global",[
+            {s1, "Maria"},
+            {s2, "Erik"},
+            {s3, "Hampus"},
+            {s4, "John"},
+            {s5, "Per Albin"}
+        ], false},
+        {"Room1",[{s6, "Kenny"}], true}
+    ],
+    List3 = [
+        {"Room2",[{s7, "Timmy"}], false},
+        {"global",[
+            {s1, "Maria"},
+            {s2, "Erik"},
+            {s3, "Hampus"},
+            {s4, "John"},
+            {s5, "Per Albin"}
+        ], false},
+        {"Room1",[{s6, "Kenny"}], true}
+    ],
+    Rec1 = [s1, s2, s3, s4, s5],
+    Rec2 = ["Maria", "Erik", "Hampus", "John", "Per Albin"],
+    ?assertEqual(receivers("", [], 1), []),
+    ?assertEqual(receivers("", List1, 1), []),
+    ?assertEqual(receivers("Room1", List2, 1), [s6]),
+    ?assertEqual(receivers("Room1", List3, 1), [s6]),
+    ?assertEqual(receivers("Room2", List3, 1), [s7]),
+    ?assertEqual(receivers("global", List1, 1), Rec1),
+    ?assertEqual(receivers("global", List2, 1), Rec1),
+    ?assertEqual(receivers("global", List3, 1), Rec1),
+    ?assertEqual(receivers("Room1", List2, 2), ["Kenny"]),
+    ?assertEqual(receivers("Room1", List3, 2), ["Kenny"]),
+    ?assertEqual(receivers("Room2", List3, 2), ["Timmy"]),
+    ?assertEqual(receivers("global", List1, 2), Rec2),
+    ?assertEqual(receivers("global", List2, 2), Rec2),
+    ?assertEqual(receivers("global", List3, 2), Rec2).
 
-rooms_test_() ->
-    A = [],
-    B = insert(rum1, A, s1, "Tommy", false),
-    _=?_assertEqual(B,[{rum1,[s1]}]),
-        
-    C = insert(rum2, B, s2, "Timmy", false),
-    __=?_assertEqual(C,[{rum2,[s2]},{rum1,[s1]}]),
+insert_test() ->
+    First = [],
+    A1 = insert("global", First, s1, "Tommy", false),
+    A2 = [
+        {"global",[{s1, "Tommy"}], false}
+    ],
+    B1 = insert("Room1", A1, s2, "Timmy", true),
+    B2 = [
+        {"Room1",[{s2, "Timmy"}], true},
+        {"global",[{s1, "Tommy"}], false}
+    ],
+    C1 = insert("global", B1, s3, "Kenny", false),
+    C2 = [
+        {"global",[
+            {s3, "Kenny"},
+            {s1, "Tommy"}
+        ], false},
+        {"Room1",[{s2, "Timmy"}], true}
+    ],
+    ?assertEqual(A1, A2),
+    ?assertEqual(B1, B2),
+    ?assertEqual(C1, C2).
 
-    D = insert(rum1, C, s3, "Tommy", false),
-    ___=?_assertEqual(D,[{rum1,[s3,s1]},{rum2,[s2]}]),
+remove_test() ->
+    L1 = insert("global", [], s1, "Tommy", false),
+    L2 = insert("global", L1, s2, "Timmy", false),
+    L3 = insert("global", L2, s3, "Kenny", false),
+    L4 = insert("global", L3, s4, "Jenny", false),
+    L5 = insert("global", L4, s5, "Ronny", false),
+    L6 = remove("global", L5, s2),
+    L7 = remove("global", L6, s4),
+    L8 = remove("global", L7, s5),
+    L9 = remove("global", L8, s1),
+    ?assertEqual(L9, [{"global", [{s3, "Kenny"}], false}]).
 
-    E1 = remove(rum123, D, s1),
-    ____=?_assertEqual(E1,[{rum1,[s3,s1]},{rum2,[s2]}]),
+removeFromAll_test() ->
+    L1 = insert("global", [], s1, "Tommy", false),
+    L2 = insert("Room1", L1, s1, "Tommy", false),
+    L3 = insert("Room2", L2, s1, "Tommy", false),
+    L4 = insert("Room3", L3, s1, "Tommy", false),
+    L5 = insert("Room4", L4, s1, "Tommy", false),
+    ?assertEqual(removeFromAll(L1, s1), []),
+    ?assertEqual(removeFromAll(L5, s1), []).
+
+findSock_test() ->
+    L1 = insert("global", [], s1, "Tommy", false),
+    L2 = insert("global", L1, s2, "Timmy", false),
+    L3 = insert("global", L2, s3, "Kenny", false),
+    L4 = insert("global", L3, s4, "Jenny", false),
+    L5 = insert("global", L4, s5, "Ronny", false),
+    ?assertEqual(findSock("Benny", L5), false),
+    ?assertEqual(findSock("Tommy", L5), s1),
+    ?assertEqual(findSock("Timmy", L5), s2),
+    ?assertEqual(findSock("Kenny", L5), s3),
+    ?assertEqual(findSock("Jenny", L5), s4),
+    ?assertEqual(findSock("Ronny", L5), s5).
+
+findName_test() ->
+    L1 = insert("global", [], s1, "Tommy", false),
+    L2 = insert("global", L1, s2, "Timmy", false),
+    L3 = insert("global", L2, s3, "Kenny", false),
+    L4 = insert("global", L3, s4, "Jenny", false),
+    L5 = insert("global", L4, s5, "Ronny", false),
+    ?assertEqual(findName(s1, L5), "Tommy"),
+    ?assertEqual(findName(s2, L5), "Timmy"),
+    ?assertEqual(findName(s3, L5), "Kenny"),
+    ?assertEqual(findName(s4, L5), "Jenny"),
+    ?assertEqual(findName(s5, L5), "Ronny").
+
+initSock_test() ->
+    I1 = initSock("global", [], s1, "Tom"),
+    I2 = initSock("global", I1, s2, "Tom"),
+    I3 = initSock("global", I2, s3, "Tom"),
+    I4 = initSock("global", I3, s4, "Tom"),
+    I5 = initSock("global", I4, s5, "Tom"),
+    ?assertEqual(findName(s1, I5), "Tom"), 
+    ?assertEqual(findName(s2, I5), "Tom_"), 
+    ?assertEqual(findName(s3, I5), "Tom__"), 
+    ?assertEqual(findName(s4, I5), "Tom___"), 
+    ?assertEqual(findName(s5, I5), "Tom____").
     
-    ____1=?_assertEqual(receivers(rum1,E1,1),[s3,s1]), 
-    ____2=?_assertEqual(receivers(rumqwe1,E1,1),[]), 
-
-    E = remove(rum1, D, s1),
-    _____=?_assertEqual(E,[{rum1,[s3]},{rum2,[s2]}]),
-
-    F = remove(rum1, E, s3),
-    ______=?_assertEqual(F,[{rum2,[s2]}]),
-
-    G = remove(rum2, F, s2),
-    _______=?_assertEqual(G,[]).
+add_socket_test() ->
+    L1 = insert("global", [], s1, "Tommy", false),
+    L2 = insert("global", L1, s2, "Timmy", false),
+    L3 = insert("global", L2, s3, "Kenny", false),
+    L4 = insert("global", L3, s4, "Jenny", false),
+    L5 = insert("global", L4, s5, "Ronny", false),
+    L6 = add_socket(s1, "Room1", L5, false),
+    L7 = add_socket(s2, "Room1", L6, false),
+    L8 = add_socket(s3, "Room1", L7, false),
+    L9 = add_socket(s4, "Room1", L8, false),
+    ?assertEqual(receivers("Room1", L9, 2), ["Jenny","Kenny","Timmy","Tommy"]).
     
+%%-endif.
