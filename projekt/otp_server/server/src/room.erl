@@ -90,6 +90,7 @@ remove(Room, List, Socket)->
         false ->
             New_List = List
     end,
+    gen_server:cast(server, {'list_room_users', Room}),
     New_List.
 
 %--------------------------------------------------------------------------
@@ -166,6 +167,7 @@ invite(Name, Room, List) ->
         false ->
             NewList = List;
         Sock ->
+            gen_tcp:send(Sock, "{invited " ++ Room ++ "}\n"),
             NewList = room:insert(Room, List, Sock, Name, true)
     end,
     gen_server:cast(server, {'list_room_users', Room}),
