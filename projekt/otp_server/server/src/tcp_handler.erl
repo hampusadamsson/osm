@@ -3,9 +3,13 @@
 -export([start/1, server/1]).
 
 start(LPort) ->
-    case gen_tcp:listen(LPort,[{active, false},{packet, line}]) of % 2=line
+        io:format("Socket listening: ~w ~n",[self()]),
+    case gen_tcp:listen(LPort,[{active, false},{packet, line},{reuseaddr, true}]) of % 2=line
         {ok, ListenSock} ->
-            server:start_servers(ListenSock),
+
+            Tmp = spawn(server,server,[ListenSock]), %<---- supervisor needed
+            io:format("New Connectiv: ~w ~n",[Tmp]),
+
             {ok, Port} = inet:port(ListenSock),
             Port;
         {error,Reason} ->
@@ -18,8 +22,11 @@ server(LS) ->
             {ok, Data} = gen_tcp:recv(S, 0),
             Length = string:len(Data),
             Name = string:substr(Data, 1, Length-1),
-            gen_server:cast(server, {'init_socket', "global", S, Name}),        %%Add to the list 
-            server:start_servers(LS),
+            gen_server:cast(server, {'init_socket', "global", S, Name}),
+
+            Tmp = spawn(server,server,[LS]), %<---- supervisor needed
+            io:format("New Connectiv: ~w ~n",[Tmp]),
+
             loop(S),
             server(LS);
         Other ->

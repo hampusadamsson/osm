@@ -18,12 +18,12 @@
 %% API Function Exports
 %% ------------------------------------------------------------------
 
--export([start_link/0, connect/2, send/2, start_servers/0, send_to_all/2, list_users/0]).
+-export([start_link/0, send/2, start_servers/0, send_to_all/2, list_users/0]).
 
 %% ------------------------------------------------------------------
 %% TCP/IP Sockets Exports
 %% ------------------------------------------------------------------
--export([start_servers/1, server/1]). 
+-export([server/1]). 
 
 %% ------------------------------------------------------------------
 %% gen_server Function Exports
@@ -44,17 +44,9 @@ start_link() ->
 %% ------------------------------------------------------------------
 
 init(Args) ->
+    process_flag(trap_exit, true),
+    tcp_handler:start(1337),
     {ok, Args}.
-
-%% ------------------------------------------------------------------
-%% Connects to a remote Host (Not. a server function)
-%% IP = remote ip
-%% Port = remote port
-%% ------------------------------------------------------------------
-handle_cast({'connect', IP, Port}, _Sock) ->
-    {ok, Sock} = gen_tcp:connect(IP, Port, [binary, {active,true}, {packet, line}]), % 2-line kan behöva bytas 
-    spawn(?MODULE,loop,[Sock]),
-    {noreply, [Sock|_Sock]};
 
 %% ------------------------------------------------------------------
 %% Establish a Socket to an incoming connection
@@ -96,7 +88,7 @@ handle_cast({'remove_from_room', Room, Rem_Socket}, Sock) ->
 %% ------------------------------------------------------------------
 handle_cast({'send', Room, Msg, Sock}, List) ->
     NameMsg = parser:getString(Msg, Sock, List),
-    send_to_all(NameMsg, room:receivers(Room, List, 1)),
+    spawn(?MODULE, send_to_all,[NameMsg, room:receivers(Room, List, 1)]),
     {noreply, List};
 
 %% ------------------------------------------------------------------
@@ -118,7 +110,7 @@ handle_call({'find_name', Socket}, AllRooms) ->
 %% ------------------------------------------------------------------
 handle_call({'list_users'}, _From, Sock) ->
     io:format("~s \n",[inet:i()]),
-    io:format("Connections: ~w\n",[length(Sock)]),
+    io:format("Rooms: ~w\n",[length([Sock])]),
     {reply, Sock, Sock};
 
 %% ------------------------------------------------------------------
@@ -135,7 +127,10 @@ handle_call({'start_servers'}, _From, Socket) ->
 handle_info(_Info, State) ->
     {noreply, State}.
 
-terminate(_Reason, _State) ->
+terminate(_Reason, State) ->
+    Sockets2kill = room:receivers("global", State, 1),
+    io:format("Trap exits...\n"),
+    lists:foreach(fun(X)->gen_tcp:close(X) end, Sockets2kill),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->
@@ -145,9 +140,6 @@ code_change(_OldVsn, State, _Extra) ->
 %% Internal Function Definitions
 %% ------------------------------------------------------------------
 
-
-connect(IP,Port)->
-    gen_server:cast(server, {'connect', IP, Port}).
 
 send(Room, Msg)->
     gen_server:cast(server, {'send', Room, Msg}).
@@ -179,8 +171,8 @@ send_to_all(Msg,[Sock|Rest])->
     send_to_all(Msg,Rest).
 
 
-start_servers(LS) ->
-    spawn(?MODULE,server,[LS]).
+% start_servers(LS) ->
+%     spawn(?MODULE,server,[LS]).
 
 server(LS) ->
     tcp_handler:server(LS).
