@@ -2,7 +2,7 @@
 
 -export([remove/3, removeFromAll/2, insert/5, receivers/3, findSock/2,
         findName/2, initSock/4, users_in_room/2, invite/3,
-        add_socket/4]).
+        add_socket/4, find/4]).
 
 %%-ifdef(TEST).
 %% To use EUnit we must include this:
@@ -92,18 +92,6 @@ remove(Room, List, Socket)->
     end,
     New_List.
 
-% ------------------------------------------------------------------
-% Find name connected to Sock
-% ------------------------------------------------------------------
-findName(Sock, List) ->
-    case lists:keyfind("global", 1, List) of
-        {_, SockList, _} ->
-            {_, Name} = lists:keyfind(Sock, 1, SockList),
-            Name;
-        false ->
-            false
-    end.
-
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % remove the List of rooms
@@ -123,18 +111,31 @@ removeFromAll([H|T], Sock) ->
     end.
 
 %--------------------------------------------------------------------------
+% Find the socket assosciated with the name
+% Arg1 - username assosciated with the socket
+% Arg2 - The entire list where the socket might be found
 %--------------------------------------------------------------------------
-% find socket with name Name in List
-%--------------------------------------------------------------------------
-findSock(_, []) ->
-    false;
 findSock(Name, List) ->
-    {_, SockList, _} = hd(List),
-    case lists:keyfind(Name, 2, SockList) of
+    find(Name,List,2,1).
+
+%--------------------------------------------------------------------------
+% Find the name assosciated with the socket
+% Arg1 - socket assosciated with the name
+% Arg2 - The entire list where the socket might be found
+%--------------------------------------------------------------------------
+findName(Sock, List) ->
+    find(Sock,List,1,2).
+
+%--------------------------------------------------------------------------
+% Find function used by findName/findSock
+%--------------------------------------------------------------------------
+find(Sock, List, Nr, Nr2) ->
+    case lists:keyfind("global", 1, List) of
+        {_, SockList, _} ->
+            Tupel = lists:keyfind(Sock, Nr, SockList),
+            element(Nr2,Tupel);
         false ->
-            findSock(Name, tl(List));
-        {Sock, _} ->
-            Sock
+            false
     end.
 
 %--------------------------------------------------------------------------
