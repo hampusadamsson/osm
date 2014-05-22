@@ -80,8 +80,7 @@ class GUI(object):
         self.roomSuccess = {}
 
         self.userList["global"] = ['Erik']
-        
-        
+                
 #################################
 #Användarnamnet
 #################################
@@ -192,6 +191,7 @@ class GUI(object):
                     else:
                         self.writeMessage("Rummet är slutet, du måste bli invitad!")
                     self.message.delete(0,END)
+                    self.roomSuccess[argumentString[1]],none)
             else:
                 self.writeMessage("Du är redan med i det angivna rummet!")
                 self.message.delete(0,END)
@@ -201,7 +201,7 @@ class GUI(object):
                 if(not self.noDuplicate(argumentString2[1])):
                     msg_temp ="global" + " " + mtext1+'\n'
                     msg = msg_temp.encode('UTF-8')
-                    print(msg)
+                 
                     self.serverSocket.send(msg)
                     self.message.delete(0,END)
                 else:
@@ -272,9 +272,7 @@ class GUI(object):
                 self.writeMessage("Tappade anslutningen, försöker återansluta automatiskt")
                 self.reconnect()
             else:
-                 self.writeMessage("Tappade anslutningen till servern, anslut manuellt med /connect IP")
-                
-            
+                self.writeMessage("Tappade anslutningen till servern, anslut manuellt med /connect IP")           
         elif(respons[0][0] == "{"):
                 temp = respons[1:len(respons)-2]
                 commandString = self.messageSplit(temp)
@@ -300,7 +298,6 @@ class GUI(object):
         for userName in self.userList[roomName]:     
             self.userWindow.insert(END,userName+'\n')
         self.userWindow.config(state = DISABLED)
-
 
 ##########################################################
 #Startar upp popupfönster för att ange användarnamn
@@ -370,12 +367,6 @@ class GUI(object):
             return 0
         else:
             return 1
-        
-##########################################################
-#Försöker ansluta till den angivna servern
-##########################################################
-
-    
 
 ##########################################################
 #Upprepar periodiska anslutningsförsök 5 gånger och utför
@@ -424,7 +415,6 @@ class GUI(object):
 
     def initiateConfig(self):
         self.config = [self.parseConfig(line) for line in open('configFile')]
-        print(self.config)
 
     def parseConfig(self,configString):
         index = configString.find("=")
