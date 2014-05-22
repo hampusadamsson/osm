@@ -132,8 +132,12 @@ findName(Sock, List) ->
 find(Sock, List, Nr, Nr2) ->
     case lists:keyfind("global", 1, List) of
         {_, SockList, _} ->
-            Tupel = lists:keyfind(Sock, Nr, SockList),
-            element(Nr2,Tupel);
+            case lists:keyfind(Sock, Nr, SockList) of
+                false ->
+                    false;
+                Tupel ->
+                    element(Nr2,Tupel)
+            end;
         false ->
             false
     end.
