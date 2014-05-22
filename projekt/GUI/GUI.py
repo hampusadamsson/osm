@@ -77,6 +77,7 @@ class GUI(object):
 
         self.windowList = {}
         self.userList = {}
+        self.roomSuccess = {}
 
         self.userList["global"] = ['Erik']
         
@@ -180,10 +181,16 @@ class GUI(object):
                     self.serverSocket.send(msg)
                     self.message.delete(0,END)
                 else:
-                    self.addTab(argumentString[1])
+                    
                     msg_temp = argumentString[1] + " " + mtext1+'\n'
                     msg = msg_temp.encode('UTF-8')
                     self.serverSocket.send(msg)
+                    while (self.roomSuccess[argumentString[1]] != "success" and self.roomSuccess[argumentString[1]] != "error"):
+                        continue
+                    if (self.roomSuccess[argumentString[1]] == "success"):
+                        self.addTab(argumentString[1])
+                    else:
+                        self.writeMessage("Rummet är slutet, du måste bli invitad!")
                     self.message.delete(0,END)
             else:
                 self.writeMessage("Du är redan med i det angivna rummet!")
@@ -270,8 +277,11 @@ class GUI(object):
             
         elif(respons[0][0] == "{"):
                 temp = respons[1:len(respons)-2]
-                roomUsers = self.messageSplit(temp)
-                self.userList[roomUsers[0]] = roomUsers[1].split(",")
+                commandString = self.messageSplit(temp)
+                if (commandString[0] == "success" or commmandString[0] == "error"):
+                    self.roomSuccess[commandString[1]] == commandString[0]
+                else:
+                    self.userList[commandString[0]] = commandString[1].split(",")
         else:
             argumentString = self.messageSplit(respons)          
             self.windowList[argumentString[0]].config(state=NORMAL)
