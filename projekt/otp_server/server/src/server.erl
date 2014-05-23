@@ -18,16 +18,7 @@
 %% API Function Exports
 %% ------------------------------------------------------------------
 
-<<<<<<< HEAD
 -export([start_link/0, send/2, start_servers/0, send_to_all/2, list_users/0, crash_me/1]).
-=======
--export([start_link/0, connect/2, send/2, start_servers/0, send_to_all/2, list_users/0]).
-
-%% ------------------------------------------------------------------
-%% TCP/IP Sockets Exports
-%% ------------------------------------------------------------------
--export([start_servers/1, server/1]). 
->>>>>>> Erik
 
 %% ------------------------------------------------------------------
 %% gen_server Function Exports
@@ -91,27 +82,16 @@ handle_cast({'remove_from_room', Room, Rem_Socket}, Sock) ->
 %% ------------------------------------------------------------------
 handle_cast({'send', Room, Msg, Sock}, List) ->
     NameMsg = parser:getString(Msg, Sock, List),
-<<<<<<< HEAD
     spawn(?MODULE, send_to_all,[NameMsg, room:receivers(Room, List, 1)]),
-=======
-    send_to_all(NameMsg, room:receivers(Room, List, 1)),
->>>>>>> Erik
     {noreply, List};
 
 %% ------------------------------------------------------------------
 %% Returns users in a room.
 %% ------------------------------------------------------------------
-<<<<<<< HEAD
+
 handle_cast({'list_room_users', Room},List) ->
     send_to_all(room:users_in_room(Room,List), room:receivers(Room,List,1)),
     {noreply, List}.
-
-=======
-handle_cast({'list_room_users', Room},Sock) ->
-    send_to_all(room:users_in_room(Room,Sock), room:receivers(Room,Sock)),
-    {noreply, Sock}.
->>>>>>> Erik
-
 
 %% ------------------------------------------------------------------
 %% Find name connected to Sock
@@ -187,16 +167,6 @@ send_to_all(Msg,[Sock|Rest])->
     gen_tcp:send(Sock, Msg),
     send_to_all(Msg,Rest).
 
-<<<<<<< HEAD
-=======
-
-start_servers(LS) ->
-    spawn(?MODULE,server,[LS]).
-
-server(LS) ->
-    tcp_handler:server(LS).
-
->>>>>>> Erik
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%% Eunit test cases  %%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

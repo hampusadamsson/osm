@@ -7,14 +7,6 @@
 %%-ifdef(TEST).
 %% To use EUnit we must include this:
 -include_lib("eunit/include/eunit.hrl").
-<<<<<<< HEAD
-%%-endif.
-=======
-
--export([remove/3, removeFromAll/2, insert/5, receivers/3, findSock/2,
-        findName/2, initSock/4, isSecret/2, users_in_room/2, invite/3,
-        add_socket/4]).
->>>>>>> Erik
 
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
@@ -24,7 +16,6 @@
 %
 %--------------------------------------------------------------------------
 receivers(Room, List, N) ->
-<<<<<<< HEAD
     case lists:keyfind(Room, 1, List) of
         {Room, Tuple_List, _}->
             case N of
@@ -35,11 +26,6 @@ receivers(Room, List, N) ->
                 _ ->
                     New_List = []
             end;
-=======
-    case lists:keyfind(Room, N, List) of
-        {Room, Tuple_List, _}->
-            New_List = lists:map(fun({X, _}) -> X end, Tuple_List);
->>>>>>> Erik
         false ->
             New_List = []
     end,
@@ -56,7 +42,6 @@ receivers(Room, List, N) ->
 initSock(Room, List, Socket, Name)->
     case findSock(Name, List) of
         false ->
-<<<<<<< HEAD
             NewList = insert(Room, List, Socket, Name, false);
         _ ->
             NewName = string:concat(Name, "_"),
@@ -64,13 +49,7 @@ initSock(Room, List, Socket, Name)->
     end,
     gen_server:cast(server, {'list_room_users', Room}),
     NewList.
-=======
-            insert(Room, List, Socket, Name, false);
-        _ ->
-            NewName = string:concat(Name, "_"),
-            insert(Room, List, Socket, NewName, false)
-    end.
->>>>>>> Erik
+
 
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
@@ -114,17 +93,7 @@ remove(Room, List, Socket)->
     gen_server:cast(server, {'list_room_users', Room}),
     New_List.
 
-<<<<<<< HEAD
-=======
-% ------------------------------------------------------------------
-% Find name connected to Sock
-% ------------------------------------------------------------------
-findName(Sock, List) ->
-    {_, SockList, _} = lists:keyfind("global", 1, List),
-    {_, Name} = lists:keyfind(Sock, 1, SockList),
-    Name.
 
->>>>>>> Erik
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % remove the List of rooms
@@ -149,7 +118,6 @@ removeFromAll([H|T], Sock) ->
 % Arg2 - The entire list where the socket might be found
 %--------------------------------------------------------------------------
 findSock(Name, List) ->
-<<<<<<< HEAD
     find(Name,List,2,1).
 
 %--------------------------------------------------------------------------
@@ -172,21 +140,10 @@ find(Sock, List, Nr, Nr2) ->
                 Tupel ->
                     element(Nr2,Tupel)
             end;
-=======
-    {_, SockList, _} = hd(List),
-    case lists:keyfind(Name, 2, SockList) of
->>>>>>> Erik
         false ->
             false
     end.
 
-<<<<<<< HEAD
-=======
-isSecret(Room, List) ->
-    {_, _, Secrecy} = lists:keyfind(Room, 1, List),
-    Secrecy.
-
->>>>>>> Erik
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % Lists users in a room
@@ -196,11 +153,7 @@ isSecret(Room, List) ->
 users_helper([H|[]], S) ->
     S ++ element(2,H);
 users_helper([H|T], S) ->
-<<<<<<< HEAD
     users_helper(T, S ++ element(2,H) ++ ",").	
-=======
-    users_helper(T, S ++ element(2,H) ++ " ").	
->>>>>>> Erik
 
 users_in_room(Room ,List) ->
     {_, SockList, _} = lists:keyfind(Room, 1, List),
@@ -213,7 +166,7 @@ users_in_room(Room ,List) ->
 invite(Name, Room, List) ->
     case room:findSock(Name, List) of
         false ->
-<<<<<<< HEAD
+
             NewList = List;
         Sock ->
             gen_tcp:send(Sock, "{invited " ++ Room ++ "}\n"),
@@ -221,18 +174,11 @@ invite(Name, Room, List) ->
     end,
     gen_server:cast(server, {'list_room_users', Room}),
     NewList.
-=======
-            List;
-        Sock ->
-            room:insert(Room, List, Sock, Name, true)
-    end.
->>>>>>> Erik
 
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % Check things before we add a new socket
 %--------------------------------------------------------------------------
-<<<<<<< HEAD
 add_socket(NewSock, Room, List, Secrecy1) ->
     case findName(NewSock, List) of
         false ->
@@ -260,21 +206,6 @@ add_socket(NewSock, Room, List, Secrecy1) ->
     end,
     gen_server:cast(server, {'list_room_users', Room}),
     NewList.
-=======
-add_socket(NewSock, Room, List, Secrecy) ->
-    Name = room:findName(NewSock, List),
-    case lists:keyfind(Room, 1, List) of
-        {_, SockList, _} ->
-            case lists:keyfind(Name, 2, SockList) of
-                false ->
-                    room:insert(Room, List, NewSock, Name, Secrecy);
-                _ ->
-                    List
-            end;
-        false ->
-            room:insert(Room, List, NewSock, Name, Secrecy)
-    end.
->>>>>>> Erik
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%% Eunit test cases  %%%%%%%%%%%%%%%%%%%%
@@ -328,7 +259,6 @@ receivers_test() ->
     ?assertEqual(receivers("global", List2, 2), Rec2),
     ?assertEqual(receivers("global", List3, 2), Rec2).
 
-<<<<<<< HEAD
 insert_test() ->
     First = [],
     A1 = insert("global", First, s1, "Tommy", false),
@@ -372,7 +302,7 @@ removeFromAll_test() ->
     L5 = insert("Room4", L4, s1, "Tommy", false),
     ?assertEqual(removeFromAll(L1, s1), []),
     ?assertEqual(removeFromAll(L5, s1), []).
-=======
+
 rooms_test_() ->
     A = [],
     B = insert(rum1, A, s1, "Tommy", false),
@@ -388,8 +318,8 @@ rooms_test_() ->
     ____=?_assertEqual(E1,[{rum1,[s3,s1]},{rum2,[s2]}]),
     
     ____1=?_assertEqual(receivers(rum1,E1,1),[s3,s1]), 
-    ____2=?_assertEqual(receivers(rumqwe1,E1,1),[]), 
->>>>>>> Erik
+    ____2=?_assertEqual(receivers(rumqwe1,E1,1),[]).
+
 
 findSock_test() ->
     L1 = insert("global", [], s1, "Tommy", false),
