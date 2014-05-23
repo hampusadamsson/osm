@@ -1,7 +1,0 @@
-.eunit
-deps
-*.o
-*.plt
-erl_crash.dump
-*rebar*
-*.erl~
