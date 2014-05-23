@@ -55,10 +55,14 @@ initSock(Room, List, Socket, Name)->
 %--------------------------------------------------------------------------
 insert(Room, List, Socket, Name, Secrecy1) ->
     case lists:keyfind(Room, 1, List) of
-        {Room, Sock_List, Secrecy2}->
+        {Room, Sock_List, Secrecy2} ->
             Tmp_List = lists:keydelete(Room, 1, List),
-            New_List = [{Room, [{Socket, Name}|Sock_List], Secrecy2}|Tmp_List];
-    
+            case lists:keyfind(Socket, 1, Sock_List) of
+                false ->
+                    New_List = [{Room, [{Socket, Name}|Sock_List], Secrecy2}|Tmp_List];
+                _ ->
+                    New_List = List
+            end;
         false ->
             New_List = [{Room, [{Socket, Name}], Secrecy1}|List]
     end,
@@ -189,7 +193,7 @@ add_socket(NewSock, Room, List, Secrecy1) ->
                         false ->
                             case Secrecy2 of
                                 false ->
-                                    gen_tcp:send(NewSock, "{success " ++ Room ++ "}\n"),
+                                    gen_tcp:send(NewSock, "{success " ++ Room ++ " existant}\n"),
                                     NewList = insert(Room, List, NewSock, Name, Secrecy2);
                                 true ->
                                     gen_tcp:send(NewSock, "{error " ++ Room ++ "}\n"),
@@ -199,7 +203,7 @@ add_socket(NewSock, Room, List, Secrecy1) ->
                             NewList = List
                     end;
                 false ->
-                    gen_tcp:send(NewSock, "{success " ++ Room ++ "}\n"),
+                    gen_tcp:send(NewSock, "{success " ++ Room ++ " new}\n"),
                     NewList = insert(Room, List, NewSock, Name, Secrecy1)
             end
     end,
