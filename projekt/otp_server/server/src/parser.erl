@@ -29,6 +29,8 @@ getParts(BodyStr) ->
     case removeNewLine(string:sub_word(BodyStr, 3)) of
         "true" ->
             Secrecy = true;
+        [] ->
+            Secrecy = [];
         _ ->
             Secrecy = false
     end,
