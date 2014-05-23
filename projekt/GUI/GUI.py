@@ -199,8 +199,13 @@ class GUI(object):
                 def validateRoom(room):
                     if self.joinStatus == 1:
                         
-                        if (self.roomSuccess[room] == "success"):
+                        if (self.roomSuccess[room][0] == "success"):
                                 self.addTab(room)
+                                if(self.roomSuccess[room][1] == "new"):
+                                    self.writeMessage("Välkommen till det nya rummet " + room)
+                                else:
+                                    self.writeMessage("Välkommen till det existerande rummet " + room)
+                                self.roomSuccess.pop(room,None) 
                         else:
                             self.writeMessage("Rummet är slutet, du måste bli invitad!")
                             self.message.delete(0,END)
@@ -213,10 +218,10 @@ class GUI(object):
                         else:
                             self.master.after(100,validateRoom,argumentString[1])
                 if arguments == 2:
-                    self.master.after(100,validateRoom,argumentString2[0])
+                    self.master.after(200,validateRoom,argumentString2[0])
                 else:
-                    self.master.after(100,validateRoom,argumentString[1])
-                #self.roomSuccess.pop(argumentString[1],None)
+                    self.master.after(200,validateRoom,argumentString[1])
+                
             else:
                 self.writeMessage("Du är redan med i det angivna rummet!")
                 self.message.delete(0,END)
@@ -295,8 +300,13 @@ class GUI(object):
                 
                 temp = respons[1:len(respons)-2]
                 commandString = self.messageSplit(temp)
-                if (commandString[0] == 'success' or commandString[0] == 'error'):
-                    self.roomSuccess[commandString[1]] = commandString[0]
+                if commandString[0] == 'success':
+                    commandString2 = self.messageSplit(commandString[1])
+                    self.roomSuccess[commandString2[0]] = [commandString[0],commandString2[1]]
+                   
+                elif commandString[0] == 'error':
+                    self.roomSuccess[commandString[1]] = [commandString[0]]
+                    print(self.roomSuccess[commandString[1]])
                 elif (commandString[0] == 'invited'):
                     if(self.noDuplicate(commandString[1])):
                         self.addTab(commandString[1])
@@ -446,7 +456,8 @@ class GUI(object):
         return message
 
     def checkRoomSuccess(self,room):
-        while(self.roomSuccess[room] != "success" and self.roomSuccess[room] != "error"):
+        roomSuccess = self.roomSuccess[room]
+        while(roomSuccess[0] != "success" and roomSuccess[0] != "error"):
             self.checkRoomSuccess(room)
         else:
             self.joinStatus = 1
@@ -473,4 +484,3 @@ if __name__ == "__main__":
     root.mainloop()
        
     
-
