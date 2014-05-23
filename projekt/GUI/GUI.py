@@ -77,21 +77,23 @@ class GUI(object):
 
         self.windowList = {}
         self.userList = {}
+        self.roomSuccess = {}
 
-        self.userList["global"] = ['Erik']
-        
-        
+        self.userList["global"] = ['']
+                
 #################################
 #Användarnamnet
 #################################
         
         self.userName = ""
+        self.Erik = 0
 
 ###########################################
 #Anger om socketen är ansluten eller inte
 ###########################################
 
         self.socketStatus = "disconnected"
+        self.config = ()
 
 #######################################################################################
 #Anger den nu aktiva taben. Ändras automatiskt när man byter tab     
@@ -113,7 +115,7 @@ class GUI(object):
 #Initierar socketen
 #####################################################################
         
-        self.sockSend = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 #####################################################################
 #Overridar fönstrets orginal-stängningsfunktion   
@@ -141,10 +143,9 @@ class GUI(object):
 ###################################################
 #Importerar nuvarande tiden och returnerar den
 ###################################################
-
+        
     def GetTime(self):
         return "<" + time.strftime("%H:%M")+" "
-
 
 ##################################################################
 #Hämtar texten från entryfältet och skickar den i bytearray-format
@@ -177,30 +178,41 @@ class GUI(object):
                     msg_temp = argumentString2[0] + " " + mtext1+'\n'
                     
                     msg = msg_temp.encode('UTF-8')
-                    self.sockSend.send(msg)
+                    self.serverSocket.send(msg)
                     self.message.delete(0,END)
                 else:
-                    self.addTab(argumentString[1])
+                    
+                    self.roomSuccess[argumentString[1]] = ""
                     msg_temp = argumentString[1] + " " + mtext1+'\n'
                     msg = msg_temp.encode('UTF-8')
-                    self.sockSend.send(msg)
-                    self.message.delete(0,END)
-<<<<<<< HEAD
+                    self.serverSocket.send(msg)
+                    self.master.after(100,self.checkRoomSuccess,argumentString[1])
                     
-            elif (argumentString[0] == "/exit"):
-                self.deleteTab(argumentString[1])
-                self.windowList.pop(argumentString[1],None)
-
-                msg_temp = self.currentTab + " " + mtext1+'\n'
-                msg = msg_temp.encode('UTF-8')
-                self.sockSend.send(msg)
-                self.message.delete(0,END)
-=======
->>>>>>> persnusk
+                    
+                    def validateRoom(argumentString):
+                        if self.joinStatus == 1:
+                        
+                            if (self.roomSuccess[argumentString[1]] == "success"):
+                                self.addTab(argumentString[1])
+                            else:
+                                self.writeMessage("Rummet är slutet, du måste bli invitad!")
+                            self.message.delete(0,END)
+                            self.joinStatus = 0
+                            
+                        else:
+                       
+                            self.master.after(100,validateRoom,argumentString)
+                    self.master.after(100,validateRoom,argumentString)
+                    self.roomSuccess.pop(argumentString[1],None)
             else:
                 self.writeMessage("Du är redan med i det angivna rummet!")
                 self.message.delete(0,END)
 
+        elif (argumentString[0] == "/invite"):
+            msg_temp =self.currentTab + " " + mtext1+'\n'
+            msg = msg_temp.encode('UTF-8')
+            self.serverSocket.send(msg)
+            self.message.delete(0,END)
         elif (argumentString[0] == "/exit"):
             if argumentString[1] == "global":
                 self.writeMessage("Du kan inte gå ur global!")
@@ -211,7 +223,7 @@ class GUI(object):
                     self.windowList.pop(argumentString[1],None)
                     msg_temp ="global" + " " + mtext1+'\n'
                     msg = msg_temp.encode('UTF-8')
-                    self.sockSend.send(msg)
+                    self.serverSocket.send(msg)
                     self.message.delete(0,END)
                 else:
                     self.writeMessage("Du är inte inne i rummet: " + argumentString[1]+"!")
@@ -219,18 +231,17 @@ class GUI(object):
         else:
             mtext = self.currentTab + " " + mtext1+'\n'
             msg = mtext.encode('UTF-8')
-            self.sockSend.send(msg)
+            self.serverSocket.send(msg)
             self.message.delete(0,END)
 
 ##################################################################
 #Stänger ner connectionen när man trycker krysset
 ##################################################################
 
-
     def closeConnection(self):
         if self.socketStatus == "ok":            
-            self.sockSend.shutdown(socket.SHUT_RDWR)
-        self.sockSend.close()
+            self.serverSocket.shutdown(socket.SHUT_RDWR)
+        self.serverSocket.close()
         print("Nu drar mainthread, see ya suckerzzzzzz!\n")
         self.master.destroy()
         sys.exit(0)
@@ -241,7 +252,7 @@ class GUI(object):
 ##########################################################
 
     def Start(self):
-        self.thread = StoppableThread(self.sockSend)
+        self.thread = StoppableThread(self.serverSocket)
         self.thread.daemon = True
         self.thread.start()
         self.checkQueue()
@@ -258,17 +269,28 @@ class GUI(object):
         if (respons == "empty"):
             1+1
         elif(respons == "Disconnected"):
-            #self.sockSend.shutdown(socket.SHUT_RDWR)
-            #self.sockSend.close()
             self.socketStatus = "disconnected"
-            self.writeMessage("Tappade anslutningen, försöker återansluta automatiskt")
+            self.serverSocket.close()
+            self.serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             stopSign = 0
-            self.reconnect()
-            
+            if self.config[0] == 'auto':
+                self.writeMessage("Tappade anslutningen, försöker återansluta automatiskt")
+                self.reconnect()
+            else:
+                self.writeMessage("Tappade anslutningen till servern, anslut manuellt med /connect IP")           
         elif(respons[0][0] == "{"):
+                
                 temp = respons[1:len(respons)-2]
-                roomUsers = self.messageSplit(temp)
-                self.userList[roomUsers[0]] = roomUsers[1].split(",")
+                commandString = self.messageSplit(temp)
+                if (commandString[0] == 'success' or commandString[0] == 'error'):
+                    self.roomSuccess[commandString[1]] = commandString[0]
+                elif (commandString[0] == 'invited'):
+                    if(self.noDuplicate(commandString[1])):
+                        self.addTab(commandString[1])
+                else:
+                    self.userList[commandString[0]] = commandString[1].split(",")
+                    if (commandString[0] == self.currentTab):
+                        self.fillUserList(self.currentTab)
         else:
             argumentString = self.messageSplit(respons)          
             self.windowList[argumentString[0]].config(state=NORMAL)
@@ -287,7 +309,6 @@ class GUI(object):
         for userName in self.userList[roomName]:     
             self.userWindow.insert(END,userName+'\n')
         self.userWindow.config(state = DISABLED)
-
 
 ##########################################################
 #Startar upp popupfönster för att ange användarnamn
@@ -322,17 +343,15 @@ class GUI(object):
         userName = self.userName
         temp = userName+'\n'
         msg = temp.encode('UTF-8')
-        self.sockSend.send(msg)
+        self.serverSocket.send(msg)
 
 ########################################################################################
 #Uppdaterar self.currentTab till den nya aktuella taben varje gång användaren byter tab
 ########################################################################################
 
     def tabChangedEvent(self,event):
-        print("Försöker byta tab")
         self.currentTab = event.widget.tab(event.widget.index("current"),"text")
         self.fillUserList(self.currentTab)
-        print("Lyckades byta tab")
 
 ##########################################################
 #Splittar upp en mottagen sträng från servern
@@ -359,12 +378,6 @@ class GUI(object):
             return 0
         else:
             return 1
-        
-##########################################################
-#Försöker ansluta till den angivna servern
-##########################################################
-
-    
 
 ##########################################################
 #Upprepar periodiska anslutningsförsök 5 gånger och utför
@@ -381,22 +394,22 @@ class GUI(object):
             self.writeMessage("Du är nu ansluten till " + self.ipAdress + "!")
             self.Start()
             self.sendUserName()
-           # thread.kill()
+            self.message.delete(0,END)
         elif (result == "Failed"):
             self.writeMessage("Återanslutning misslyckades, anslut manuellt med /connect IP")
             self.message.config(state=NORMAL)
-           # thread.kill()
+            self.message.delete(0,END)
         else:
             self.writeMessage("Inget svar från servern... Försöker igen om 5 sekunder. " + str(result) + " försök kvar")
             self.master.after(2000,self.checkConnectQueue,thread)
     
     def reconnect(self):
         self.message.config(state=DISABLED)
-        thread = connectToServer(self.sockSend,self.ipAdress)
+        thread = connectToServer(self.serverSocket,self.ipAdress,self.config[1])
         thread.daemon = True
         thread.start()
         self.checkConnectQueue(thread)
-        self.message.delete(0,END)
+        
 
 ##########################################################
 #Skriver ut ett meddelande i det aktiva fönstret
@@ -406,6 +419,27 @@ class GUI(object):
         self.windowList[self.currentTab].config(state=NORMAL)
         self.windowList[self.currentTab].insert(INSERT,message+'\n')
         self.windowList[self.currentTab].config(state=DISABLED)
+
+###########################################################################################
+#Initierar den angivna konfigurationen från configFilen mha hjälpfunktionen parseConfig
+###########################################################################################
+
+    def initiateConfig(self):
+        self.config = [self.parseConfig(line) for line in open('configFile')]
+
+    def parseConfig(self,configString):
+        index = configString.find("=")
+        message = configString[index+1:len(configString)-1]
+        return message
+
+    def checkRoomSuccess(self,room):
+        while(self.roomSuccess[room] != "success" and self.roomSuccess[room] != "error"):
+            self.checkRoomSuccess(room)
+        else:
+            self.joinStatus = 1
+        
+            
+        
 
 ##########################################################
 #Startar mainfunktionen
@@ -417,6 +451,7 @@ if __name__ == "__main__":
     root.title("Nuntii IRC")
     m=GUI(root)
     root.withdraw()
+    m.initiateConfig()
     m.welcome()    
     m.enterUserName()
     m.userName = m.getUserName()

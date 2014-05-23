@@ -70,7 +70,10 @@ sendBack(Request, RoomName, Secrecy, Data, Socket, Room) ->
 %% ------------------------------------------------------------------
 handle(Data, Socket)->   
     [Room|Body] = string:tokens(Data, " "),
+<<<<<<< HEAD
 
+=======
+>>>>>>> Erik
     BodyStr = string:join(Body, " "),
     case getParts(BodyStr) of
         {[], [], []} ->
