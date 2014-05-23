@@ -2,7 +2,7 @@
 
 -export([remove/3, removeFromAll/2, insert/5, receivers/3, findSock/2,
         findName/2, initSock/4, users_in_room/2, invite/3,
-        add_socket/4]).
+        add_socket/4, find/4]).
 
 %%-ifdef(TEST).
 %% To use EUnit we must include this:
@@ -43,11 +43,13 @@ receivers(Room, List, N) ->
 initSock(Room, List, Socket, Name)->
     case findSock(Name, List) of
         false ->
-            insert(Room, List, Socket, Name, false);
+            NewList = insert(Room, List, Socket, Name, false);
         _ ->
             NewName = string:concat(Name, "_"),
-            initSock(Room, List, Socket, NewName)
-    end.
+            NewList = initSock(Room, List, Socket, NewName)
+    end,
+    gen_server:cast(server, {'list_room_users', Room}),
+    NewList.
 
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
@@ -88,15 +90,8 @@ remove(Room, List, Socket)->
         false ->
             New_List = List
     end,
+    gen_server:cast(server, {'list_room_users', Room}),
     New_List.
-
-% ------------------------------------------------------------------
-% Find name connected to Sock
-% ------------------------------------------------------------------
-findName(Sock, List) ->
-    {_, SockList, _} = lists:keyfind("global", 1, List),
-    {_, Name} = lists:keyfind(Sock, 1, SockList),
-    Name.
 
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
@@ -117,18 +112,35 @@ removeFromAll([H|T], Sock) ->
     end.
 
 %--------------------------------------------------------------------------
+% Find the socket assosciated with the name
+% Arg1 - username assosciated with the socket
+% Arg2 - The entire list where the socket might be found
 %--------------------------------------------------------------------------
-% find socket with name Name in List
-%--------------------------------------------------------------------------
-findSock(_, []) ->
-    false;
 findSock(Name, List) ->
-    {_, SockList, _} = hd(List),
-    case lists:keyfind(Name, 2, SockList) of
+    find(Name,List,2,1).
+
+%--------------------------------------------------------------------------
+% Find the name assosciated with the socket
+% Arg1 - socket assosciated with the name
+% Arg2 - The entire list where the socket might be found
+%--------------------------------------------------------------------------
+findName(Sock, List) ->
+    find(Sock,List,1,2).
+
+%--------------------------------------------------------------------------
+% Find function used by findName/findSock
+%--------------------------------------------------------------------------
+find(Sock, List, Nr, Nr2) ->
+    case lists:keyfind("global", 1, List) of
+        {_, SockList, _} ->
+            case lists:keyfind(Sock, Nr, SockList) of
+                false ->
+                    false;
+                Tupel ->
+                    element(Nr2,Tupel)
+            end;
         false ->
-            findSock(Name, tl(List));
-        {Sock, _} ->
-            Sock
+            false
     end.
 
 %--------------------------------------------------------------------------
@@ -140,7 +152,7 @@ findSock(Name, List) ->
 users_helper([H|[]], S) ->
     S ++ element(2,H);
 users_helper([H|T], S) ->
-    users_helper(T, S ++ element(2,H) ++ " ").	
+    users_helper(T, S ++ element(2,H) ++ ",").	
 
 users_in_room(Room ,List) ->
     {_, SockList, _} = lists:keyfind(Room, 1, List),
@@ -153,34 +165,45 @@ users_in_room(Room ,List) ->
 invite(Name, Room, List) ->
     case room:findSock(Name, List) of
         false ->
-            List;
+            NewList = List;
         Sock ->
-            room:insert(Room, List, Sock, Name, true)
-    end.
+            gen_tcp:send(Sock, "{invited " ++ Room ++ "}\n"),
+            NewList = room:insert(Room, List, Sock, Name, true)
+    end,
+    gen_server:cast(server, {'list_room_users', Room}),
+    NewList.
 
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % Check things before we add a new socket
 %--------------------------------------------------------------------------
 add_socket(NewSock, Room, List, Secrecy1) ->
-    Name = findName(NewSock, List),
-    case lists:keyfind(Room, 1, List) of
-        {_, SockList, Secrecy2} ->
-            case lists:keyfind(Name, 2, SockList) of
-                false ->
-                    case Secrecy2 of
-                        false ->
-                            insert(Room, List, NewSock, Name, Secrecy2);
-                        true ->
-                            gen_tcp:send(NewSock, "error"),
-                            List
-                    end;
-                _ ->
-                    List
-            end;
+    case findName(NewSock, List) of
         false ->
-            room:insert(Room, List, NewSock, Name, Secrecy1)
-    end.
+            NewList = List;
+        Name ->
+            case lists:keyfind(Room, 1, List) of
+                {_, SockList, Secrecy2} ->
+                    case lists:keyfind(Name, 2, SockList) of
+                        false ->
+                            case Secrecy2 of
+                                false ->
+                                    gen_tcp:send(NewSock, "{success " ++ Room ++ "}\n"),
+                                    NewList = insert(Room, List, NewSock, Name, Secrecy2);
+                                true ->
+                                    gen_tcp:send(NewSock, "{error " ++ Room ++ "}\n"),
+                                    NewList = List
+                            end;
+                        _ ->
+                            NewList = List
+                    end;
+                false ->
+                    gen_tcp:send(NewSock, "{success " ++ Room ++ "}\n"),
+                    NewList = insert(Room, List, NewSock, Name, Secrecy1)
+            end
+    end,
+    gen_server:cast(server, {'list_room_users', Room}),
+    NewList.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%% Eunit test cases  %%%%%%%%%%%%%%%%%%%%
@@ -303,28 +326,13 @@ findName_test() ->
     ?assertEqual(findName(s4, L5), "Jenny"),
     ?assertEqual(findName(s5, L5), "Ronny").
 
-initSock_test() ->
-    I1 = initSock("global", [], s1, "Tom"),
-    I2 = initSock("global", I1, s2, "Tom"),
-    I3 = initSock("global", I2, s3, "Tom"),
-    I4 = initSock("global", I3, s4, "Tom"),
-    I5 = initSock("global", I4, s5, "Tom"),
-    ?assertEqual(findName(s1, I5), "Tom"), 
-    ?assertEqual(findName(s2, I5), "Tom_"), 
-    ?assertEqual(findName(s3, I5), "Tom__"), 
-    ?assertEqual(findName(s4, I5), "Tom___"), 
-    ?assertEqual(findName(s5, I5), "Tom____").
-    
-add_socket_test() ->
+users_in_room_test() ->
     L1 = insert("global", [], s1, "Tommy", false),
     L2 = insert("global", L1, s2, "Timmy", false),
     L3 = insert("global", L2, s3, "Kenny", false),
     L4 = insert("global", L3, s4, "Jenny", false),
     L5 = insert("global", L4, s5, "Ronny", false),
-    L6 = add_socket(s1, "Room1", L5, false),
-    L7 = add_socket(s2, "Room1", L6, false),
-    L8 = add_socket(s3, "Room1", L7, false),
-    L9 = add_socket(s4, "Room1", L8, false),
-    ?assertEqual(receivers("Room1", L9, 2), ["Jenny","Kenny","Timmy","Tommy"]).
-    
+    CorrectStr = "{global Ronny,Jenny,Kenny,Timmy,Tommy}\n",
+    ?assertEqual(users_in_room("global", L5), CorrectStr).
+
 %%-endif.
