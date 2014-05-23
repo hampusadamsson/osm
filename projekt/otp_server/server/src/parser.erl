@@ -27,19 +27,17 @@ getParts(BodyStr) ->
     Request = removeNewLine(string:sub_word(BodyStr, 1)),
     RoomName = removeNewLine(string:sub_word(BodyStr, 2)),
     case removeNewLine(string:sub_word(BodyStr, 3)) of
-        "false" ->
-            Secrecy = false;
         "true" ->
             Secrecy = true;
-        Secrecy ->
-            Secrecy
+        _ ->
+            Secrecy = false
     end,
     {Request, RoomName, Secrecy}.
 
 sendBack(Request, Data, Socket, Room) ->
     case Request of
         "/exitall" ->
-            gen_server:cast(server, {'remove', Socket});
+            ok; %gen_server:cast(server, {'remove', Socket});
         _ ->
             gen_server:cast(server, {'send', Room, Data, Socket})   
     end.
