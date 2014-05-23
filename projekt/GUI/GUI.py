@@ -79,13 +79,14 @@ class GUI(object):
         self.userList = {}
         self.roomSuccess = {}
 
-        self.userList["global"] = ['Erik']
+        self.userList["global"] = ['']
                 
 #################################
 #Användarnamnet
 #################################
         
         self.userName = ""
+        self.Erik = 0
 
 ###########################################
 #Anger om socketen är ansluten eller inte
@@ -142,7 +143,7 @@ class GUI(object):
 ###################################################
 #Importerar nuvarande tiden och returnerar den
 ###################################################
-
+        
     def GetTime(self):
         return "<" + time.strftime("%H:%M")+" "
 
@@ -181,33 +182,37 @@ class GUI(object):
                     self.message.delete(0,END)
                 else:
                     
+                    self.roomSuccess[argumentString[1]] = ""
                     msg_temp = argumentString[1] + " " + mtext1+'\n'
                     msg = msg_temp.encode('UTF-8')
                     self.serverSocket.send(msg)
-                    while (self.roomSuccess[argumentString[1]] != "success" and self.roomSuccess[argumentString[1]] != "error"):
-                        continue
-                    if (self.roomSuccess[argumentString[1]] == "success"):
-                        self.addTab(argumentString[1])
-                    else:
-                        self.writeMessage("Rummet är slutet, du måste bli invitad!")
-                    self.message.delete(0,END)
-                    self.roomSuccess[argumentString[1]],none)
+                    self.master.after(100,self.checkRoomSuccess,argumentString[1])
+                    
+                    
+                    def validateRoom(argumentString):
+                        if self.joinStatus == 1:
+                        
+                            if (self.roomSuccess[argumentString[1]] == "success"):
+                                self.addTab(argumentString[1])
+                            else:
+                                self.writeMessage("Rummet är slutet, du måste bli invitad!")
+                            self.message.delete(0,END)
+                            self.joinStatus = 0
+                            
+                        else:
+                       
+                            self.master.after(100,validateRoom,argumentString)
+                    self.master.after(100,validateRoom,argumentString)
+                    self.roomSuccess.pop([argumentString[1]],None)
             else:
                 self.writeMessage("Du är redan med i det angivna rummet!")
                 self.message.delete(0,END)
 
         elif (argumentString[0] == "/invite"):
-                argumentString2 = self.messageSplit(argumentString[1])
-                if(not self.noDuplicate(argumentString2[1])):
-                    msg_temp ="global" + " " + mtext1+'\n'
-                    msg = msg_temp.encode('UTF-8')
-                 
-                    self.serverSocket.send(msg)
-                    self.message.delete(0,END)
-                else:
-                    self.writeMessage("Du kan inte bjuda in till ett rum du inte är medlem i!")
-                    self.message.delete(0,END)
-
+            msg_temp =self.currentTab + " " + mtext1+'\n'
+            msg = msg_temp.encode('UTF-8')
+            self.serverSocket.send(msg)
+            self.message.delete(0,END)
         elif (argumentString[0] == "/exit"):
             if argumentString[1] == "global":
                 self.writeMessage("Du kan inte gå ur global!")
@@ -274,12 +279,18 @@ class GUI(object):
             else:
                 self.writeMessage("Tappade anslutningen till servern, anslut manuellt med /connect IP")           
         elif(respons[0][0] == "{"):
+                
                 temp = respons[1:len(respons)-2]
                 commandString = self.messageSplit(temp)
-                if (commandString[0] == "success" or commmandString[0] == "error"):
-                    self.roomSuccess[commandString[1]] == commandString[0]
+                if (commandString[0] == 'success' or commandString[0] == 'error'):
+                    self.roomSuccess[commandString[1]] = commandString[0]
+                elif (commandString[0] == 'invited'):
+                    if(self.noDuplicate(commandString[1])):
+                        self.addTab(commandString[1])
                 else:
                     self.userList[commandString[0]] = commandString[1].split(",")
+                    if (commandString[0] == self.currentTab):
+                        self.fillUserList(self.currentTab)
         else:
             argumentString = self.messageSplit(respons)          
             self.windowList[argumentString[0]].config(state=NORMAL)
@@ -420,6 +431,14 @@ class GUI(object):
         index = configString.find("=")
         message = configString[index+1:len(configString)-1]
         return message
+
+    def checkRoomSuccess(self,room):
+        while(self.roomSuccess[room] != "success" and self.roomSuccess[room] != "error"):
+            self.checkRoomSuccess(room)
+        else:
+            self.joinStatus = 1
+        
+            
         
 
 ##########################################################
