@@ -149,9 +149,15 @@ users_helper([H|[]], S) ->
 users_helper([H|T], S) ->
     users_helper(T, S ++ element(2,H) ++ ",").	
 
+users_in_room(_, []) ->
+    "";
 users_in_room(Room ,List) ->
-    {_, SockList, _} = lists:keyfind(Room, 1, List),
-    "{"++ Room ++ " " ++ users_helper(SockList,"") ++ "}\n".
+    case lists:keyfind(Room, 1, List) of
+        false ->
+            "";
+        {_, SockList, _} ->
+            "{"++ Room ++ " " ++ users_helper(SockList,"") ++ "}\n"
+    end.
     
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------

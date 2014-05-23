@@ -5,5 +5,5 @@
               {applications,[kernel,stdlib]},
               {mod,{server_app,[]}},
               {env,[]},
-              {modules,[client,parser,room,server,server_app,server_sup,
+              {modules,[parser,room,server,server_app,server_sup,
                         tcp_handler]}]}.
