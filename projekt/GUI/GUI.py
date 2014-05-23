@@ -171,39 +171,52 @@ class GUI(object):
             self.message.delete(0,END)
             
         elif (argumentString[0] == "/join"):
-            if self.noDuplicate(argumentString[1]):
-                if (" " in argumentString[1]):
-                    argumentString2 = self.messageSplit(argumentString[1])
-                    self.addTab(argumentString2[0])
+            success = 0
+            if (" " in argumentString[1]):
+                argumentString2 = self.messageSplit(argumentString[1])
+                if self.noDuplicate(argumentString2[0]):
+                   success = 1
+                arguments = 2
+            else:
+                if self.noDuplicate(argumentString[1]):
+                    success = 1
+                arguments = 1
+            if success == 1:
+                if (arguments == 2):
+                    self.roomSuccess[argumentString2[0]] = ""
                     msg_temp = argumentString2[0] + " " + mtext1+'\n'
-                    
                     msg = msg_temp.encode('UTF-8')
                     self.serverSocket.send(msg)
-                    self.message.delete(0,END)
+                    self.master.after(100,self.checkRoomSuccess,argumentString2[0])
+                  
                 else:
-                    
                     self.roomSuccess[argumentString[1]] = ""
                     msg_temp = argumentString[1] + " " + mtext1+'\n'
                     msg = msg_temp.encode('UTF-8')
                     self.serverSocket.send(msg)
-                    self.master.after(100,self.checkRoomSuccess,argumentString[1])
-                    
-                    
-                    def validateRoom(argumentString):
-                        if self.joinStatus == 1:
+                    self.master.after(100,self.checkRoomSuccess,argumentString[1])    
+                self.message.delete(0,END)
+                def validateRoom(room):
+                    if self.joinStatus == 1:
                         
-                            if (self.roomSuccess[argumentString[1]] == "success"):
-                                self.addTab(argumentString[1])
-                            else:
-                                self.writeMessage("Rummet är slutet, du måste bli invitad!")
+                        if (self.roomSuccess[room] == "success"):
+                                self.addTab(room)
+                        else:
+                            self.writeMessage("Rummet är slutet, du måste bli invitad!")
                             self.message.delete(0,END)
                             self.joinStatus = 0
                             
-                        else:
+                    else:
                        
-                            self.master.after(100,validateRoom,argumentString)
-                    self.master.after(100,validateRoom,argumentString)
-                    self.roomSuccess.pop(argumentString[1],None)
+                        if arguments == 2:
+                            self.master.after(100,validateRoom,argumentString2[0])
+                        else:
+                            self.master.after(100,validateRoom,argumentString[1])
+                if arguments == 2:
+                    self.master.after(100,validateRoom,argumentString2[0])
+                else:
+                    self.master.after(100,validateRoom,argumentString[1])
+                #self.roomSuccess.pop(argumentString[1],None)
             else:
                 self.writeMessage("Du är redan med i det angivna rummet!")
                 self.message.delete(0,END)
