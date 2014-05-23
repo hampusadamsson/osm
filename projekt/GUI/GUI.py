@@ -203,7 +203,7 @@ class GUI(object):
                        
                             self.master.after(100,validateRoom,argumentString)
                     self.master.after(100,validateRoom,argumentString)
-                    self.roomSuccess.pop([argumentString[1]],None)
+                    self.roomSuccess.pop(argumentString[1],None)
             else:
                 self.writeMessage("Du är redan med i det angivna rummet!")
                 self.message.delete(0,END)
