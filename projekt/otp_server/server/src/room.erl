@@ -13,19 +13,19 @@
 %--------------------------------------------------------------------------
 receivers(Room, List, N) ->
     case lists:keyfind(Room, 1, List) of
-        {Room, Tuple_List, _}->
+        {Room, SockList, _}->
             case N of
                 1 ->
-                    New_List = lists:map(fun({X, _}) -> X end, Tuple_List);
+                    NewList = lists:map(fun({X, _}) -> X end, SockList);
                 2 ->
-                    New_List = lists:map(fun({_, X}) -> X end, Tuple_List);
+                    NewList = lists:map(fun({_, X}) -> X end, SockList);
                 _ ->
-                    New_List = []
+                    NewList = []
             end;
         false ->
-            New_List = []
+            NewList = []
     end,
-    New_List.
+    NewList.
 
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
@@ -35,13 +35,13 @@ receivers(Room, List, N) ->
 %
 %--------------------------------------------------------------------------
 
-init_sock(Room, List, Socket, Name)->
+init_sock(Room, List, Sock, Name)->
     case find_sock(Name, List) of
         false ->
-            NewList = insert(Room, List, Socket, Name, false);
+            NewList = insert(Room, List, Sock, Name, false);
         _ ->
             NewName = string:concat(Name, "_"),
-            NewList = init_sock(Room, List, Socket, NewName)
+            NewList = init_sock(Room, List, Sock, NewName)
     end,
     gen_server:cast(server, {'list_room_users', Room}),
     NewList.
@@ -53,20 +53,20 @@ init_sock(Room, List, Socket, Name)->
 % ex. [{room_name, [sock1,sock2,sock3]}]
 %
 %--------------------------------------------------------------------------
-insert(Room, List, Socket, Name, Secrecy1) ->
+insert(Room, List, Sock, Name, Secrecy1) ->
     case lists:keyfind(Room, 1, List) of
-        {Room, Sock_List, Secrecy2} ->
-            Tmp_List = lists:keydelete(Room, 1, List),
-            case lists:keyfind(Socket, 1, Sock_List) of
+        {Room, SockList, Secrecy2} ->
+            TmpList = lists:keydelete(Room, 1, List),
+            case lists:keyfind(Sock, 1, SockList) of
                 false ->
-                    New_List = [{Room, [{Socket, Name}|Sock_List], Secrecy2}|Tmp_List];
+                    NewList = [{Room, [{Sock, Name}|SockList], Secrecy2}|TmpList];
                 _ ->
-                    New_List = List
+                    NewList = List
             end;
         false ->
-            New_List = [{Room, [{Socket, Name}], Secrecy1}|List]
+            NewList = [{Room, [{Sock, Name}], Secrecy1}|List]
     end,
-    New_List.
+    NewList.
 
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
@@ -75,22 +75,22 @@ insert(Room, List, Socket, Name, Secrecy1) ->
 % ex. [{room_name, [sock1,sock2,sock3]}]
 %
 %--------------------------------------------------------------------------
-remove(Room, List, Socket)->
+remove(Room, List, Sock)->
     case lists:keyfind(Room, 1, List) of
-        {Room, Sock_List, Secrecy}->
-            Tmp_List = lists:keydelete(Room, 1, List),
-            Sock_List2 = lists:keydelete(Socket, 1, Sock_List),
+        {Room, SockList1, Secrecy}->
+            TmpList = lists:keydelete(Room, 1, List),
+            SockList2 = lists:keydelete(Sock, 1, SockList1),
             if 
-                length(Sock_List2)==0 ->
-                    New_List = Tmp_List;
+                length(SockList2)==0 ->
+                    NewList = TmpList;
                 true ->  
-                    New_List = [{Room, Sock_List2, Secrecy}|Tmp_List]
+                    NewList = [{Room, SockList2, Secrecy}|TmpList]
             end;
         false ->
-            New_List = List
+            NewList = List
     end,
     gen_server:cast(server, {'list_room_users', Room}),
-    New_List.
+    NewList.
 
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
@@ -146,14 +146,14 @@ find_name(Sock, List) ->
 %--------------------------------------------------------------------------
 % Find function used by find_name/find_sock
 %--------------------------------------------------------------------------
-find(Sock, List, Nr, Nr2) ->
+find(Sock, List, N1, N2) ->
     case lists:keyfind("global", 1, List) of
         {_, SockList, _} ->
-            case lists:keyfind(Sock, Nr, SockList) of
+            case lists:keyfind(Sock, N1, SockList) of
                 false ->
                     false;
                 Tupel ->
-                    element(Nr2,Tupel)
+                    element(N2,Tupel)
             end;
         false ->
             false

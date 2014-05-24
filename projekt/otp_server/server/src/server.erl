@@ -24,7 +24,7 @@
 %% gen_server Function Exports
 %% ------------------------------------------------------------------
 
--export([init/1, handle_call/2, handle_call/3, handle_cast/2, handle_info/2,
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
 %% ------------------------------------------------------------------
@@ -66,15 +66,15 @@ handle_cast({'invite', Name, Room}, List) ->
 %% Remove socket from list after disconnect
 %% Rem_Sock = The one to remove
 %% ------------------------------------------------------------------
-handle_cast({'remove', Rem_Socket}, Sock) ->
-    {noreply, room:remove_from_all(Sock, Rem_Socket)};
+handle_cast({'remove', RemSocket}, List) ->
+    {noreply, room:remove_from_all(List, RemSocket)};
 
 %% ------------------------------------------------------------------
 %% Remove socket from certain room in list
 %% Rem_Sock = The one to remove
 %% ------------------------------------------------------------------
-handle_cast({'remove_from_room', Room, Rem_Socket}, Sock) ->
-    {noreply, room:remove(Room, Sock, Rem_Socket)};
+handle_cast({'remove_from_room', Room, RemSocket}, List) ->
+    {noreply, room:remove(Room, List, RemSocket)};
 
 %% ------------------------------------------------------------------
 %% Sends a message !IF! connected
@@ -94,20 +94,13 @@ handle_cast({'list_room_users', Room},List) ->
     spawn(?MODULE, send_to_all, [Rooms, Receivers]),
     {noreply, List}.
 
-
-%% ------------------------------------------------------------------
-%% Find name connected to Sock
-%% ------------------------------------------------------------------
-handle_call({'find_name', Socket}, AllRooms) ->
-    {reply, room:find_name(Socket, AllRooms), AllRooms}. 
-
 %% ------------------------------------------------------------------
 %% Displays current user-list
 %% ------------------------------------------------------------------
-handle_call({'list_users'}, _From, Sock) ->
+handle_call({'list_users'}, _From, List) ->
     io:format("~s \n",[inet:i()]),
-    io:format("Rooms: ~w\n",[length([Sock])]),
-    {reply, Sock, Sock};
+    io:format("Rooms: ~w\n",[length([List])]),
+    {reply, List, List};
 
 %% ------------------------------------------------------------------
 %% Listen for incoming connections 

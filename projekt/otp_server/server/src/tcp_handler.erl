@@ -6,10 +6,8 @@ start(LPort) ->
         io:format("Socket listening: ~w ~n",[self()]),
     case gen_tcp:listen(LPort,[{active, false},{packet, line},{reuseaddr, true}]) of % 2=line
         {ok, ListenSock} ->
-
             Tmp = spawn(tcp_handler, server,[ListenSock]), %<---- supervisor needed (Låt genserver skapa dessa ???)
             io:format("New Connectiv: ~w ~n",[Tmp]),
-
             {ok, Port} = inet:port(ListenSock),
             Port;
         {error,Reason} ->
@@ -23,10 +21,8 @@ server(LS) ->
             Length = string:len(Data),
             Name = string:substr(Data, 1, Length-1),
             gen_server:cast(server, {'init_socket', "global", S, Name}),
-
             Tmp = spawn(tcp_handler, server,[LS]), %<---- supervisor needed
             io:format("New Connectiv: ~w ~n",[Tmp]),
-
             loop(S),
             server(LS);
         Other ->

@@ -31,13 +31,13 @@ get_parts_test() ->
     ?assertEqual({[],[],[]},parser:get_parts("    ")),
     ?assertEqual({"asd",[],[]},parser:get_parts("asd")),
     ?assertEqual({"tjena","tjofräs",[]},parser:get_parts("tjena tjofräs")),
-    ?assertEqual({"hallå","hej","köttbullar"},parser:get_parts("hallå hej köttbullar")),
-    ?assertEqual({"hallå","hej","köttbullar"},parser:get_parts("hallå hej köttbullar kladdkaka med grädde")),
+    ?assertEqual({"hallå","hej",false},parser:get_parts("hallå hej köttbullar")),
+    ?assertEqual({"hallå","hej",false},parser:get_parts("hallå hej köttbullar kladdkaka med grädde")),
     ?assertEqual({"asd","qwe",true},parser:get_parts("asd qwe true")),
     ?assertEqual({"hallaballo","tratt",false},parser:get_parts("hallaballo tratt false")),
     ?assertEqual({"asd","qwe",true},parser:get_parts("asd qwe true jag har kul")),
     ?assertEqual({"hallaballo","tratt",false},parser:get_parts("hallaballo tratt false jag är glad")),
-    ?assertEqual({"massor","av","nonsens"},parser:get_parts("massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens")).
+    ?assertEqual({"massor","av",false},parser:get_parts("massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens massor av nonsens")).
 
 
 %%%%%%%%%%%%%%%%%%% Tests for get_string %%%%%%%%%%%%%%%%%%%

@@ -3,7 +3,7 @@
 %% To use EUnit we must include this:
 -include_lib("eunit/include/eunit.hrl").
 
--export([handle/2, get_string/3]).
+-export([remove_new_line/1, get_parts/1, handle/2, get_string/3]).
 
 remove_new_line([]) ->
     [];
