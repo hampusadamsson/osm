@@ -40,4 +40,3 @@ class connectToServer(threading.Thread):
     def kill(self):
         sys.exit(0)        
         
-
