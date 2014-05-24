@@ -47,7 +47,7 @@ init(Args) ->
 %% Sock = inc. Socket
 %% ------------------------------------------------------------------
 handle_cast({'init_socket', Room, NewSock, Name}, List) ->
-    {noreply, room:initSock(Room, List, NewSock, Name)};
+    {noreply, room:init_sock(Room, List, NewSock, Name)};
 
 %% ------------------------------------------------------------------
 %% Add socket with name when writing /join
@@ -67,7 +67,7 @@ handle_cast({'invite', Name, Room}, List) ->
 %% Rem_Sock = The one to remove
 %% ------------------------------------------------------------------
 handle_cast({'remove', Rem_Socket}, Sock) ->
-    {noreply, room:removeFromAll(Sock, Rem_Socket)};
+    {noreply, room:remove_from_all(Sock, Rem_Socket)};
 
 %% ------------------------------------------------------------------
 %% Remove socket from certain room in list
@@ -81,7 +81,7 @@ handle_cast({'remove_from_room', Room, Rem_Socket}, Sock) ->
 %% Sock = socket created by 'connect'
 %% ------------------------------------------------------------------
 handle_cast({'send', Room, Msg, Sock}, List) ->
-    NameMsg = parser:getString(Msg, Sock, List),
+    NameMsg = parser:get_string(Msg, Sock, List),
     spawn(?MODULE, send_to_all,[NameMsg, room:receivers(Room, List, 1)]),
     {noreply, List};
 
@@ -89,7 +89,9 @@ handle_cast({'send', Room, Msg, Sock}, List) ->
 %% Returns users in a room.
 %% ------------------------------------------------------------------
 handle_cast({'list_room_users', Room},List) ->
-    send_to_all(room:users_in_room(Room,List), room:receivers(Room,List,1)),
+    Rooms = room:users_in_room(Room, List),
+    Receivers = room:receivers(Room, List, 1),
+    spawn(?MODULE, send_to_all, [Rooms, Receivers]),
     {noreply, List}.
 
 
@@ -97,7 +99,7 @@ handle_cast({'list_room_users', Room},List) ->
 %% Find name connected to Sock
 %% ------------------------------------------------------------------
 handle_call({'find_name', Socket}, AllRooms) ->
-    {reply, room:findName(Socket, AllRooms), AllRooms}. 
+    {reply, room:find_name(Socket, AllRooms), AllRooms}. 
 
 %% ------------------------------------------------------------------
 %% Displays current user-list

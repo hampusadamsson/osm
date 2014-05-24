@@ -1,7 +1,7 @@
 -module(room).
 
--export([remove/3, removeFromAll/2, insert/5, receivers/3, findSock/2,
-        findName/2, initSock/4, users_in_room/2, invite/3,
+-export([remove/3, remove_from_all/2, insert/5, receivers/3, find_sock/2,
+        find_name/2, init_sock/4, users_in_room/2, invite/3,
         add_socket/4, find/4]).
 
 %--------------------------------------------------------------------------
@@ -35,13 +35,13 @@ receivers(Room, List, N) ->
 %
 %--------------------------------------------------------------------------
 
-initSock(Room, List, Socket, Name)->
-    case findSock(Name, List) of
+init_sock(Room, List, Socket, Name)->
+    case find_sock(Name, List) of
         false ->
             NewList = insert(Room, List, Socket, Name, false);
         _ ->
             NewName = string:concat(Name, "_"),
-            NewList = initSock(Room, List, Socket, NewName)
+            NewList = init_sock(Room, List, Socket, NewName)
     end,
     gen_server:cast(server, {'list_room_users', Room}),
     NewList.
@@ -94,28 +94,45 @@ remove(Room, List, Socket)->
 
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
+% Update all rooms user lists
+%
+%--------------------------------------------------------------------------
+inform_all([]) ->
+    ok;
+inform_all([{Room, _, _}|T]) ->
+    gen_server:cast(server, {'list_room_users', Room}),
+    inform_all(T).
+
+%--------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 % remove the List of rooms
 % 
 % ex. [{room_name, [sock1,sock2,sock3]}]
 %
 %--------------------------------------------------------------------------
-removeFromAll([], _) ->
+remove_from_all_([], _) ->
     [];
-removeFromAll([H|T], Sock) ->
+remove_from_all_([H|T], Sock) ->
     {Room, SockList, Secrecy} = H,
     case lists:keydelete(Sock, 1, SockList) of
         [] ->
-            removeFromAll(T, Sock);
+            remove_from_all_(T, Sock);
         NewSockList ->
-            [{Room, NewSockList, Secrecy}|removeFromAll(T, Sock)]
+            [{Room, NewSockList, Secrecy}|remove_from_all_(T, Sock)]
     end.
+
+remove_from_all(List, Sock) ->
+    NewList = remove_from_all_(List, Sock),
+    inform_all(List),
+    NewList.
+
 
 %--------------------------------------------------------------------------
 % Find the socket assosciated with the name
 % Arg1 - username assosciated with the socket
 % Arg2 - The entire list where the socket might be found
 %--------------------------------------------------------------------------
-findSock(Name, List) ->
+find_sock(Name, List) ->
     find(Name,List,2,1).
 
 %--------------------------------------------------------------------------
@@ -123,11 +140,11 @@ findSock(Name, List) ->
 % Arg1 - socket assosciated with the name
 % Arg2 - The entire list where the socket might be found
 %--------------------------------------------------------------------------
-findName(Sock, List) ->
+find_name(Sock, List) ->
     find(Sock,List,1,2).
 
 %--------------------------------------------------------------------------
-% Find function used by findName/findSock
+% Find function used by find_name/find_sock
 %--------------------------------------------------------------------------
 find(Sock, List, Nr, Nr2) ->
     case lists:keyfind("global", 1, List) of
@@ -168,12 +185,12 @@ users_in_room(Room ,List) ->
 % Find the invited socket, if it exists
 %--------------------------------------------------------------------------
 invite(Name, Room, List) ->
-    case room:findSock(Name, List) of
+    case room:find_sock(Name, List) of
         false ->
             NewList = List;
         Sock ->
             gen_tcp:send(Sock, "{invited " ++ Room ++ "}\n"),
-            NewList = room:insert(Room, List, Sock, Name, true)
+            NewList = room:insert(Room, List, Sock, Name, false)
     end,
     gen_server:cast(server, {'list_room_users', Room}),
     NewList.
@@ -183,7 +200,7 @@ invite(Name, Room, List) ->
 % Check things before we add a new socket
 %--------------------------------------------------------------------------
 add_socket(NewSock, Room, List, Secrecy1) ->
-    case findName(NewSock, List) of
+    case find_name(NewSock, List) of
         false ->
             NewList = List;
         Name ->

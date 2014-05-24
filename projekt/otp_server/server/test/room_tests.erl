@@ -95,33 +95,33 @@ removeFromAll_test() ->
     L3 = room:insert("Room2", L2, s1, "Tommy", false),
     L4 = room:insert("Room3", L3, s1, "Tommy", false),
     L5 = room:insert("Room4", L4, s1, "Tommy", false),
-    ?assertEqual(room:removeFromAll(L1, s1), []),
-    ?assertEqual(room:removeFromAll(L5, s1), []).
+    ?assertEqual(room:remove_from_all(L1, s1), []),
+    ?assertEqual(room:remove_from_all(L5, s1), []).
 
-findSock_test() ->
+find_sock_test() ->
     L1 = room:insert("global", [], s1, "Tommy", false),
     L2 = room:insert("global", L1, s2, "Timmy", false),
     L3 = room:insert("global", L2, s3, "Kenny", false),
     L4 = room:insert("global", L3, s4, "Jenny", false),
     L5 = room:insert("global", L4, s5, "Ronny", false),
-    ?assertEqual(room:findSock("Benny", L5), false),
-    ?assertEqual(room:findSock("Tommy", L5), s1),
-    ?assertEqual(room:findSock("Timmy", L5), s2),
-    ?assertEqual(room:findSock("Kenny", L5), s3),
-    ?assertEqual(room:findSock("Jenny", L5), s4),
-    ?assertEqual(room:findSock("Ronny", L5), s5).
+    ?assertEqual(room:find_sock("Benny", L5), false),
+    ?assertEqual(room:find_sock("Tommy", L5), s1),
+    ?assertEqual(room:find_sock("Timmy", L5), s2),
+    ?assertEqual(room:find_sock("Kenny", L5), s3),
+    ?assertEqual(room:find_sock("Jenny", L5), s4),
+    ?assertEqual(room:find_sock("Ronny", L5), s5).
 
-findName_test() ->
+find_name_test() ->
     L1 = room:insert("global", [], s1, "Tommy", false),
     L2 = room:insert("global", L1, s2, "Timmy", false),
     L3 = room:insert("global", L2, s3, "Kenny", false),
     L4 = room:insert("global", L3, s4, "Jenny", false),
     L5 = room:insert("global", L4, s5, "Ronny", false),
-    ?assertEqual(room:findName(s1, L5), "Tommy"),
-    ?assertEqual(room:findName(s2, L5), "Timmy"),
-    ?assertEqual(room:findName(s3, L5), "Kenny"),
-    ?assertEqual(room:findName(s4, L5), "Jenny"),
-    ?assertEqual(room:findName(s5, L5), "Ronny").
+    ?assertEqual(room:find_name(s1, L5), "Tommy"),
+    ?assertEqual(room:find_name(s2, L5), "Timmy"),
+    ?assertEqual(room:find_name(s3, L5), "Kenny"),
+    ?assertEqual(room:find_name(s4, L5), "Jenny"),
+    ?assertEqual(room:find_name(s5, L5), "Ronny").
 
 users_in_room_test() ->
     L1 = room:insert("global", [], s1, "Tommy", false),
