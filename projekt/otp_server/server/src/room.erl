@@ -2,7 +2,7 @@
 
 -export([remove/3, remove_from_all/2, insert/5, receivers/3, find_sock/2,
         find_name/2, init_sock/4, users_in_room/2, invite/3,
-        add_socket/4, find/4]).
+        add_socket/4, rooms/1, get_info/2]).
 
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
@@ -43,7 +43,7 @@ init_sock(Room, List, Sock, Name)->
             NewName = string:concat(Name, "_"),
             NewList = init_sock(Room, List, Sock, NewName)
     end,
-    gen_server:cast(server, {'list_room_users', Room}),
+    inform_all(NewList),
     NewList.
 
 %--------------------------------------------------------------------------
@@ -80,16 +80,17 @@ remove(Room, List, Sock)->
         {Room, SockList1, Secrecy}->
             TmpList = lists:keydelete(Room, 1, List),
             SockList2 = lists:keydelete(Sock, 1, SockList1),
-            if 
-                length(SockList2)==0 ->
-                    NewList = TmpList;
+            case SockList2 of
+                [] ->
+                    NewList = TmpList,
+                    inform_all(List);
                 true ->  
                     NewList = [{Room, SockList2, Secrecy}|TmpList]
             end;
         false ->
             NewList = List
     end,
-    gen_server:cast(server, {'list_room_users', Room}),
+    inform_all(NewList),
     NewList.
 
 %--------------------------------------------------------------------------
@@ -99,8 +100,10 @@ remove(Room, List, Sock)->
 %--------------------------------------------------------------------------
 inform_all([]) ->
     ok;
-inform_all([{Room, _, _}|T]) ->
-    gen_server:cast(server, {'list_room_users', Room}),
+inform_all(NewList) ->
+    [{Room, _, _}|T] = NewList,
+    gen_server:cast(server, {'list_room_users', Room, NewList}),
+    gen_server:cast(server, {'list_rooms', Room, NewList}),
     inform_all(T).
 
 %--------------------------------------------------------------------------
@@ -123,7 +126,7 @@ remove_from_all_([H|T], Sock) ->
 
 remove_from_all(List, Sock) ->
     NewList = remove_from_all_(List, Sock),
-    inform_all(List),
+    inform_all(NewList),
     NewList.
 
 
@@ -179,6 +182,22 @@ users_in_room(Room ,List) ->
         {_, SockList, _} ->
             "{"++ Room ++ " " ++ users_helper(SockList,"") ++ "}\n"
     end.
+
+%--------------------------------------------------------------------------
+%--------------------------------------------------------------------------
+% Lists all rooms
+%--------------------------------------------------------------------------
+
+% Helper function to rooms
+rooms_helper([]) ->
+    "";
+rooms_helper([{Room, _, _}|[]]) ->
+    Room;
+rooms_helper([{Room, _, _}|T]) ->
+    Room ++ "," ++ rooms_helper(T).
+
+rooms(List) ->
+    "{" ++ rooms_helper(List) ++ "}".
     
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
@@ -192,7 +211,7 @@ invite(Name, Room, List) ->
             gen_tcp:send(Sock, "{invited " ++ Room ++ "}\n"),
             NewList = room:insert(Room, List, Sock, Name, false)
     end,
-    gen_server:cast(server, {'list_room_users', Room}),
+    inform_all(NewList),
     NewList.
 
 %--------------------------------------------------------------------------
@@ -224,6 +243,18 @@ add_socket(NewSock, Room, List, Secrecy1) ->
                     NewList = insert(Room, List, NewSock, Name, Secrecy1)
             end
     end,
-    gen_server:cast(server, {'list_room_users', Room}),
+    inform_all(NewList),
     NewList.
 
+%--------------------------------------------------------------------------
+%--------------------------------------------------------------------------
+% Get info of a room as a string
+%--------------------------------------------------------------------------
+get_info(Room, List) ->
+    {_, _, Secrecy} = lists:keyfind(Room, 1, List),
+    case Secrecy of
+        false ->
+            Room ++ " >  INFO " ++ Room ++ ": open\n";
+        true ->
+            Room ++ " >  INFO " ++ Room ++ ": private\n"
+    end.
