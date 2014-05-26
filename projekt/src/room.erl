@@ -55,10 +55,10 @@ init_sock(Room, List, Sock, Name)->
 insert(Room, List, Sock, Name, Secrecy1) ->
     case lists:keyfind(Room, 1, List) of
         {Room, SockList, Secrecy2} ->
-            TmpList = lists:keydelete(Room, 1, List),
+            NewSockList = [{Sock, Name}|SockList],
             case lists:keyfind(Sock, 1, SockList) of
                 false ->
-                    NewList = [{Room, [{Sock, Name}|SockList], Secrecy2}|TmpList];
+                    NewList = lists:keyreplace(Room, 1, List, {Room, NewSockList, Secrecy2});
                 _ ->
                     NewList = List
             end;
