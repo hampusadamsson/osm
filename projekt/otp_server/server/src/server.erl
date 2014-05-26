@@ -43,42 +43,55 @@ init(Args) ->
     tcp_handler:start(1337),
     {ok, Args}.
 
+%% ------------------------------------------------------------------
+%% @doc
 %% Establish a Socket to an incoming connection
 %% Sock = inc. Socket
+%% @end
 %% ------------------------------------------------------------------
 handle_cast({'init_socket', Room, NewSock, Name}, List) ->
     {noreply, room:init_sock(Room, List, NewSock, Name)};
 
 %% ------------------------------------------------------------------
+%% @doc
 %% Add socket with name when writing /join
 %% Sock = inc. Socket
+%% @end
 %% ------------------------------------------------------------------
 handle_cast({'add_socket', Room, NewSock, Secrecy}, List) ->
     {noreply, room:add_socket(NewSock, Room, List, Secrecy)};
 
 %% ------------------------------------------------------------------
+%% @doc
 %% Invite user Name to room Room
+%% @end
 %% ------------------------------------------------------------------
 handle_cast({'invite', Name, Room}, List) ->
     {noreply, room:invite(Name, Room, List)};
 
 %% ------------------------------------------------------------------
+%% @doc
 %% Remove socket from list after disconnect
 %% Rem_Sock = The one to remove
+%% @end
 %% ------------------------------------------------------------------
 handle_cast({'remove', RemSocket}, List) ->
     {noreply, room:remove_from_all(List, RemSocket)};
 
 %% ------------------------------------------------------------------
+%% @doc
 %% Remove socket from certain room in list
 %% Rem_Sock = The one to remove
+%% @end
 %% ------------------------------------------------------------------
 handle_cast({'remove_from_room', Room, RemSocket}, List) ->
     {noreply, room:remove(Room, List, RemSocket)};
 
 %% ------------------------------------------------------------------
+%% @doc
 %% Sends a message !IF! connected
 %% Sock = socket created by 'connect'
+%% @end
 %% ------------------------------------------------------------------
 handle_cast({'send', Room, Msg, Sock}, List) ->
     NameMsg = parser:get_string(Msg, Sock, List),
@@ -86,7 +99,9 @@ handle_cast({'send', Room, Msg, Sock}, List) ->
     {noreply, List};
 
 %% ------------------------------------------------------------------
+%% @doc
 %% Returns users in a room.
+%% @end
 %% ------------------------------------------------------------------
 handle_cast({'list_room_users', Room},List) ->
     Rooms = room:users_in_room(Room, List),
@@ -95,7 +110,9 @@ handle_cast({'list_room_users', Room},List) ->
     {noreply, List}.
 
 %% ------------------------------------------------------------------
+%% @doc
 %% Displays current user-list
+%% @end
 %% ------------------------------------------------------------------
 handle_call({'list_users'}, _From, List) ->
     io:format("~s \n",[inet:i()]),
@@ -103,11 +120,12 @@ handle_call({'list_users'}, _From, List) ->
     {reply, List, List};
 
 %% ------------------------------------------------------------------
+%% @doc
 %% Listen for incoming connections 
 %%
 %% start(Arg1,Arg2)
 %% Arg1 = listening port for incoming servers
-%%
+%% @end
 %% ------------------------------------------------------------------
 handle_call({'start_servers'}, _From, Socket) ->
     Port=1337,
