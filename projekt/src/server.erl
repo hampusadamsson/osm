@@ -43,7 +43,10 @@ init(Args) ->
     tcp_handler:start(1337),
     {ok, Args}.
 
+%% Establish a Socket to an incoming connection
+%% Sock = inc. Socket
 %% ------------------------------------------------------------------
+
 %% @doc
 %% Establish a Socket to an incoming connection
 %% Sock = inc. Socket
@@ -107,6 +110,36 @@ handle_cast({'list_room_users', Room},List) ->
     Rooms = room:users_in_room(Room, List),
     Receivers = room:receivers(Room, List, 1),
     spawn(?MODULE, send_to_all, [Rooms, Receivers]),
+    {noreply, List}.
+
+handle_cast({'send', Room, Msg, Sock}, List) ->
+    NameMsg = parser:get_string(Msg, Sock, List),
+    spawn(?MODULE, send_to_all,[NameMsg, room:receivers(Room, List, 1)]),
+    {noreply, List};
+
+%% ------------------------------------------------------------------
+%% Returns users in a room.
+%% ------------------------------------------------------------------
+handle_cast({'list_room_users', Room, NewList}, _) ->
+    Users = room:users_in_room(Room, NewList),
+    Receivers = room:receivers(Room, NewList, 1),
+    spawn(?MODULE, send_to_all, [Users, Receivers]),
+    {noreply, NewList};
+
+%% ------------------------------------------------------------------
+%% Returns all the rooms in List.
+%% ------------------------------------------------------------------
+handle_cast({'list_rooms', NewList}, _) ->
+    Rooms = room:rooms(NewList),
+    Receivers = room:receivers("global", NewList, 1),
+    spawn(?MODULE, send_to_all, [Rooms, Receivers]),
+    {noreply, NewList};
+
+%% ------------------------------------------------------------------
+%% Show info about the room
+%% ------------------------------------------------------------------
+handle_cast({'info', Room, Sock}, List) ->
+    gen_tcp:send(Sock, room:get_info(Room, List)),
     {noreply, List}.
 
 %% ------------------------------------------------------------------

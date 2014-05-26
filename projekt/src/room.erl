@@ -2,15 +2,15 @@
 
 -export([remove/3, remove_from_all/2, insert/5, receivers/3, find_sock/2,
         find_name/2, init_sock/4, users_in_room/2, invite/3,
-        add_socket/4, find/4]).
+        add_socket/4, rooms/1, get_info/2]).
 
-%%--------------------------------------------------------------------------
-%% @doc 
-%% returns a list of sockets in a room
-%% 
-%% ex. [{room_name, [sock1,sock2,sock3]}]
-%% @end
-%%--------------------------------------------------------------------------
+%--------------------------------------------------------------------------
+%--------------------------------------------------------------------------
+% returns a list of sockets in a room
+% 
+% ex. [{room_name, [sock1,sock2,sock3]}]
+%
+%--------------------------------------------------------------------------
 receivers(Room, List, N) ->
     case lists:keyfind(Room, 1, List) of
         {Room, SockList, _}->
@@ -42,7 +42,7 @@ init_sock(Room, List, Sock, Name)->
             NewName = string:concat(Name, "_"),
             NewList = init_sock(Room, List, Sock, NewName)
     end,
-    gen_server:cast(server, {'list_room_users', Room}),
+    inform_all(NewList),
     NewList.
 
 %%--------------------------------------------------------------------------
@@ -79,16 +79,17 @@ remove(Room, List, Sock)->
         {Room, SockList1, Secrecy}->
             TmpList = lists:keydelete(Room, 1, List),
             SockList2 = lists:keydelete(Sock, 1, SockList1),
-            if 
-                length(SockList2)==0 ->
-                    NewList = TmpList;
+            case SockList2 of
+                [] ->
+                    NewList = TmpList,
+                    inform_all(List);
                 true ->  
                     NewList = [{Room, SockList2, Secrecy}|TmpList]
             end;
         false ->
             NewList = List
     end,
-    gen_server:cast(server, {'list_room_users', Room}),
+    inform_all(NewList),
     NewList.
 
 %--------------------------------------------------------------------------
@@ -96,11 +97,16 @@ remove(Room, List, Sock)->
 % Update all rooms user lists
 %
 %--------------------------------------------------------------------------
-inform_all([]) ->
+inform_all_([]) ->
     ok;
-inform_all([{Room, _, _}|T]) ->
-    gen_server:cast(server, {'list_room_users', Room}),
+inform_all_(NewList) ->
+    [{Room, _, _}|T] = NewList,
+    gen_server:cast(server, {'list_room_users', Room, NewList}),
     inform_all(T).
+
+inform_all(NewList) ->
+    inform_all_(NewList),
+    gen_server:cast(server, {'list_rooms', NewList}).
 
 %%--------------------------------------------------------------------------
 %% @doc
@@ -174,19 +180,20 @@ find(Sock, List, N1, N2) ->
 
 %%--------------------------------------------------------------------------
 %% @doc
-%% Helper function to users_in_room
-%% @end
-%%--------------------------------------------------------------------------
-users_in_room_([H|[]], S) ->
-    S ++ element(2,H);
-users_in_room_([H|T], S) ->
-    users_in_room_(T, S ++ element(2,H) ++ ",").	
-
-%%--------------------------------------------------------------------------
-%% @doc
 %% Lists users in a room
 %% @end
 %%--------------------------------------------------------------------------
+
+%%--------------------------------------------------------------------------
+%% @doc
+%% Helper function to users_in_room
+%% @end
+%%--------------------------------------------------------------------------
+users_helper([H|[]], S) ->
+    S ++ element(2,H);
+users_helper([H|T], S) ->
+    users_helper(T, S ++ element(2,H) ++ ",").	
+
 users_in_room(_, []) ->
     "";
 users_in_room(Room ,List) ->
@@ -194,7 +201,7 @@ users_in_room(Room ,List) ->
         false ->
             "";
         {_, SockList, _} ->
-            "{"++ Room ++ " " ++ users_in_room_(SockList,"") ++ "}\n"
+            "{"++ Room ++ " " ++ users_helper(SockList,"") ++ "}\n"
     end.
     
 
@@ -211,9 +218,25 @@ invite(Name, Room, List) ->
             gen_tcp:send(Sock, "{invited " ++ Room ++ "}\n"),
             NewList = room:insert(Room, List, Sock, Name, false)
     end,
-    gen_server:cast(server, {'list_room_users', Room}),
+    inform_all(NewList),
     NewList.
 
+%--------------------------------------------------------------------------
+%--------------------------------------------------------------------------
+% Lists all rooms
+%--------------------------------------------------------------------------
+
+% Helper function to rooms
+rooms_helper([]) ->
+    "";
+rooms_helper([{Room, _, _}|[]]) ->
+    Room;
+rooms_helper([{Room, _, _}|T]) ->
+    Room ++ "," ++ rooms_helper(T).
+
+rooms(List) ->
+    "{" ++ rooms_helper(List) ++ "}\n".
+    
 %%--------------------------------------------------------------------------
 %% @doc
 %% Check things before we add a new socket
@@ -244,5 +267,18 @@ add_socket(NewSock, Room, List, Secrecy1) ->
                     NewList = insert(Room, List, NewSock, Name, Secrecy1)
             end
     end,
-    gen_server:cast(server, {'list_room_users', Room}),
+    inform_all(NewList),
     NewList.
+
+%--------------------------------------------------------------------------
+%--------------------------------------------------------------------------
+% Get info of a room as a string
+%--------------------------------------------------------------------------
+get_info(Room, List) ->
+    {_, _, Secrecy} = lists:keyfind(Room, 1, List),
+    case Secrecy of
+        false ->
+            Room ++ " >  INFO " ++ Room ++ ": open\n";
+        true ->
+            Room ++ " >  INFO " ++ Room ++ ": private\n"
+    end.
