@@ -18,18 +18,13 @@
 %% API Function Exports
 %% ------------------------------------------------------------------
 
--export([start_link/0, connect/2, send/2, start_servers/0, send_to_all/2, list_users/0]).
-
-%% ------------------------------------------------------------------
-%% TCP/IP Sockets Exports
-%% ------------------------------------------------------------------
--export([start_servers/1, server/1]). 
+-export([start_link/0, send/2, start_servers/0, send_to_all/2, list_users/0, crash_me/1]).
 
 %% ------------------------------------------------------------------
 %% gen_server Function Exports
 %% ------------------------------------------------------------------
 
--export([init/1, handle_call/2, handle_call/3, handle_cast/2, handle_info/2,
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
 %% ------------------------------------------------------------------
@@ -44,24 +39,15 @@ start_link() ->
 %% ------------------------------------------------------------------
 
 init(Args) ->
+    process_flag(trap_exit, true),
+    tcp_handler:start(1337),
     {ok, Args}.
 
-%% ------------------------------------------------------------------
-%% Connects to a remote Host (Not. a server function)
-%% IP = remote ip
-%% Port = remote port
-%% ------------------------------------------------------------------
-handle_cast({'connect', IP, Port}, _Sock) ->
-    {ok, Sock} = gen_tcp:connect(IP, Port, [binary, {active,true}, {packet, line}]), % 2-line kan behöva bytas 
-    spawn(?MODULE,loop,[Sock]),
-    {noreply, [Sock|_Sock]};
-
-%% ------------------------------------------------------------------
 %% Establish a Socket to an incoming connection
 %% Sock = inc. Socket
 %% ------------------------------------------------------------------
 handle_cast({'init_socket', Room, NewSock, Name}, List) ->
-    {noreply, room:initSock(Room, List, NewSock, Name)};
+    {noreply, room:init_sock(Room, List, NewSock, Name)};
 
 %% ------------------------------------------------------------------
 %% Add socket with name when writing /join
@@ -80,46 +66,57 @@ handle_cast({'invite', Name, Room}, List) ->
 %% Remove socket from list after disconnect
 %% Rem_Sock = The one to remove
 %% ------------------------------------------------------------------
-handle_cast({'remove', Rem_Socket}, Sock) ->
-    {noreply, room:removeFromAll(Sock, Rem_Socket)};
+handle_cast({'remove', RemSocket}, List) ->
+    {noreply, room:remove_from_all(List, RemSocket)};
 
 %% ------------------------------------------------------------------
 %% Remove socket from certain room in list
 %% Rem_Sock = The one to remove
 %% ------------------------------------------------------------------
-handle_cast({'remove_from_room', Room, Rem_Socket}, Sock) ->
-    {noreply, room:remove(Room, Sock, Rem_Socket)};
+handle_cast({'remove_from_room', Room, RemSocket}, List) ->
+    {noreply, room:remove(Room, List, RemSocket)};
 
 %% ------------------------------------------------------------------
 %% Sends a message !IF! connected
 %% Sock = socket created by 'connect'
 %% ------------------------------------------------------------------
 handle_cast({'send', Room, Msg, Sock}, List) ->
-    NameMsg = parser:getString(Msg, Sock, List),
-    send_to_all(NameMsg, room:receivers(Room, List, 1)),
+    NameMsg = parser:get_string(Msg, Sock, List),
+    spawn(?MODULE, send_to_all,[NameMsg, room:receivers(Room, List, 1)]),
     {noreply, List};
 
 %% ------------------------------------------------------------------
 %% Returns users in a room.
 %% ------------------------------------------------------------------
-handle_cast({'list_room_users', Room},Sock) ->
-    send_to_all(room:users_in_room(Room,Sock), room:receivers(Room,Sock)),
-    {noreply, Sock}.
-
+handle_cast({'list_room_users', Room, NewList}, _) ->
+    Users = room:users_in_room(Room, NewList),
+    Receivers = room:receivers(Room, NewList, 1),
+    spawn(?MODULE, send_to_all, [Users, Receivers]),
+    {noreply, NewList};
 
 %% ------------------------------------------------------------------
-%% Find name connected to Sock
+%% Returns all the rooms in List.
 %% ------------------------------------------------------------------
-handle_call({'find_name', Socket}, AllRooms) ->
-    {reply, room:findName(Socket, AllRooms), AllRooms}. 
+handle_cast({'list_rooms', NewList}, _) ->
+    Rooms = room:rooms(NewList),
+    Receivers = room:receivers("global", NewList, 1),
+    spawn(?MODULE, send_to_all, [Rooms, Receivers]),
+    {noreply, NewList};
+
+%% ------------------------------------------------------------------
+%% Show info about the room
+%% ------------------------------------------------------------------
+handle_cast({'info', Room, Sock}, List) ->
+    gen_tcp:send(Sock, room:get_info(Room, List)),
+    {noreply, List}.
 
 %% ------------------------------------------------------------------
 %% Displays current user-list
 %% ------------------------------------------------------------------
-handle_call({'list_users'}, _From, Sock) ->
+handle_call({'list_users'}, _From, List) ->
     io:format("~s \n",[inet:i()]),
-    io:format("Connections: ~w\n",[length(Sock)]),
-    {reply, Sock, Sock};
+    io:format("Rooms: ~w\n",[length([List])]),
+    {reply, List, List};
 
 %% ------------------------------------------------------------------
 %% Listen for incoming connections 
@@ -135,7 +132,10 @@ handle_call({'start_servers'}, _From, Socket) ->
 handle_info(_Info, State) ->
     {noreply, State}.
 
-terminate(_Reason, _State) ->
+terminate(_Reason, State) ->
+    Sockets2kill = room:receivers("global", State, 1),
+    io:format("Trap exits...\n"),
+    lists:foreach(fun(X)->gen_tcp:close(X) end, Sockets2kill),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->
@@ -146,9 +146,6 @@ code_change(_OldVsn, State, _Extra) ->
 %% ------------------------------------------------------------------
 
 
-connect(IP,Port)->
-    gen_server:cast(server, {'connect', IP, Port}).
-
 send(Room, Msg)->
     gen_server:cast(server, {'send', Room, Msg}).
 
@@ -158,32 +155,28 @@ start_servers()->
 list_users()->
     gen_server:call(server, {'list_users'}).
 
+crash_me(Crash_type)->
+    case Crash_type of
+        1 ->
+            gen_server:call(server, {'fsdadsfeasdfsagsadgagd'});        
+        2 ->
+             gen_server:call(server, {crash, "i'm crashing"});
+        3  ->
+            13/0
+        end.
 
+    
 %
 %-
 %----------------------------------------- SERVER-tcp/ip ----
 %
 %
 
-%%                 TODO
-%              
-%   ok      lyssnande servern
-%   ok      listan på sockets - update
-%           fixa bra print - inet:i().       
-
-
 send_to_all(_,[])->
     ok;
 send_to_all(Msg,[Sock|Rest])->
     gen_tcp:send(Sock, Msg),
     send_to_all(Msg,Rest).
-
-
-start_servers(LS) ->
-    spawn(?MODULE,server,[LS]).
-
-server(LS) ->
-    tcp_handler:server(LS).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%% Eunit test cases  %%%%%%%%%%%%%%%%%%%%

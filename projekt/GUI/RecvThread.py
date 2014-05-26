@@ -14,8 +14,8 @@ class StoppableThread(threading.Thread):
         while True:
             data = self.serverSocket.readline()
 
-            #Om vi bara får bullshit från socketen avslutas tråden och GUI:t
-            #informeras att detta har hänt med "Disconnect" meddelandet
+            #Om vi bara far bullshit fran socketen avslutas traden och GUI:t
+            #informeras att detta har hant med "Disconnect" meddelandet
 
             if not data:
                 #Avbryt loopen

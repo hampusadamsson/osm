@@ -36,8 +36,6 @@ class GUI(object):
 
         self.userWindow = Text(master, width=20,state=DISABLED)
         self.userWindow.place(x=0,y=23)
-        self.roomWindow = Text(master, width=20,state=DISABLED)
-        self.roomWindow.place(x=700,y=23)
 
 ##########################################################################
 #Stringvariablel som används för att få tillbaka texten från Entryfältet
@@ -64,7 +62,7 @@ class GUI(object):
 
         self.windowList = {}
         self.userList = {}
-        self.rooms = {}
+        self.roomSuccess = {}
         self.configList = {}
 
         self.userList["global"] = ['']
@@ -162,13 +160,45 @@ class GUI(object):
                 arguments = 1
             if success == 1:
                 if (arguments == 2):
+                    self.roomSuccess[argumentString2[0]] = ""
                     msg_temp = argumentString2[0] + " " + mtext1+'\n'
-                    msg = msg_temp.encode('UTF-8')   
+                    msg = msg_temp.encode('UTF-8')
+                    self.serverSocket.send(msg)
+                    self.master.after(100,self.checkRoomSuccess,argumentString2[0])
+                  
                 else:
+                    self.roomSuccess[argumentString[1]] = ""
                     msg_temp = argumentString[1] + " " + mtext1+'\n'
                     msg = msg_temp.encode('UTF-8')
-                self.serverSocket.send(msg)
+                    self.serverSocket.send(msg)
+                    self.master.after(100,self.checkRoomSuccess,argumentString[1])    
                 self.message.delete(0,END)
+                def validateRoom(room):
+                    if self.joinStatus == 1:
+                        
+                        if (self.roomSuccess[room][0] == "success"):
+                                self.addTab(room)
+                                if(self.roomSuccess[room][1] == "new"):
+                                    self.writeMessage("Välkommen till det nya rummet " + room)
+                                else:
+                                    self.writeMessage("Välkommen till det existerande rummet " + room)
+                                self.roomSuccess.pop(room,None) 
+                        else:
+                            self.writeMessage("Rummet är slutet, du måste bli invitad!")
+                            self.message.delete(0,END)
+                            self.joinStatus = 0
+                            
+                    else:
+                       
+                        if arguments == 2:
+                            self.master.after(100,validateRoom,argumentString2[0])
+                        else:
+                            self.master.after(100,validateRoom,argumentString[1])
+                if arguments == 2:
+                    self.master.after(200,validateRoom,argumentString2[0])
+                else:
+                    self.master.after(200,validateRoom,argumentString[1])
+                
             else:
                 self.writeMessage("Du är redan med i det angivna rummet!")
                 self.message.delete(0,END)
@@ -244,33 +274,23 @@ class GUI(object):
             else:
                 self.writeMessage("Tappade anslutningen till servern, anslut manuellt med /connect IP")           
         elif(respons[0][0] == "{"):
-                print (respons)
+                print(respons)
                 temp = respons[1:len(respons)-2]
-                if " " in temp:
-                    commandString = self.messageSplit(temp)
-                    if commandString[0] == 'success':
-                        commandString2 = self.messageSplit(commandString[1])
-                        self.rooms[commandString2[0]] = [commandString[0],commandString2[1]]
-                        print("Tabnamn:" +commandString2[0])
-                        self.addTab(commandString2[0])
-                    elif commandString[0] == 'error':
-                        self.writeMessage("Rummet är slutet, du måste bli inbjuden")
-                    elif (commandString[0] == 'invited'):
-                        if(self.noDuplicate(commandString[1])):
-                            self.addTab(commandString[1])
-                    else:
-                        self.userList[commandString[0]] = commandString[1].split(",")
-                        if (commandString[0] == self.currentTab):
-                            self.fillUserList(self.currentTab)
+                commandString = self.messageSplit(temp)
+                if commandString[0] == 'success':
+                    commandString2 = self.messageSplit(commandString[1])
+                    self.roomSuccess[commandString2[0]] = [commandString[0],commandString2[1]]
+                   
+                elif commandString[0] == 'error':
+                    self.roomSuccess[commandString[1]] = [commandString[0]]
+                    print(self.roomSuccess[commandString[1]])
+                elif (commandString[0] == 'invited'):
+                    if(self.noDuplicate(commandString[1])):
+                        self.addTab(commandString[1])
                 else:
-                    roomList = temp.split(",")
-                    print("Rumslista:")
-                    print (roomList)
-                    self.roomWindow.config(state = NORMAL)
-                    self.roomWindow.delete(1.0,END)
-                    for room in roomList:    
-                        self.roomWindow.insert(END,room+'\n')
-                    self.roomWindow.config(state = DISABLED)
+                    self.userList[commandString[0]] = commandString[1].split(",")
+                    if (commandString[0] == self.currentTab):
+                        self.fillUserList(self.currentTab)
         else:
             argumentString = self.messageSplit(respons)          
             self.windowList[argumentString[0]].config(state=NORMAL)
@@ -377,8 +397,6 @@ class GUI(object):
             self.message.delete(0,END)
             if self.configList["restoreTabs"] == "auto" and len(self.windowList) > 1:
                 self.restoreTabs()
-            elif self.configList["restoreTabs"] == "clear":
-                self.deleteAllTabs()
             elif len(self.windowList) > 1:
                 self.writeMessage("Skriv /restoreTabs för att återskapa dina fönster")
         elif (result == "Failed"):
@@ -420,28 +438,36 @@ class GUI(object):
         element = configString[0:index]
         message = configString[index+1:len(configString)-1]
         self.configList[element] = message
+        print(self.configList)
 
-
+    def checkRoomSuccess(self,room):
+        roomSuccess = self.roomSuccess[room]
+        while(roomSuccess[0] != "success" and roomSuccess[0] != "error"):
+            self.checkRoomSuccess(room)
+        else:
+            self.joinStatus = 1
+        
 ##########################################################
 #Skriver ut ett meddelande i det aktiva fönstret
 ##########################################################
 
     def restoreTabs(self):
+        windowList = []
         for element in self.windowList:
             if element != "global":
-                temp = element + " " + "/invite "+self.configList["userName"] + '\n'
-                msg = temp.encode('UTF-8')
-                self.serverSocket.send(msg)         
+                windowList.append(element)
+                self.deleteTab(element)
+        
+        for window in windowList:
+            self.windowList.pop(window,None)
+            temp = window + " " + "/invite "+self.configList["userName"] + '\n'
+            msg = temp.encode('UTF-8')
+            self.serverSocket.send(msg)
 
     def clearWindow(self):
         self.windowList[self.currentTab].config(state=NORMAL)
         self.windowList[self.currentTab].delete("1.0",END)
         self.windowList[self.currentTab].config(state=DISABLED)
-
-    def deleteAllTabs(self):
-        for window in self.windowList:
-            if window != "global":
-                self.deleteTab(window)
 
 ##########################################################
 #Startar mainfunktionen
