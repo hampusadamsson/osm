@@ -97,9 +97,9 @@ handle_cast({'list_room_users', Room, NewList}, _) ->
 %% ------------------------------------------------------------------
 %% Returns all the rooms in List.
 %% ------------------------------------------------------------------
-handle_cast({'list_rooms', Room, NewList}, _) ->
+handle_cast({'list_rooms', NewList}, _) ->
     Rooms = room:rooms(NewList),
-    Receivers = room:receivers(Room, NewList, 1),
+    Receivers = room:receivers("global", NewList, 1),
     spawn(?MODULE, send_to_all, [Rooms, Receivers]),
     {noreply, NewList};
 

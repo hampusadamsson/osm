@@ -98,13 +98,16 @@ remove(Room, List, Sock)->
 % Update all rooms user lists
 %
 %--------------------------------------------------------------------------
-inform_all([]) ->
+inform_all_([]) ->
     ok;
-inform_all(NewList) ->
+inform_all_(NewList) ->
     [{Room, _, _}|T] = NewList,
     gen_server:cast(server, {'list_room_users', Room, NewList}),
-    gen_server:cast(server, {'list_rooms', Room, NewList}),
     inform_all(T).
+
+inform_all(NewList) ->
+    inform_all_(NewList),
+    gen_server:cast(server, {'list_rooms', NewList}).
 
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
