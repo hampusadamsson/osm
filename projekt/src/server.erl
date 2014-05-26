@@ -106,20 +106,6 @@ handle_cast({'send', Room, Msg, Sock}, List) ->
 %% Returns users in a room.
 %% @end
 %% ------------------------------------------------------------------
-handle_cast({'list_room_users', Room},List) ->
-    Rooms = room:users_in_room(Room, List),
-    Receivers = room:receivers(Room, List, 1),
-    spawn(?MODULE, send_to_all, [Rooms, Receivers]),
-    {noreply, List}.
-
-handle_cast({'send', Room, Msg, Sock}, List) ->
-    NameMsg = parser:get_string(Msg, Sock, List),
-    spawn(?MODULE, send_to_all,[NameMsg, room:receivers(Room, List, 1)]),
-    {noreply, List};
-
-%% ------------------------------------------------------------------
-%% Returns users in a room.
-%% ------------------------------------------------------------------
 handle_cast({'list_room_users', Room, NewList}, _) ->
     Users = room:users_in_room(Room, NewList),
     Receivers = room:receivers(Room, NewList, 1),

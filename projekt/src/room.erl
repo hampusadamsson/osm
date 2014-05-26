@@ -133,7 +133,7 @@ remove_from_all_([H|T], Sock) ->
 %%--------------------------------------------------------------------------
 remove_from_all(List, Sock) ->
     NewList = remove_from_all_(List, Sock),
-    inform_all(List),
+    inform_all(NewList),
     NewList.
 
 %%--------------------------------------------------------------------------
@@ -180,10 +180,25 @@ find(Sock, List, N1, N2) ->
 
 %%--------------------------------------------------------------------------
 %% @doc
+%% Find the invited socket, if it exists
+%% @end
+%%--------------------------------------------------------------------------
+invite(Name, Room, List) ->
+    case room:find_sock(Name, List) of
+        false ->
+            NewList = List;
+        Sock ->
+            gen_tcp:send(Sock, "{invited " ++ Room ++ "}\n"),
+            NewList = room:insert(Room, List, Sock, Name, false)
+    end,
+    inform_all(NewList),
+    NewList.
+
+%%--------------------------------------------------------------------------
+%% @doc
 %% Lists users in a room
 %% @end
 %%--------------------------------------------------------------------------
-
 %%--------------------------------------------------------------------------
 %% @doc
 %% Helper function to users_in_room
@@ -204,28 +219,10 @@ users_in_room(Room ,List) ->
             "{"++ Room ++ " " ++ users_helper(SockList,"") ++ "}\n"
     end.
     
-
-%%--------------------------------------------------------------------------
-%% @doc
-%% Find the invited socket, if it exists
-%% @end
-%%--------------------------------------------------------------------------
-invite(Name, Room, List) ->
-    case room:find_sock(Name, List) of
-        false ->
-            NewList = List;
-        Sock ->
-            gen_tcp:send(Sock, "{invited " ++ Room ++ "}\n"),
-            NewList = room:insert(Room, List, Sock, Name, false)
-    end,
-    inform_all(NewList),
-    NewList.
-
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % Lists all rooms
 %--------------------------------------------------------------------------
-
 % Helper function to rooms
 rooms_helper([]) ->
     "";
