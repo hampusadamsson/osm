@@ -58,9 +58,17 @@ start_link() ->
 %%          {error, Reason}   
 %%--------------------------------------------------------------------
 init([]) ->
-    AChild = {'server',{'server',start_link,[]},
+    Child = {'server',{'server',start_link,[]},
               permanent,2000,worker,['server']},
-    {ok,{{one_for_all,0,1}, [AChild]}}.
+      
+    _One_for_one = {one_for_one,500,60},
+    _One_for_all = {one_for_all,500,60},
+    _Rest_for_one = {rest_for_one,500,60},
+    _Simple_one_for_one = {simple_one_for_one,500,60},
+ 
+    Restart_strategy = _One_for_one,
+        
+      {ok,{Restart_strategy, [Child]}}.
 
 %%====================================================================
 %% Internal functions
@@ -78,14 +86,14 @@ init([]) ->
 %% All functions with names ending wiht _test() or _test_() will be
 %% called automatically by fifo:test()
 
-new_test_() ->
-    server_sup:start_link(),
-    server:add_user("tom"),
-    server:add_user("max"),
-    server:add_user("peter"),
-    server:add_user("karl"),
+% new_test_() ->
+%     server_sup:start_link(),
+%     server:add_user("tom"),
+%     server:add_user("max"),
+%     server:add_user("peter"),
+%     server:add_user("karl"),
 
-    [?_assertEqual(["karl","peter","max","tom"],server:list_user())].
+%     [?_assertEqual(["karl","peter","max","tom"],server:list_user())].
 
 
 
