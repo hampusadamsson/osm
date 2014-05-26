@@ -107,6 +107,16 @@ handle_cast({'list_room_users', Room},List) ->
     Rooms = room:users_in_room(Room, List),
     Receivers = room:receivers(Room, List, 1),
     spawn(?MODULE, send_to_all, [Rooms, Receivers]),
+    {noreply, List};
+    
+%% ------------------------------------------------------------------
+%% Returns the ip of a user.
+%% @end
+%% ------------------------------------------------------------------
+handle_cast({'whois', Name, Room, Sock}, List) ->
+    {Ip,Port} = room:get_ip(Name, List),
+    Msg = io_lib:format(" {whois User: ~s,Connectd From: ~s,On port: ~w}~n",[Name, Ip, Port]),
+    gen_tcp:send(Sock, Room ++ Msg),
     {noreply, List}.
 
 %% ------------------------------------------------------------------
@@ -170,7 +180,7 @@ crash_me(Crash_type)->
             gen_server:call(server, {crash, "i'm crashing"})
     end.
 
-    
+
 %
 %-
 %----------------------------------------- SERVER-tcp/ip ----

@@ -2,7 +2,7 @@
 
 -export([remove/3, remove_from_all/2, insert/5, receivers/3, find_sock/2,
         find_name/2, init_sock/4, users_in_room/2, invite/3,
-        add_socket/4, find/4]).
+        add_socket/4, find/4, get_ip/2]).
 
 %%--------------------------------------------------------------------------
 %% @doc 
@@ -213,6 +213,20 @@ invite(Name, Room, List) ->
     end,
     gen_server:cast(server, {'list_room_users', Room}),
     NewList.
+
+%%--------------------------------------------------------------------------
+%% @doc
+%% 
+%% @end
+%%--------------------------------------------------------------------------
+
+get_ip(Name, List) ->
+    Sock = room:find_sock(Name, List),
+    Info = inet:sockname(Sock),
+    {_, {Ip, Port}} = Info,    
+    Tmp = string:tokens(lists:flatten(io_lib:format("~p", [Ip])), ",{}"),
+    Ip2 = string:join(Tmp,"."),
+    {Ip2,Port}.
 
 %%--------------------------------------------------------------------------
 %% @doc
