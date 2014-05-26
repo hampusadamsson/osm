@@ -134,10 +134,15 @@ handle_call({'start_servers'}, _From, Socket) ->
 handle_info(_Info, State) ->
     {noreply, State}.
 
-terminate(_Reason, State) ->
+terminate(Reason, State) ->
     Sockets2kill = room:receivers("global", State, 1),
     io:format("Trap exits...\n"),
     lists:foreach(fun(X)->gen_tcp:close(X) end, Sockets2kill),
+    
+    {ok, Path} = file:get_cwd(),
+
+    file:write_file(Path++"/crash_dump",
+                    io_lib:fwrite("\>>STATE when server terminated:\n~p\n\n>>Connected SOCKETS when server terminated:\n~p\n\nREASON for termination:\n~p",[State, Sockets2kill, Reason])),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->
@@ -162,10 +167,8 @@ crash_me(Crash_type)->
         1 ->
             gen_server:call(server, {'fsdadsfeasdfsagsadgagd'});        
         2 ->
-             gen_server:call(server, {crash, "i'm crashing"});
-        3  ->
-            13/0
-        end.
+            gen_server:call(server, {crash, "i'm crashing"})
+    end.
 
     
 %
