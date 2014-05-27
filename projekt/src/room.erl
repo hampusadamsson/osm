@@ -198,6 +198,8 @@ invite(Name, Room, List) ->
 %% Helper function to users_in_room
 %% @end
 %%--------------------------------------------------------------------------
+users_helper([], []) ->
+[];
 users_helper([H|[]], S) ->
     S ++ element(2,H);
 users_helper([H|T], S) ->

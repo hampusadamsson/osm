@@ -57,8 +57,8 @@ start_link() ->
 %%          ignore                          |
 %%          {error, Reason}   
 %%--------------------------------------------------------------------
-init([]) ->
-    Child = {'server',{'server',start_link,[]},
+init(Arg) ->
+    Child = {'server',{'server',start_link, Arg},
               permanent,2000,worker,['server']},
       
     _One_for_one = {one_for_one,500,60},
