@@ -242,7 +242,8 @@ user_rooms([{Room, SockList, _}|T], Name) ->
 rooms(List, Name) ->
     case Name of
         false ->
-            RoomList = lists:map(fun({X, _, _}) -> X end, List),
+            TmpList = lists:filter(fun({_, _, S}) -> not S end, List),
+            RoomList = lists:map(fun({X, _, _}) -> X end, TmpList),
             "{" ++ room_string(RoomList) ++ "}\n";
         _ ->
             RoomList = user_rooms(List, Name),
