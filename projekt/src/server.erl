@@ -43,7 +43,10 @@ init(Args) ->
     tcp_handler:start(1337),
     {ok, Args}.
 
+%% Establish a Socket to an incoming connection
+%% Sock = inc. Socket
 %% ------------------------------------------------------------------
+
 %% @doc
 %% Establish a Socket to an incoming connection
 %% Sock = inc. Socket
@@ -125,10 +128,10 @@ handle_cast({'list_rooms', NewList}, _) ->
 %% Returns the ip of a user.
 %% @end
 %% ------------------------------------------------------------------
-handle_cast({'whois', Name, Room, Sock}, List) ->
+handle_cast({'whois', Name, Sock}, List) ->
     {Ip,Port} = room:get_ip(Name, List),
     Msg = io_lib:format(" {whois User: ~s,Connectd From: ~s,On port: ~w}~n",[Name, Ip, Port]),
-    gen_tcp:send(Sock, Room ++ Msg),
+    gen_tcp:send(Sock, Msg),
     {noreply, List};    
 
 %% ------------------------------------------------------------------
@@ -138,7 +141,15 @@ handle_cast({'whois', Name, Room, Sock}, List) ->
 %% ------------------------------------------------------------------
 handle_cast({'info', Room, Sock}, List) ->
     gen_tcp:send(Sock, room:get_info(Room, List)),
-    {noreply, List}.
+    {noreply, List};
+
+%% ------------------------------------------------------------------
+%% @doc
+%% Rename yourself
+%% @end
+%% ------------------------------------------------------------------
+handle_cast({'rename_user', New, Sock}, List) ->
+    {noreply, room:rename_user(New, Sock, List)}.
 
 %% ------------------------------------------------------------------
 %% @doc

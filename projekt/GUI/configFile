@@ -1,2 +1,6 @@
 reconnectMode=auto
 delay=5
+reconnectAmount=5
+ipAdress=localhost
+userName=PerAlbin
+restoreTabs=auto

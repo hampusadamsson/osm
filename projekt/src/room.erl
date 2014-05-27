@@ -1,8 +1,8 @@
 -module(room).
 
 -export([remove/3, remove_from_all/2, insert/5, receivers/3, find_sock/2,
-	 find_name/2, init_sock/4, users_in_room/2, invite/3,add_socket/4, 
-	 rooms/1, get_info/2, get_ip/2]).
+	 find_name/2, init_sock/4, users_in_room/2, invite/3, add_socket/4, 
+	 rooms/1, get_info/2, rename_user/3, get_ip/2]).
 
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
@@ -79,12 +79,11 @@ remove(Room, List, Sock)->
         {Room, SockList1, Secrecy}->
             TmpList = lists:keydelete(Room, 1, List),
             SockList2 = lists:keydelete(Sock, 1, SockList1),
-            case SockList2 of
-                [] ->
-                    NewList = TmpList,
-                    inform_all(List);
+            if 
+                SockList2 == [] ->
+                    NewList = TmpList;
                 true ->  
-                    NewList = [{Room, SockList2, Secrecy}|TmpList]
+                    NewList = lists:keyreplace(Room, 1, List, {Room, SockList2, Secrecy})
             end;
         false ->
             NewList = List
@@ -234,12 +233,12 @@ rooms_helper([{Room, _, _}|T]) ->
 rooms(List) ->
     "{" ++ rooms_helper(List) ++ "}\n".
     
+
 %%--------------------------------------------------------------------------
 %% @doc
 %% 
 %% @end
 %%--------------------------------------------------------------------------
-
 get_ip(Name, List) ->
     Sock = room:find_sock(Name, List),
     Info = inet:sockname(Sock),
@@ -289,7 +288,35 @@ get_info(Room, List) ->
     {_, _, Secrecy} = lists:keyfind(Room, 1, List),
     case Secrecy of
         false ->
-            Room ++ " >  INFO " ++ Room ++ ": open\n";
+            Room ++ " >  INFO " ++ Room ++ ": public\n";
         true ->
             Room ++ " >  INFO " ++ Room ++ ": private\n"
     end.
+
+rename_user_(_, _, []) ->
+    [];
+rename_user_(New, Sock, List) ->
+    [H|T] = List,
+    {Room, SockList, Secrecy} = H,   
+    case lists:keyfind(Sock, 1, SockList) of
+        false ->
+            [H|rename_user_(New, Sock, T)];
+        {_, Current} ->
+            [{
+                Room,
+                lists:keyreplace(Current, 2, SockList, {Sock, New}),
+                Secrecy
+            }|rename_user_(New, Sock, T)] 
+    end.
+
+rename_user(New1, Sock, List) ->
+    case find_sock(New1, List) of
+        false ->
+            NewList = rename_user_(New1, Sock, List);
+        _ ->
+            New2 = string:concat(New1, "_"),
+            NewList = rename_user_(New2, Sock, List)
+    end,
+    inform_all(NewList),
+    NewList.
+
