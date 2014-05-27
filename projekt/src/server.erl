@@ -103,13 +103,25 @@ handle_cast({'send', Room, Msg, Sock}, List) ->
 %% Returns users in a room.
 %% @end
 %% ------------------------------------------------------------------
-handle_cast({'list_room_users', Room},List) ->
-    Rooms = room:users_in_room(Room, List),
-    Receivers = room:receivers(Room, List, 1),
-    spawn(?MODULE, send_to_all, [Rooms, Receivers]),
-    {noreply, List};
-    
+handle_cast({'list_room_users', Room, NewList}, _) ->
+    Users = room:users_in_room(Room, NewList),
+    Receivers = room:receivers(Room, NewList, 1),
+    spawn(?MODULE, send_to_all, [Users, Receivers]),
+    {noreply, NewList};
+
 %% ------------------------------------------------------------------
+%% @doc
+%% Returns all the rooms in List.
+%% @end 
+%% ------------------------------------------------------------------
+handle_cast({'list_rooms', NewList}, _) ->
+    Rooms = room:rooms(NewList),
+    Receivers = room:receivers("global", NewList, 1),
+    spawn(?MODULE, send_to_all, [Rooms, Receivers]),
+    {noreply, NewList};
+
+%% ------------------------------------------------------------------
+%% @doc
 %% Returns the ip of a user.
 %% @end
 %% ------------------------------------------------------------------
@@ -117,6 +129,15 @@ handle_cast({'whois', Name, Room, Sock}, List) ->
     {Ip,Port} = room:get_ip(Name, List),
     Msg = io_lib:format(" {whois User: ~s,Connectd From: ~s,On port: ~w}~n",[Name, Ip, Port]),
     gen_tcp:send(Sock, Room ++ Msg),
+    {noreply, List};    
+
+%% ------------------------------------------------------------------
+%% @edoc
+%% Show info about the room
+%% @end
+%% ------------------------------------------------------------------
+handle_cast({'info', Room, Sock}, List) ->
+    gen_tcp:send(Sock, room:get_info(Room, List)),
     {noreply, List}.
 
 %% ------------------------------------------------------------------
