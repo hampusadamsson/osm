@@ -246,7 +246,7 @@ rooms(List, Name) ->
         _ ->
             RoomList = user_rooms(List, Name)
     end,
-    room_string(RoomList).
+    "{track " ++ room_string(RoomList) ++ "}\n".
 
 %%--------------------------------------------------------------------------
 %% @doc

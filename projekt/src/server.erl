@@ -135,6 +135,15 @@ handle_cast({'whois', Name, Sock}, List) ->
     {noreply, List};    
 
 %% ------------------------------------------------------------------
+%% @doc
+%% Returns a list of the rooms that user Name is a member of.
+%% @end
+%% ------------------------------------------------------------------
+handle_cast({'track', Name, Sock}, List) ->
+    gen_tcp:send(Sock, room:rooms(List, Name)),
+    {noreply, List};    
+
+%% ------------------------------------------------------------------
 %% @edoc
 %% Show info about the room
 %% @end
