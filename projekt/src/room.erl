@@ -2,7 +2,7 @@
 
 -export([remove/3, remove_from_all/2, insert/5, receivers/3, find_sock/2,
 	 find_name/2, init_sock/4, users_in_room/2, invite/3, add_socket/4, 
-	 rooms/1, get_info/2, rename_user/3, get_ip/2]).
+	 rooms/2, get_info/2, rename_user/3, get_ip/2]).
 
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
@@ -220,19 +220,33 @@ users_in_room(Room ,List) ->
     
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
-% Lists all rooms
+% Lists all rooms, or if Name is not false then the Rooms user Name is in.
 %--------------------------------------------------------------------------
-% Helper function to rooms
-rooms_helper([]) ->
+room_string([]) ->
     "";
-rooms_helper([{Room, _, _}|[]]) ->
-    Room;
-rooms_helper([{Room, _, _}|T]) ->
-    Room ++ "," ++ rooms_helper(T).
+room_string([H|[]]) ->
+    H;
+room_string([H|T]) ->
+    H ++ "," ++ room_string(T).
 
-rooms(List) ->
-    "{" ++ rooms_helper(List) ++ "}\n".
-    
+user_rooms([], _) ->
+    [];
+user_rooms([{Room, SockList, _}|T], Name) ->
+    case lists:keymember(Name, 2, SockList) of
+        false ->
+            user_rooms(T, Name);
+        true ->
+            [Room|user_rooms(T, Name)]
+    end.
+
+rooms(List, Name) ->
+    case Name of
+        false ->
+            RoomList = lists:map(fun({X, _, _}) -> X end, List);
+        _ ->
+            RoomList = user_rooms(List, Name)
+    end,
+    "{track " ++ room_string(RoomList) ++ "}\n".
 
 %%--------------------------------------------------------------------------
 %% @doc
