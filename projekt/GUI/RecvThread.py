@@ -21,7 +21,6 @@ class StoppableThread(threading.Thread):
                 #Avbryt loopen
                 break
             self.messageQueue.put(data)
-        print("Nu dog servern, ahahahahahahaha\n")
         self.messageQueue.put("Disconnected")
         sys.exit(0)
         

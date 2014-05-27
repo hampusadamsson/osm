@@ -6,12 +6,12 @@ from time import sleep
 
 class connectToServer(threading.Thread):
 
-    def __init__(self,serverSocket,ipAdress,delay):
+    def __init__(self,serverSocket,ipAdress,delay,tries):
         super(connectToServer,self).__init__()
         self.socket = serverSocket
         self.messageQueue = queue.Queue()
         self.ipAdress = ipAdress
-        self.tries = 5
+        self.tries = int(tries)
         self.delay = float(delay)
 
     def run(self):

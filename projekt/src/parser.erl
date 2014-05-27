@@ -37,7 +37,7 @@ get_parts(BodyStr) ->
     Request = remove_new_line(string:sub_word(BodyStr, 1)),
     RoomName = remove_new_line(string:sub_word(BodyStr, 2)),
     case remove_new_line(string:sub_word(BodyStr, 3)) of
-        "true" ->
+        "private" ->
             Secrecy = true;
         [] ->
             Secrecy = [];
@@ -54,8 +54,8 @@ get_parts(BodyStr) ->
 %% ------------------------------------------------------------------
 send_back(Request, Data, Socket, Room) ->
     case Request of
-        "/exitall" ->
-            ok; %gen_server:cast(server, {'remove', Socket});
+        "/info" ->
+            gen_server:cast(server, {'info', Room, Socket});   
         _ ->
             gen_server:cast(server, {'send', Room, Data, Socket})   
     end.
@@ -72,8 +72,14 @@ send_back(Request, Name, Data, Socket, Room) ->
             gen_server:cast(server, {'add_socket', Name, Socket, false});
         "/invite" ->
             gen_server:cast(server, {'invite', Name, Room});
+        "/rename" ->
+            gen_server:cast(server, {'rename_user', Name, Socket});
         "/exit" ->
             gen_server:cast(server, {'remove_from_room', Name, Socket});
+        "/whois" -> 
+            gen_server:cast(server, {'whois', Name, Socket});
+        "/track" -> 
+            gen_server:cast(server, {'track', Name, Socket});
         _ ->
             gen_server:cast(server, {'send', Room, Data, Socket})   
     end.
