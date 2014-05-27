@@ -118,7 +118,7 @@ handle_cast({'list_room_users', Room, NewList}, _) ->
 %% @end 
 %% ------------------------------------------------------------------
 handle_cast({'list_rooms', NewList}, _) ->
-    Rooms = room:rooms(NewList),
+    Rooms = room:rooms(NewList, false),
     Receivers = room:receivers("global", NewList, 1),
     spawn(?MODULE, send_to_all, [Rooms, Receivers]),
     {noreply, NewList};
@@ -132,6 +132,15 @@ handle_cast({'whois', Name, Sock}, List) ->
     {Ip,Port} = room:get_ip(Name, List),
     Msg = io_lib:format("{whois User: ~s,Connectd From: ~s,On port: ~w}~n",[Name, Ip, Port]),
     gen_tcp:send(Sock, Msg),
+    {noreply, List};    
+
+%% ------------------------------------------------------------------
+%% @doc
+%% Returns a list of the rooms that user Name is a member of.
+%% @end
+%% ------------------------------------------------------------------
+handle_cast({'track', Name, Sock}, List) ->
+    gen_tcp:send(Sock, room:rooms(List, Name)),
     {noreply, List};    
 
 %% ------------------------------------------------------------------
