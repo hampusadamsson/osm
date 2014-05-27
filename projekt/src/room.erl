@@ -242,11 +242,12 @@ user_rooms([{Room, SockList, _}|T], Name) ->
 rooms(List, Name) ->
     case Name of
         false ->
-            RoomList = lists:map(fun({X, _, _}) -> X end, List);
+            RoomList = lists:map(fun({X, _, _}) -> X end, List),
+            "{" ++ room_string(RoomList) ++ "}\n";
         _ ->
-            RoomList = user_rooms(List, Name)
-    end,
-    "{track " ++ room_string(RoomList) ++ "}\n".
+            RoomList = user_rooms(List, Name),
+            "{track " ++ room_string(RoomList) ++ "}\n"
+    end.
 
 %%--------------------------------------------------------------------------
 %% @doc
