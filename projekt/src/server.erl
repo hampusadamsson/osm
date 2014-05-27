@@ -126,7 +126,23 @@ handle_cast({'list_rooms', NewList}, _) ->
 %% ------------------------------------------------------------------
 handle_cast({'info', Room, Sock}, List) ->
     gen_tcp:send(Sock, room:get_info(Room, List)),
-    {noreply, List}.
+    {noreply, List};
+
+%% ------------------------------------------------------------------
+%% @doc
+%% Rename the room you are in at the moment
+%% @end
+%% ------------------------------------------------------------------
+%%handle_cast({'rename_room', Current, New}, List) ->
+%%    {noreply, room:};
+
+%% ------------------------------------------------------------------
+%% @doc
+%% Rename yourself
+%% @end
+%% ------------------------------------------------------------------
+handle_cast({'rename_user', New, Sock}, List) ->
+    {noreply, room:rename_user(New, Sock, List)}.
 
 %% ------------------------------------------------------------------
 %% @doc

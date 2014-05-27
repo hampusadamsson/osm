@@ -72,6 +72,8 @@ send_back(Request, Name, Data, Socket, Room) ->
             gen_server:cast(server, {'add_socket', Name, Socket, false});
         "/invite" ->
             gen_server:cast(server, {'invite', Name, Room});
+        "/rename" ->
+            gen_server:cast(server, {'rename_user', Name, Socket});
         "/exit" ->
             gen_server:cast(server, {'remove_from_room', Name, Socket});
         _ ->
