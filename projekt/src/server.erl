@@ -129,10 +129,14 @@ handle_cast({'list_rooms', NewList}, _) ->
 %% @end
 %% ------------------------------------------------------------------
 handle_cast({'whois', Name, Sock}, List) ->
-    {Ip,Port} = room:get_ip(Name, List),
-    Msg = io_lib:format("{whois User: ~s,Connectd From: ~s,On port: ~w}~n",[Name, Ip, Port]),
-    gen_tcp:send(Sock, Msg),
-    {noreply, List};    
+    case room:get_ip(Name, List) of
+        false ->
+            {noreply, List};    
+        {Ip, Port} ->
+            Msg = io_lib:format("{whois User: ~s,Connectd From: ~s,On port: ~w}~n",[Name, Ip, Port]),
+            gen_tcp:send(Sock, Msg),
+            {noreply, List}    
+    end;
 
 %% ------------------------------------------------------------------
 %% @doc
