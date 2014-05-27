@@ -12,6 +12,8 @@ import errno
 import os
 from time import sleep
 from Connect import connectToServer
+from menu import UserMenu
+from menu import RoomMenu
 
 ##########################################################
 #Initierar GUI:t
@@ -34,10 +36,11 @@ class GUI(object):
 #Userlist där alla användarna i ett rum ska listas
 ########################################################## 
 
-        self.userWindow = Text(master, width=20,state=DISABLED)
+        self.userWindow = Listbox(master, width=15,height=23)
         self.userWindow.place(x=0,y=23)
-        self.roomWindow = Text(master, width=20,state=DISABLED)
-        self.roomWindow.place(x=700,y=23)
+        self.roomWindow = Listbox(master, width=15,height=23)
+        self.roomWindow.place(x=705,y=23)
+       
 
 ##########################################################################
 #Stringvariablel som används för att få tillbaka texten från Entryfältet
@@ -117,7 +120,9 @@ class GUI(object):
     def addTab(self,name):
         tab = Text(self.master,state=DISABLED)
         self.windowList[name] = tab
-        self.nb.add(tab, text=name)    
+        self.nb.add(tab, text=name)
+        self.userMenu.setRoomList(self.windowList)
+        self.roomMenu.setRoomList(self.windowList)
 
 ###################################################
 #Importerar nuvarande tiden och returnerar den
@@ -207,7 +212,6 @@ class GUI(object):
         if self.socketStatus == "ok":            
             self.serverSocket.shutdown(socket.SHUT_RDWR)
         self.serverSocket.close()
-        print("Nu drar mainthread, see ya suckerzzzzzz!\n")
         self.master.destroy()
         sys.exit(0)
         
@@ -221,6 +225,36 @@ class GUI(object):
         self.thread.daemon = True
         self.thread.start()
         self.checkQueue()
+        self.initiateMenues()
+        self.userMenu.setCurrent(self.configList["userName"])
+        self.roomMenu.setCurrent("global")
+
+#########################################################
+
+    def initiateMenues(self):
+        self.userMenu = UserMenu(self.master,self.serverSocket)
+        self.userWindow.bind('<<ListboxSelect>>',self.userSelect)
+        self.userWindow.bind('<FocusOut>',self.userMenu.popupFocusOut)
+        self.userWindow.bind('<Button-3>',self.userMenu.popup)
+
+        self.roomMenu = RoomMenu(self.master,self.serverSocket)
+        self.roomWindow.bind('<<ListboxSelect>>',self.roomSelect)
+        self.roomWindow.bind('<FocusOut>',self.roomMenu.popupFocusOut)
+        self.roomWindow.bind('<Button-3>',self.roomMenu.popup)
+        
+    def userSelect(self,event):
+        
+        self.userMenu.setCurrent(self.userWindow.get(self.userWindow.curselection()))
+
+    def roomSelect(self,event):
+ 
+        self.roomMenu.setCurrent(self.roomWindow.get(self.roomWindow.curselection()))
+ 
+    def userSelectAlt(self):
+        self.userMenu.setCurrent(self.userWindow.get(self.userWindow.curselection()))
+    def roomSelectAlt(self):
+        self.roomMenu.setCurrent(self.roomWindow.get(self.roomWindow.curselection()))
+       
 
 ##########################################################
 #Kollar om det finns något nytt meddelande att hämta
@@ -244,14 +278,13 @@ class GUI(object):
             else:
                 self.writeMessage("Tappade anslutningen till servern, anslut manuellt med /connect IP")           
         elif(respons[0][0] == "{"):
-                print (respons)
+      
                 temp = respons[1:len(respons)-2]
                 if " " in temp:
                     commandString = self.messageSplit(temp)
                     if commandString[0] == 'success':
                         commandString2 = self.messageSplit(commandString[1])
                         self.rooms[commandString2[0]] = [commandString[0],commandString2[1]]
-                        print("Tabnamn:" +commandString2[0])
                         self.addTab(commandString2[0])
                     elif commandString[0] == 'error':
                         self.writeMessage("Rummet är slutet, du måste bli inbjuden")
@@ -264,13 +297,9 @@ class GUI(object):
                             self.fillUserList(self.currentTab)
                 else:
                     roomList = temp.split(",")
-                    print("Rumslista:")
-                    print (roomList)
-                    self.roomWindow.config(state = NORMAL)
-                    self.roomWindow.delete(1.0,END)
+                    self.roomWindow.delete(0,END)
                     for room in roomList:    
-                        self.roomWindow.insert(END,room+'\n')
-                    self.roomWindow.config(state = DISABLED)
+                        self.roomWindow.insert(END,room)
         else:
             argumentString = self.messageSplit(respons)          
             self.windowList[argumentString[0]].config(state=NORMAL)
@@ -284,19 +313,9 @@ class GUI(object):
 ##########################################################
 
     def fillUserList(self,roomName):
-        self.userWindow.config(state = NORMAL)
-        self.userWindow.delete(1.0,END)
+        self.userWindow.delete(0,END)
         for userName in self.userList[roomName]:     
-            self.userWindow.insert(END,userName+'\n')
-        self.userWindow.config(state = DISABLED)
-
-##########################################################
-#Startar upp popupfönster för att ange användarnamn
-##########################################################
-
-    def enterUserName(self):
-        self.popup = popupWindow(self.master)
-        self.master.wait_window(self.popup.top)
+            self.userWindow.insert(END,userName)
 
 ##########################################################
 #Skriver ut välkomstmeddelandet
@@ -348,7 +367,8 @@ class GUI(object):
 
     def deleteTab(self,name):
         self.nb.forget(self.windowList[name])
-
+        self.userMenu.setRoomList(self.windowList)
+        self.roomMenu.setRoomList(self.windowList)
 ###################################################################
 #Kolla om det angivna namnet redan existerar i listan över fönster
 ###################################################################
@@ -391,7 +411,7 @@ class GUI(object):
     
     def reconnect(self):
         self.message.config(state=DISABLED)
-        thread = connectToServer(self.serverSocket,self.configList["ipAdress"],self.configList["delay"])
+        thread = connectToServer(self.serverSocket,self.configList["ipAdress"],self.configList["delay"],self.configList["reconnectAmount"])
         thread.daemon = True
         thread.start()
         self.checkConnectQueue(thread)
@@ -449,12 +469,16 @@ class GUI(object):
 
 if __name__ == "__main__":
     root=Tk()
-    root.geometry("700x500")
+    root.geometry("850x500")
     root.title("Nuntii IRC")
     m=GUI(root)
     m.initiateConfig()
-    m.welcome()    
-    m.reconnect()
+    m.welcome()
+    if m.configList["connectMode"] == 'auto':
+        m.reconnect()
+    else:
+        m.writeMessage("Du är inte ansluten till en server, anslut med /connect IP") 
+        
     root.mainloop()
        
     
