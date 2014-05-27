@@ -274,7 +274,7 @@ get_info(Room, List) ->
     {_, _, Secrecy} = lists:keyfind(Room, 1, List),
     case Secrecy of
         false ->
-            Room ++ " >  INFO " ++ Room ++ ": open\n";
+            Room ++ " >  INFO " ++ Room ++ ": public\n";
         true ->
             Room ++ " >  INFO " ++ Room ++ ": private\n"
     end.
