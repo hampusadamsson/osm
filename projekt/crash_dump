@@ -1,0 +1,15 @@
+>>STATE when server terminated:
+[{"DV",[{#Port<0.707>,"SilverLord"}],false},
+ {"global",[{#Port<0.707>,"SilverLord"}],false}]
+
+>>Connected SOCKETS when server terminated:
+[#Port<0.707>]
+
+REASON for termination:
+{function_clause,[{prim_inet,sockname,[false],[]},
+                  {room,get_ip,2,[{file,"src/room.erl"},{line,259}]},
+                  {server,handle_cast,2,[{file,"src/server.erl"},{line,132}]},
+                  {gen_server,handle_msg,5,
+                              [{file,"gen_server.erl"},{line,604}]},
+                  {proc_lib,init_p_do_apply,3,
+                            [{file,"proc_lib.erl"},{line,239}]}]}

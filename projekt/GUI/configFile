@@ -1,8 +1,7 @@
 reconnectMode=auto
-delay=5
-reconnectAmount=3
-ipAdress=localhost
-userName=SilverLord
-restoreTabs=auto
+userName=Nalle_Puh
 connectMode=auto
-
+reconnectAmount=2
+restoreTabs=auto
+ipAdress=localhost
+delay=5

@@ -15,7 +15,6 @@ from Connect import connectToServer
 from menu import UserMenu
 from menu import RoomMenu
 
-
 ##########################################################
 #Initierar GUI:t
 ##########################################################    
@@ -41,10 +40,6 @@ class GUI(object):
         self.userWindow.place(x=0,y=23)
         self.roomWindow = Listbox(master, width=15,height=23)
         self.roomWindow.place(x=705,y=23)
-        self.roomLabel = Label(master,text="Tillgängliga Rum",font=("Helvetica",10))
-        self.roomLabel.place(x=715,y=0)
-        self.userLabel = Label(master,text="Användare",font=("Helvetica",10))
-        self.userLabel.place(x=30,y=0)
        
 
 ##########################################################################
@@ -143,7 +138,7 @@ class GUI(object):
 ##################################################################
 
     def sendMessage(self,event):
-
+     
         mtext1 = self.temp.get()
         argumentString = self.messageSplit(mtext1)
 
@@ -188,18 +183,6 @@ class GUI(object):
             msg = msg_temp.encode('UTF-8')
             self.serverSocket.send(msg)
             self.message.delete(0,END)
-        elif (argumentString[0] == "/clea"):
-            self.clearWindow()
-
-        elif (argumentString[0] == "/rename"):
-            
-            self.configList["userName"] = argumentString[1]
-            self.rename()
-            msg_temp =self.currentTab + " " + mtext1+'\n'
-            msg = msg_temp.encode('UTF-8')
-            self.serverSocket.send(msg)
-            self.message.delete(0,END)
-            
         elif (argumentString[0] == "/exit"):
             if argumentString[1] == "global":
                 self.writeMessage("Du kan inte gå ur global!")
@@ -229,6 +212,7 @@ class GUI(object):
         if self.socketStatus == "ok":            
             self.serverSocket.shutdown(socket.SHUT_RDWR)
         self.serverSocket.close()
+        print("Nu drar mainthread, see ya suckerzzzzzz!\n")
         self.master.destroy()
         sys.exit(0)
         
@@ -249,7 +233,7 @@ class GUI(object):
 #########################################################
 
     def initiateMenues(self):
-        self.userMenu = UserMenu(self.master,self.serverSocket,self.configList["userName"])
+        self.userMenu = UserMenu(self.master,self.serverSocket)
         self.userWindow.bind('<<ListboxSelect>>',self.userSelect)
         self.userWindow.bind('<FocusOut>',self.userMenu.popupFocusOut)
         self.userWindow.bind('<Button-3>',self.userMenu.popup)
@@ -270,7 +254,7 @@ class GUI(object):
     def userSelectAlt(self):
         self.userMenu.setCurrent(self.userWindow.get(self.userWindow.curselection()))
     def roomSelectAlt(self):
-        self.roomMenu.setCurrent(self.roomWindow.get(self.roomWindow.curselection()))
+        self.roomMenu.setCurrent(self.roomWindow.get(ACTIVE))
        
 
 ##########################################################
@@ -308,24 +292,6 @@ class GUI(object):
                     elif (commandString[0] == 'invited'):
                         if(self.noDuplicate(commandString[1])):
                             self.addTab(commandString[1])
-
-                    elif commandString[0] == 'whois':
-                        whoisInfo = commandString[1].split(",")
-                        self.writeMessage("------------------------")
-                        for element in whoisInfo:
-                            self.writeMessage(element)
-                        self.writeMessage("------------------------")
-                        self.writeMessage("")
-
-                    elif commandString[0] == 'track':
-                        trackList = commandString[1].split(",")
-                        self.writeMessage("------------------------")
-                        self.writeMessage(self.userWindow.get(self.userWindow.curselection()) + " är med i följande rum:")
-                        for element in trackList:
-                            self.writeMessage(element)
-                        self.writeMessage("------------------------")
-                        self.writeMessage("")
-                        
                     else:
                         self.userList[commandString[0]] = commandString[1].split(",")
                         if (commandString[0] == self.currentTab):
@@ -358,7 +324,7 @@ class GUI(object):
 
     def welcome(self):
         self.globalRoom.config(state=NORMAL)
-        self.globalRoom.insert(END,"Välkommen "+self.configList["userName"] +"!\n")
+        self.globalRoom.insert(END,"Välkommen tillbaka "+self.configList["userName"] +"!\n")
         self.globalRoom.insert(END,"----------------------------------------\n")
         self.globalRoom.config(state=DISABLED)
 
@@ -498,14 +464,6 @@ class GUI(object):
             if window != "global":
                 self.deleteTab(window)
 
-    def rename(self):
-        open('configFile', 'w').close()
-        file = open('configFile','w')
-        for element in self.configList:
-            file.write(element+"="+self.configList[element]+'\n')
-        file.close()
-        
-
 ##########################################################
 #Startar mainfunktionen
 ##########################################################
@@ -516,12 +474,8 @@ if __name__ == "__main__":
     root.title("Nuntii IRC")
     m=GUI(root)
     m.initiateConfig()
-    m.welcome()
-    if m.configList["connectMode"] == 'auto':
-        m.reconnect()
-    else:
-        m.writeMessage("Du är inte ansluten till en server, anslut med /connect IP") 
-        
+    m.welcome()    
+    m.reconnect()
     root.mainloop()
        
     
