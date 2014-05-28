@@ -55,8 +55,7 @@ receivers_test() ->
     ?assertEqual(room:receivers("global", List3, 2), Rec2).
 
 insert_test() ->
-    First = [],
-    A1 = room:insert("global", First, s1, "Tommy", false),
+    A1 = room:insert("global", [], s1, "Tommy", false),
     A2 = [
         {"global",[{s1, "Tommy"}], false}
     ],
@@ -87,14 +86,20 @@ remove_test() ->
     L7 = room:remove("global", L6, s4),
     L8 = room:remove("global", L7, s5),
     L9 = room:remove("global", L8, s1),
+    Not1 = room:remove("globak", L9, s3),
+    Not2 = room:remove("global", L9, s6),
+    ?assertEqual(Not1, [{"global", [{s3, "Kenny"}], false}]),
+    ?assertEqual(Not2, [{"global", [{s3, "Kenny"}], false}]),
     ?assertEqual(L9, [{"global", [{s3, "Kenny"}], false}]).
 
-removeFromAll_test() ->
+remove_from_all_test() ->
     L1 = room:insert("global", [], s1, "Tommy", false),
     L2 = room:insert("Room1", L1, s1, "Tommy", false),
     L3 = room:insert("Room2", L2, s1, "Tommy", false),
     L4 = room:insert("Room3", L3, s1, "Tommy", false),
     L5 = room:insert("Room4", L4, s1, "Tommy", false),
+    ?assertEqual(room:remove_from_all([], s2), []),
+    ?assertEqual(room:remove_from_all(L5, s2), L5),
     ?assertEqual(room:remove_from_all(L1, s1), []),
     ?assertEqual(room:remove_from_all(L5, s1), []).
 
@@ -104,6 +109,7 @@ find_sock_test() ->
     L3 = room:insert("global", L2, s3, "Kenny", false),
     L4 = room:insert("global", L3, s4, "Jenny", false),
     L5 = room:insert("global", L4, s5, "Ronny", false),
+    ?assertEqual(room:find_sock("", []), false),
     ?assertEqual(room:find_sock("Benny", L5), false),
     ?assertEqual(room:find_sock("Tommy", L5), s1),
     ?assertEqual(room:find_sock("Timmy", L5), s2),
@@ -117,6 +123,8 @@ find_name_test() ->
     L3 = room:insert("global", L2, s3, "Kenny", false),
     L4 = room:insert("global", L3, s4, "Jenny", false),
     L5 = room:insert("global", L4, s5, "Ronny", false),
+    ?assertEqual(room:find_name(s1, []), false),
+    ?assertEqual(room:find_name(s6, L5), false),
     ?assertEqual(room:find_name(s1, L5), "Tommy"),
     ?assertEqual(room:find_name(s2, L5), "Timmy"),
     ?assertEqual(room:find_name(s3, L5), "Kenny"),
@@ -130,5 +138,41 @@ users_in_room_test() ->
     L4 = room:insert("global", L3, s4, "Jenny", false),
     L5 = room:insert("global", L4, s5, "Ronny", false),
     CorrectStr = "{global Ronny,Jenny,Kenny,Timmy,Tommy}\n",
+    ?assertEqual(room:users_in_room("global", []), false),
+    ?assertEqual(room:users_in_room("globak", L5), false),
     ?assertEqual(room:users_in_room("global", L5), CorrectStr).
+
+rooms_test() ->
+    L1 = room:insert("global", [], s1, "Tommy", false),
+    L2 = room:insert("global", L1, s2, "Timmy", false),
+    L3 = room:insert("global", L2, s3, "Kenny", false),
+    L4 = room:insert("global", L3, s4, "Jenny", false),
+    L5 = room:insert("Room1", L4, s1, "Tommy", false),
+    L6 = room:insert("Room2", L5, s2, "Timmy", false),
+    L7 = room:insert("Room3", L6, s3, "Kenny", false),
+    L8 = room:insert("Room4", L7, s4, "Jenny", false),
+    CorrectStr1 = "{Room4,Room3,Room2,Room1,global}\n",
+    CorrectStr2 = "{track Room3,global}\n",
+    ?assertEqual(room:rooms([], false), false),
+    ?assertEqual(room:rooms([], "Kenny"), false),
+    ?assertEqual(room:rooms(L8, false), CorrectStr1),
+    ?assertEqual(room:rooms(L8, "Kenny"), CorrectStr2).
+
+get_info_test() ->
+    L1 = room:insert("global", [], s1, "Tommy", false),
+    L2 = room:insert("global", L1, s2, "Timmy", false),
+    L3 = room:insert("global", L2, s3, "Kenny", false),
+    L4 = room:insert("global", L3, s4, "Jenny", false),
+    L5 = room:insert("Room1", L4, s1, "Tommy", true),
+    L6 = room:insert("Room2", L5, s2, "Timmy", false),
+    L7 = room:insert("Room3", L6, s3, "Kenny", true),
+    L8 = room:insert("Room4", L7, s4, "Jenny", false),
+    CorrectStr1 = "Room1 >  INFO Room1: private\n",
+    CorrectStr2 = "Room2 >  INFO Room2: public\n",
+    CorrectStr3 = "Room3 >  INFO Room3: private\n",
+    CorrectStr4 = "Room4 >  INFO Room4: public\n",
+    ?assertEqual(room:get_info("Room1", L8), CorrectStr1),
+    ?assertEqual(room:get_info("Room2", L8), CorrectStr2),
+    ?assertEqual(room:get_info("Room3", L8), CorrectStr3),
+    ?assertEqual(room:get_info("Room4", L8), CorrectStr4).
 
