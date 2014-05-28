@@ -1,6 +1,6 @@
 -module(tcp_handler).
 
--export([start/1, server/1, send_to_all/2]).
+-export([start/1, server/1, send_ip/3, send_to_all/2]).
 
 start(LPort) ->
         io:format("Socket listening: ~w ~n",[self()]),
@@ -41,6 +41,16 @@ loop(S) ->
             io:format("Disconnect: ~s \n",[Reason]),
             gen_server:cast(server, {'remove', S}), %global byts mot alla
             gen_tcp:close(S)
+    end.
+
+send_ip(Name, Sock, List) ->
+    case room:get_ip(Name, List) of
+        false ->
+            {noreply, List};    
+        {Ip, Port} ->
+            Msg = io_lib:format("{whois User: ~s,Connectd From: ~s,On port: ~w}~n",[Name, Ip, Port]),
+            gen_tcp:send(Sock, Msg),
+            {noreply, List}    
     end.
 
 send_to_all(_,[])->
