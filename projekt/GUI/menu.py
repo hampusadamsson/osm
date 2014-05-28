@@ -10,7 +10,26 @@ class UserMenu():
         self.menu.add_command(label = "Whisper", command = lambda: self.whisper(self.current))
         self.menu.add_command(label = "Whois",command = lambda: self.whois(self.current))
         self.menu.add_command(label = "Track",command = lambda: self.track(self.current))
-        self.menu.add_command(label = "Close Menu", command = lambda: self.menu.unpost)
+        self.menu.add_command(label = "Dummy",command = self.menu.unpost)
+        self.menu.add_command(label = "Dummy",command = self.menu.unpost)
+
+
+    def createRoomMenu(self,roomList):
+        
+        roomMenu = tki.Menu(self.menu,tearoff=0)
+        
+        def createRoomMenuAux(menu,text):
+            menu.add_command(label=text,command = lambda: self.invite(text,self.current))
+
+        for roomName in roomList:
+            createRoomMenuAux(roomMenu,roomName)
+        
+        self.menu.delete(3,5)
+        self.menu.add_cascade(label="Invite", menu=roomMenu)
+        self.menu.add_command(label = "Close",command = self.menu.unpost)
+
+    def invite(self,roomName,user):
+        self.sendCommand(roomName +" /invite",user)
 
     def whisper(self,namn):
             self.sendCommand("global /join",namn+self.userName+" private")

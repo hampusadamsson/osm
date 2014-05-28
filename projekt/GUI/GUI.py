@@ -14,6 +14,7 @@ from time import sleep
 from Connect import connectToServer
 from menu import UserMenu
 from menu import RoomMenu
+import copy
 
 
 ##########################################################
@@ -60,12 +61,7 @@ class GUI(object):
         self.message = Entry(master,width=40,textvariable = self.temp)
         self.message.place(x=260,y=440)
         self.message.bind('<Return>',self.sendMessage)
-
-        self.restoreButton = Button(master, text="restoreTabs", command=self.restoreTabs)
-        self.restoreButton.place(x=10,y=435)
-        self.clearButton = Button(master, text="Clear Screen", command=self.clearWindow)
-        self.clearButton.place(x=10,y=470)
-
+        
 ############################################################################
 #Initierar ett dictionary för att hålla koll på alla fönsternamn som skapas
 ############################################################################
@@ -125,6 +121,7 @@ class GUI(object):
     def addTab(self,name):
         tab = Text(self.master,state=DISABLED)
         self.windowList[name] = tab
+        self.userMenu.createRoomMenu(self.windowList)
         self.nb.add(tab, text=name)
         self.userMenu.setRoomList(self.windowList)
         self.roomMenu.setRoomList(self.windowList)
@@ -152,11 +149,17 @@ class GUI(object):
                self.configList["ipAdress"] = argumentString[1]
                self.reconnect()
             else:
-               self.message.delete(0,END)
+                if argumentString[1] == self.configList["ipAdress"]:
+                    self.writeMessage("Du är redan ansluten till " +argumentString[1],"syscall")
+                else:
+                    self.disconnect()
+                    self.configList["ipAdress"] = argumentString[1]
+                    self.reconnect()
+                self.message.delete(0,END)
             
                     
         elif (self.socketStatus != "ok"):
-            self.writeMessage("Du är inte ansluten till en server, anslut med /connect IP")
+            self.writeMessage("Du är inte ansluten till en server, anslut med /connect IP","syscall")
             self.message.delete(0,END)
             
         elif (argumentString[0] == "/join"):
@@ -180,7 +183,7 @@ class GUI(object):
                 self.serverSocket.send(msg)
                 self.message.delete(0,END)
             else:
-                self.writeMessage("Du är redan med i det angivna rummet!")
+                self.writeMessage("Du är redan med i det angivna rummet!","syscall")
                 self.message.delete(0,END)
 
         elif (argumentString[0] == "/invite"):
@@ -202,18 +205,19 @@ class GUI(object):
             
         elif (argumentString[0] == "/exit"):
             if argumentString[1] == "global":
-                self.writeMessage("Du kan inte gå ur global!")
+                self.writeMessage("Du kan inte gå ur global!","syscall")
                 self.message.delete(0,END)
             else:
                 if(not self.noDuplicate(argumentString[1])):
                     self.deleteTab(argumentString[1])
                     self.windowList.pop(argumentString[1],None)
+                    self.userMenu.createRoomMenu(self.windowList)
                     msg_temp ="global" + " " + mtext1+'\n'
                     msg = msg_temp.encode('UTF-8')
                     self.serverSocket.send(msg)
                     self.message.delete(0,END)
                 else:
-                    self.writeMessage("Du är inte inne i rummet: " + argumentString[1]+"!")
+                    self.writeMessage("Du är inte inne i rummet: " + argumentString[1]+"!","syscall")
                     self.message.delete(0,END)
         else:
             mtext = self.currentTab + " " + mtext1+'\n'
@@ -245,18 +249,18 @@ class GUI(object):
         self.initiateMenues()
         self.userMenu.setCurrent(self.configList["userName"])
         self.roomMenu.setCurrent("global")
+        
 
 #########################################################
 
     def initiateMenues(self):
         self.userMenu = UserMenu(self.master,self.serverSocket,self.configList["userName"])
         self.userWindow.bind('<<ListboxSelect>>',self.userSelect)
-        self.userWindow.bind('<FocusOut>',self.userMenu.popupFocusOut)
         self.userWindow.bind('<Button-3>',self.userMenu.popup)
+        self.userMenu.createRoomMenu(self.windowList)
 
         self.roomMenu = RoomMenu(self.master,self.serverSocket)
         self.roomWindow.bind('<<ListboxSelect>>',self.roomSelect)
-        self.roomWindow.bind('<FocusOut>',self.roomMenu.popupFocusOut)
         self.roomWindow.bind('<Button-3>',self.roomMenu.popup)
         
     def userSelect(self,event):
@@ -289,10 +293,10 @@ class GUI(object):
             self.disconnect()
             stopSign = 0
             if self.configList["reconnectMode"] == 'auto':
-                self.writeMessage("Tappade anslutningen, försöker återansluta automatiskt")
+                self.writeMessage("Tappade anslutningen, försöker återansluta automatiskt","syscall")
                 self.reconnect()
             else:
-                self.writeMessage("Tappade anslutningen till servern, anslut manuellt med /connect IP")           
+                self.writeMessage("Tappade anslutningen till servern, anslut manuellt med /connect IP","syscall")           
         elif(respons[0][0] == "{"):
       
                 temp = respons[1:len(respons)-2]
@@ -303,27 +307,29 @@ class GUI(object):
                         self.rooms[commandString2[0]] = [commandString[0],commandString2[1]]
                         self.addTab(commandString2[0])
                     elif commandString[0] == 'error':
-                        self.writeMessage("Rummet är slutet, du måste bli inbjuden")
+                        self.writeMessage("Rummet är slutet, du måste bli inbjuden","syscall")
                     elif (commandString[0] == 'invited'):
                         if(self.noDuplicate(commandString[1])):
                             self.addTab(commandString[1])
 
                     elif commandString[0] == 'whois':
                         whoisInfo = commandString[1].split(",")
-                        self.writeMessage("------------------------")
+                        self.writeMessage("","syscall")
+                        self.writeMessage("------------------------","syscall")
                         for element in whoisInfo:
-                            self.writeMessage(element)
-                        self.writeMessage("------------------------")
-                        self.writeMessage("")
+                            self.writeMessage(element,"syscall")
+                        self.writeMessage("------------------------","syscall")
+                        self.writeMessage("","syscall")
 
                     elif commandString[0] == 'track':
                         trackList = commandString[1].split(",")
-                        self.writeMessage("------------------------")
-                        self.writeMessage(self.userWindow.get(self.userWindow.curselection()) + " är med i följande rum:")
+                        self.writeMessage("","syscall")
+                        self.writeMessage("------------------------","syscall")
+                        self.writeMessage(self.userWindow.get(self.userWindow.curselection()) + " är med i följande rum:","syscall")
                         for element in trackList:
-                            self.writeMessage(element)
-                        self.writeMessage("------------------------")
-                        self.writeMessage("")
+                            self.writeMessage(element,"syscall")
+                        self.writeMessage("------------------------","syscall")
+                        self.writeMessage("","syscall")
                         
                     else:
                         self.userList[commandString[0]] = commandString[1].split(",")
@@ -337,7 +343,8 @@ class GUI(object):
         else:
             argumentString = self.messageSplit(respons)          
             self.windowList[argumentString[0]].config(state=NORMAL)
-            self.windowList[argumentString[0]].insert(INSERT,self.GetTime() + argumentString[1])
+            self.windowList[argumentString[0]].insert(END,self.GetTime() + argumentString[1])
+            self.windowList[argumentString[0]].yview(END)
             self.windowList[argumentString[0]].config(state=DISABLED)
         if stopSign == 1:
             self.master.after(50,self.checkQueue)
@@ -425,22 +432,22 @@ class GUI(object):
         elif (result == "Connected"):
             self.message.config(state=NORMAL)
             self.socketStatus = "ok"
-            self.writeMessage("Du är nu ansluten till " + self.configList["ipAdress"] + "!")
+            self.writeMessage("Du är nu ansluten till " + self.configList["ipAdress"] + "!","syscall")
             self.Start()
             self.sendUserName()
             self.message.delete(0,END)
             if self.configList["restoreTabs"] == "auto" and len(self.windowList) > 1:
                 self.restoreTabs()
-            elif self.configList["restoreTabs"] == "clear":
+            else:
                 self.deleteAllTabs()
-            elif len(self.windowList) > 1:
-                self.writeMessage("Skriv /restoreTabs för att återskapa dina fönster")
+                self.clearWindowList()
+                
         elif (result == "Failed"):
-            self.writeMessage("Återanslutning misslyckades, anslut manuellt med /connect IP")
+            self.writeMessage("Återanslutning misslyckades, anslut manuellt med /connect IP","syscall")
             self.message.config(state=NORMAL)
             self.message.delete(0,END)
         else:
-            self.writeMessage("Inget svar från servern... Försöker igen om " + self.configList["delay"] + " sekunder. " + str(result) + " försök kvar")
+            self.writeMessage("Inget svar från servern... Försöker igen om " + self.configList["delay"] + " sekunder. " + str(result) + " försök kvar","syscall")
             self.master.after(2000,self.checkConnectQueue,thread)
     
     def reconnect(self):
@@ -455,9 +462,13 @@ class GUI(object):
 #Skriver ut ett meddelande i det aktiva fönstret
 ##########################################################
 
-    def writeMessage(self,message):
+    def writeMessage(self,message,flag):
         self.windowList[self.currentTab].config(state=NORMAL)
-        self.windowList[self.currentTab].insert(INSERT,message+'\n')
+        self.windowList[self.currentTab].insert(END,message+'\n')
+        if flag == "syscall":
+           self.windowList[self.currentTab].tag_add("here", "end -2 line linestart", "end -2 line lineend")
+           self.windowList[self.currentTab].tag_config("here", background="white", foreground="red")
+        self.windowList[self.currentTab].yview(END)
         self.windowList[self.currentTab].config(state=DISABLED)
 
 ###########################################################################################
@@ -505,10 +516,22 @@ class GUI(object):
         file.close()
 
     def disconnect(self):
+        if self.socketStatus == "ok":            
+            self.serverSocket.shutdown(socket.SHUT_RDWR)
         self.serverSocket.close()
         self.serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        
-        
+        self.socketStatus = "disconnected"
+
+    def clearWindowList(self):
+        copyList = []
+        for element in self.windowList:
+            if element != "global":
+                copyList.append(copy.deepcopy(element))    
+        for key in copyList:
+            if key == "global":
+                continue
+            else:
+                self.windowList.pop(key,None)       
 
 ##########################################################
 #Startar mainfunktionen
@@ -524,7 +547,7 @@ if __name__ == "__main__":
     if m.configList["connectMode"] == 'auto':
         m.reconnect()
     else:
-        m.writeMessage("Du är inte ansluten till en server, anslut med /connect IP") 
+        m.writeMessage("Du är inte ansluten till en server, anslut med /connect IP","syscall") 
         
     root.mainloop()
        
