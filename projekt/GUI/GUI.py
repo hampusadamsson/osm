@@ -286,8 +286,7 @@ class GUI(object):
             1+1
         elif(respons == "Disconnected"):
             self.socketStatus = "disconnected"
-            self.serverSocket.close()
-            self.serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.disconnect()
             stopSign = 0
             if self.configList["reconnectMode"] == 'auto':
                 self.writeMessage("Tappade anslutningen, försöker återansluta automatiskt")
@@ -504,6 +503,11 @@ class GUI(object):
         for element in self.configList:
             file.write(element+"="+self.configList[element]+'\n')
         file.close()
+
+    def disconnect(self):
+        self.serverSocket.close()
+        self.serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        
         
 
 ##########################################################
