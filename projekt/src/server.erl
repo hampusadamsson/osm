@@ -38,10 +38,24 @@ start_link() ->
 %% gen_server Function Definitions
 %% ------------------------------------------------------------------
 
-init(Args) ->
+init(_Args) ->
     process_flag(trap_exit, true),
     tcp_handler:start(1337),
-    {ok, Args}.
+
+    case storage_handler:recover_state() of
+        {error, _Reason} ->
+            io:format("TOM\n"),
+            Arg = [];
+        State ->
+            io:format("loading...\n"),
+            io:format("state:~p \n",[State]),
+            
+                                                %Arg = [],
+            Arg = State,
+            storage_handler:delete_state()
+    end,
+    
+    {ok, Arg}.
 
 %% Establish a Socket to an incoming connection
 %% Sock = inc. Socket
@@ -129,10 +143,14 @@ handle_cast({'list_rooms', NewList}, _) ->
 %% @end
 %% ------------------------------------------------------------------
 handle_cast({'whois', Name, Sock}, List) ->
-    {Ip,Port} = room:get_ip(Name, List),
-    Msg = io_lib:format("{whois User: ~s,Connectd From: ~s,On port: ~w}~n",[Name, Ip, Port]),
-    gen_tcp:send(Sock, Msg),
-    {noreply, List};    
+    case room:get_ip(Name, List) of
+        false ->
+            {noreply, List};    
+        {Ip, Port} ->
+            Msg = io_lib:format("{whois User: ~s,Connectd From: ~s,On port: ~w}~n",[Name, Ip, Port]),
+            gen_tcp:send(Sock, Msg),
+            {noreply, List}    
+    end;
 
 %% ------------------------------------------------------------------
 %% @doc
@@ -187,10 +205,10 @@ handle_info(_Info, State) ->
 
 terminate(Reason, State) ->
     Sockets2kill = room:receivers("global", State, 1),
-    io:format("Trap exits...\n"),
     lists:foreach(fun(X)->gen_tcp:close(X) end, Sockets2kill),
     
     {ok, Path} = file:get_cwd(),
+    storage_handler:save_state(State),
 
     file:write_file(Path++"/crash_dump",
                     io_lib:fwrite("\>>STATE when server terminated:\n~p\n\n>>Connected SOCKETS when server terminated:\n~p\n\nREASON for termination:\n~p",[State, Sockets2kill, Reason])),

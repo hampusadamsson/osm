@@ -198,6 +198,8 @@ invite(Name, Room, List) ->
 %% Helper function to users_in_room
 %% @end
 %%--------------------------------------------------------------------------
+users_helper([], []) ->
+[];
 users_helper([H|[]], S) ->
     S ++ element(2,H);
 users_helper([H|T], S) ->
@@ -242,7 +244,8 @@ user_rooms([{Room, SockList, _}|T], Name) ->
 rooms(List, Name) ->
     case Name of
         false ->
-            RoomList = lists:map(fun({X, _, _}) -> X end, List),
+            TmpList = lists:filter(fun({_, _, S}) -> not S end, List),
+            RoomList = lists:map(fun({X, _, _}) -> X end, TmpList),
             "{" ++ room_string(RoomList) ++ "}\n";
         _ ->
             RoomList = user_rooms(List, Name),
@@ -255,12 +258,17 @@ rooms(List, Name) ->
 %% @end
 %%--------------------------------------------------------------------------
 get_ip(Name, List) ->
-    Sock = room:find_sock(Name, List),
-    Info = inet:sockname(Sock),
-    {_, {Ip, Port}} = Info,    
-    Tmp = string:tokens(lists:flatten(io_lib:format("~p", [Ip])), ",{}"),
-    Ip2 = string:join(Tmp,"."),
-    {Ip2,Port}.
+    case room:find_sock(Name, List) of
+        false ->
+            false;
+        Sock ->
+            Info = inet:sockname(Sock),
+            {_, {Ip, Port}} = Info,    
+            Tmp = string:tokens(lists:flatten(io_lib:format("~p", [Ip])), ",{}"),
+            Ip2 = string:join(Tmp,"."),
+            {Ip2,Port}
+    end.
+
 
 %%--------------------------------------------------------------------------
 %% @doc

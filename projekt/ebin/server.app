@@ -6,4 +6,4 @@
               {mod,{server_app,[]}},
               {env,[]},
               {modules,[parser,room,server,server_app,server_sup,
-                        tcp_handler]}]}.
+                        storage_handler,tcp_handler]}]}.
