@@ -1,6 +1,6 @@
 -module(tcp_handler).
 
--export([start/1, server/1]).
+-export([start/1, server/1, send_to_all/2]).
 
 start(LPort) ->
         io:format("Socket listening: ~w ~n",[self()]),
@@ -42,4 +42,10 @@ loop(S) ->
             gen_server:cast(server, {'remove', S}), %global byts mot alla
             gen_tcp:close(S)
     end.
+
+send_to_all(_,[])->
+    ok;
+send_to_all(Msg,[Sock|Rest])->
+    gen_tcp:send(Sock, Msg),
+    send_to_all(Msg,Rest).
 
