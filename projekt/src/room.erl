@@ -211,11 +211,11 @@ users_helper([H|T], S) ->
 %% @end
 %%--------------------------------------------------------------------------
 users_in_room(_, []) ->
-    "";
+    false;
 users_in_room(Room ,List) ->
     case lists:keyfind(Room, 1, List) of
         false ->
-            "";
+            false;
         {_, SockList, _} ->
             "{"++ Room ++ " " ++ users_helper(SockList,"") ++ "}\n"
     end.
@@ -241,6 +241,8 @@ user_rooms([{Room, SockList, _}|T], Name) ->
             [Room|user_rooms(T, Name)]
     end.
 
+rooms([], _) ->
+    false;
 rooms(List, Name) ->
     case Name of
         false ->
@@ -305,7 +307,9 @@ add_socket(NewSock, Room, List, Secrecy1) ->
 
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
+% @doc
 % Get info of a room as a string
+% @end
 %--------------------------------------------------------------------------
 get_info(Room, List) ->
     {_, _, Secrecy} = lists:keyfind(Room, 1, List),
@@ -316,6 +320,12 @@ get_info(Room, List) ->
             Room ++ " >  INFO " ++ Room ++ ": private\n"
     end.
 
+%--------------------------------------------------------------------------
+%--------------------------------------------------------------------------
+% @doc
+% Gives the user with socket Sock the new name New 
+% @end
+%--------------------------------------------------------------------------
 rename_user_(_, _, []) ->
     [];
 rename_user_(New, Sock, List) ->
