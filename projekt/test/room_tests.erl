@@ -67,11 +67,11 @@ insert_test() ->
     ],
     C1 = room:insert("global", B1, s3, "Kenny", false),
     C2 = [
+        {"Room1",[{s2, "Timmy"}], true},
         {"global",[
             {s3, "Kenny"},
             {s1, "Tommy"}
-        ], false},
-        {"Room1",[{s2, "Timmy"}], true}
+        ], false}
     ],
     ?assertEqual(A1, A2),
     ?assertEqual(B1, B2),
