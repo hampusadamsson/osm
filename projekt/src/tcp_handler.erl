@@ -3,7 +3,7 @@
 -export([start/1, server/1, send_ip/3, send_to_all/2]).
 
 start(LPort) ->
-        io:format("Socket listening: ~w ~n",[self()]),
+    io:format("Socket listening: ~w ~n",[self()]),
     case gen_tcp:listen(LPort,[{active, false},{packet, line},{reuseaddr, true}]) of % 2=line
         {ok, ListenSock} ->
             Tmp = spawn(tcp_handler, server,[ListenSock]), %<---- supervisor needed (Låt genserver skapa dessa ???)
@@ -28,7 +28,6 @@ server(LS) ->
         Other ->
             io:format("accept returned ~w - goodbye!~n",[Other])
     end.
-
 
 loop(S) ->
     inet:setopts(S,[{active,false}]),
