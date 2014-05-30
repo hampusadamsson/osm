@@ -8,7 +8,10 @@
 
 
 %% ------------------------------------------------------------------
-%% @doc Removes the newline char at the end of a string.
+%% @doc Removes the newline character at the end of the string Str
+%%      and returns it.
+%%
+%%      Str - The string to be modified.
 %% @end
 %% ------------------------------------------------------------------
 remove_new_line([]) ->
@@ -30,7 +33,11 @@ remove_new_line(Str) ->
 
 %% ------------------------------------------------------------------
 %% @doc Extracts the first three words in a string and returns them
-%%      as three seprate strings.
+%%      as three seprate strings. The rest of the input string will
+%%      be ignored.
+%%
+%%      BodyStr - The string of which the three words will be
+%%      extracted from.
 %% @end
 %% ------------------------------------------------------------------
 get_parts(BodyStr) ->
@@ -47,9 +54,17 @@ get_parts(BodyStr) ->
     {Request, RoomName, Secrecy}.
 
 %% ------------------------------------------------------------------
-%% @doc 
-%% Matches out the different commands available and takes the 
-%% appropriate corresponding action.
+%% @doc Matches out what command if any was given in the message then
+%%      calls on the appropriate function to carry out the correct
+%%      corresponding action.
+%%
+%%      Request - The actual command part of the message
+%%
+%%      Data - The remaining part of the message after the command
+%%
+%%      Socket - The socket form which the message came
+%%
+%%      Room - The rrom form which the message came
 %% @end
 %% ------------------------------------------------------------------
 send_back(Request, Data, Socket, Room) ->
@@ -61,9 +76,19 @@ send_back(Request, Data, Socket, Room) ->
     end.
 
 %% ------------------------------------------------------------------
-%% @doc 
-%% Matches out the different commands available and takes the 
-%% appropriate corresponding action.
+%% @doc Matches out what command if any was given in the message then
+%%      calls on the appropriate function to carry out the correct
+%%      corresponding action.
+%%
+%%      Request - The actual command part of the message
+%%
+%%      Name - The user which the command will effect
+%%
+%%      Data - The remaining part of the message after the command
+%%
+%%      Socket - The socket form which the message came
+%%
+%%      Room - The rrom form which the message came
 %% @end
 %% ------------------------------------------------------------------
 send_back(Request, Name, Data, Socket, Room) ->
@@ -85,9 +110,22 @@ send_back(Request, Name, Data, Socket, Room) ->
     end.
 
 %% ------------------------------------------------------------------
-%% @doc 
-%% Matches out the different commands available and takes the 
-%% appropriate corresponding action.
+%% @doc Matches out what command if any was given in the message then
+%%      calls on the appropriate function to carry out the correct
+%%      corresponding action.
+%%
+%%      Request - The actual command part of the message
+%%
+%%      RoomName - The room that the command will effect
+%%
+%%      Secrecy - true or false depending on whether the room should
+%%      be hidden or not
+%%
+%%      Data - The remaining part of the message after the command
+%%
+%%      Socket - The socket form which the message came
+%%
+%%      Room - The rrom form which the message came
 %% @end
 %% ------------------------------------------------------------------
 send_back(Request, RoomName, Secrecy, Data, Socket, Room) ->
@@ -99,10 +137,11 @@ send_back(Request, RoomName, Secrecy, Data, Socket, Room) ->
     end.
 
 %% ------------------------------------------------------------------
-%% @doc
-%% Incomming Data - Data being a string.
+%% @doc Handles incomming messages and decides where to pass it on
 %%
-%% Data will be parsed to execute functions.
+%%      Data - The message
+%%
+%%      Socket - The socket form which the message came
 %% @end
 %% ------------------------------------------------------------------
 handle(Data, Socket)->   
@@ -121,8 +160,14 @@ handle(Data, Socket)->
     end.
 
 %% ------------------------------------------------------------------
-%% @doc
-%% Get the string from parser with the right name added to it.
+%% @doc Takes a message and formats it into a string ready to be
+%%      printed in the client.
+%%
+%%      FromParser - The message to be manipulated
+%%
+%%      Sock - The socket form which the message came
+%%
+%%      List - List containing all rooms and the sockets in each room
 %% @end
 %% ------------------------------------------------------------------
 get_string(FromParser, Sock, List) ->
@@ -132,4 +177,3 @@ get_string(FromParser, Sock, List) ->
     Name = room:find_name(Sock, List),
     NameMsg = string:join([Room, string:concat(Name, ">"), Msg], " "),
     NameMsg.
-
