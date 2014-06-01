@@ -448,10 +448,14 @@ rename_user_(New, Sock, List) ->
 rename_user(New1, Sock, List) ->
     case find_sock(New1, List) of
         false ->
+        	Msg = "{username " ++ New1 ++ "}\n",
+        	gen_tcp:send(Sock, Msg),
             NewList = rename_user_(New1, Sock, List);
         _ ->
+
             New2 = string:concat(New1, "_"),
-            Msg = "{username " ++ New2 ++ "}",
+            Msg = "{username " ++ New2 ++ "}\n",
+            io:fwrite("~w",[Msg]),
             gen_tcp:send(Sock, Msg),
             NewList = rename_user_(New2, Sock, List)
     end,
