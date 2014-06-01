@@ -451,6 +451,8 @@ rename_user(New1, Sock, List) ->
             NewList = rename_user_(New1, Sock, List);
         _ ->
             New2 = string:concat(New1, "_"),
+            Msg = "{username " ++ New2 ++ "}",
+            gen_tcp:send(Sock, Msg),
             NewList = rename_user_(New2, Sock, List)
     end,
     inform_all(NewList),
