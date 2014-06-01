@@ -3,7 +3,7 @@
 -export([start/1, server/1]).
 
 start(LPort) ->
-        io:format("Socket listening: ~w ~n",[self()]),
+    io:format("Socket listening: ~w ~n",[self()]),
     case gen_tcp:listen(LPort,[{active, false},{packet, line},{reuseaddr, true}]) of % 2=line
         {ok, ListenSock} ->
             Tmp = spawn(tcp_handler, server,[ListenSock]), %<---- supervisor needed (Låt genserver skapa dessa ???)
