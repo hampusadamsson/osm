@@ -2,6 +2,12 @@
 
 -export([start/1, server/1, send_ip/3, send_to_all/2]).
 
+%% ---------------------------------------------------------------------------
+%% @doc (MARKED) Starts listening to incoming connections to the server??
+%%
+%%      LPort - The port to listen to
+%% @end
+%% ---------------------------------------------------------------------------
 start(LPort) ->
     io:format("Socket listening: ~w ~n",[self()]),
     case gen_tcp:listen(LPort,[{active, false},{packet, line},{reuseaddr, true}]) of % 2=line
@@ -14,6 +20,12 @@ start(LPort) ->
             {error,Reason}
     end. 
 
+%% ---------------------------------------------------------------------------
+%% @doc Accepts and establishes a connection with the client
+%%
+%%      LS - The socket trying to establish a connection
+%% @end
+%% ---------------------------------------------------------------------------
 server(LS) ->
     case gen_tcp:accept(LS) of
         {ok,S} ->
@@ -29,6 +41,12 @@ server(LS) ->
             io:format("accept returned ~w - goodbye!~n",[Other])
     end.
 
+%% ---------------------------------------------------------------------------
+%% @doc A loop reciving messages form a socket
+%%
+%%      S - A socket
+%% @end
+%% ---------------------------------------------------------------------------
 loop(S) ->
     inet:setopts(S,[{active,false}]),
     case gen_tcp:recv(S,0) of
@@ -42,6 +60,16 @@ loop(S) ->
             gen_tcp:close(S)
     end.
 
+%% ---------------------------------------------------------------------------
+%% @doc Sends a message with ip and port of a user Name to a socket
+%%
+%%      Name - The username of the user to send info about
+%%
+%%      Sock - The socket to send the message to
+%%
+%%      List - List containing all rooms and the sockets in each room
+%% @end
+%% ---------------------------------------------------------------------------
 send_ip(Name, Sock, List) ->
     case room:get_ip(Name, List) of
         false ->
@@ -52,9 +80,16 @@ send_ip(Name, Sock, List) ->
             {noreply, List}    
     end.
 
+%% ---------------------------------------------------------------------------
+%% @doc Sends a message Msg to al list of sockets Sock
+%%
+%%      Msg - A message in the form of a string
+%%
+%%      Sock - List of sockets
+%% @end
+%% ---------------------------------------------------------------------------
 send_to_all(_,[])->
     ok;
 send_to_all(Msg,[Sock|Rest])->
     gen_tcp:send(Sock, Msg),
     send_to_all(Msg,Rest).
-
