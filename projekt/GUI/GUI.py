@@ -32,18 +32,18 @@ class GUI(object):
 ########################################################## 
 
         self.nb = ttk.Notebook(master)
-        self.nb.place(x=130, y=0)
+        self.nb.place(x=122, y=0)
 
 ##########################################################
 #Userlist där alla användarna i ett rum ska listas
 ########################################################## 
 
-        self.userWindow = Listbox(master, width=15,height=23)
+        self.userWindow = Listbox(master, width=15,height=24)
         self.userWindow.place(x=0,y=23)
-        self.roomWindow = Listbox(master, width=15,height=23)
-        self.roomWindow.place(x=705,y=23)
+        self.roomWindow = Listbox(master, width=15,height=24)
+        self.roomWindow.place(x=689,y=23)
         self.roomLabel = Label(master,text="Tillgängliga Rum",font=("Helvetica",10))
-        self.roomLabel.place(x=715,y=0)
+        self.roomLabel.place(x=695,y=0)
         self.userLabel = Label(master,text="Användare",font=("Helvetica",10))
         self.userLabel.place(x=30,y=0)
        
@@ -58,8 +58,8 @@ class GUI(object):
 #Initierar Entryfältet där användaren skriver in sina meddelanden
 #########################################################################
 
-        self.message = Entry(master,width=40,textvariable = self.temp)
-        self.message.place(x=260,y=440)
+        self.message = Entry(master,width=70,textvariable = self.temp)
+        self.message.place(x=123,y=390)
         self.message.bind('<Return>',self.sendMessage)
         
 ############################################################################
@@ -541,7 +541,7 @@ class GUI(object):
 
 if __name__ == "__main__":
     root=Tk()
-    root.geometry("850x500")
+    root.geometry("815x420")
     root.title("Nuntii IRC")
     m=GUI(root)
     m.initiateConfig()
