@@ -18,7 +18,7 @@
 %% API Function Exports
 %% ------------------------------------------------------------------
 
--export([start_link/0, send/2, start_servers/0, send_to_all/2, list_users/0, crash_me/1]).
+-export([start_link/0, send/2, start_servers/0, list_users/0, crash_me/1]).
 
 %% ------------------------------------------------------------------
 %% gen_server Function Exports
@@ -112,7 +112,7 @@ handle_cast({'remove_from_room', Room, RemSocket}, List) ->
 %% ------------------------------------------------------------------
 handle_cast({'send', Room, Msg, Sock}, List) ->
     NameMsg = parser:get_string(Msg, Sock, List),
-    spawn(?MODULE, send_to_all,[NameMsg, room:receivers(Room, List, 1)]),
+    spawn(tcp_handler, send_to_all,[NameMsg, room:receivers(Room, List, 1)]),
     {noreply, List};
 
 %% ------------------------------------------------------------------
@@ -123,7 +123,7 @@ handle_cast({'send', Room, Msg, Sock}, List) ->
 handle_cast({'list_room_users', Room, NewList}, _) ->
     Users = room:users_in_room(Room, NewList),
     Receivers = room:receivers(Room, NewList, 1),
-    spawn(?MODULE, send_to_all, [Users, Receivers]),
+    spawn(tcp_handler, send_to_all, [Users, Receivers]),
     {noreply, NewList};
 
 %% ------------------------------------------------------------------
@@ -134,7 +134,7 @@ handle_cast({'list_room_users', Room, NewList}, _) ->
 handle_cast({'list_rooms', NewList}, _) ->
     Rooms = room:rooms(NewList, false),
     Receivers = room:receivers("global", NewList, 1),
-    spawn(?MODULE, send_to_all, [Rooms, Receivers]),
+    spawn(tcp_handler, send_to_all, [Rooms, Receivers]),
     {noreply, NewList};
 
 %% ------------------------------------------------------------------
@@ -143,14 +143,7 @@ handle_cast({'list_rooms', NewList}, _) ->
 %% @end
 %% ------------------------------------------------------------------
 handle_cast({'whois', Name, Sock}, List) ->
-    case room:get_ip(Name, List) of
-        false ->
-            {noreply, List};    
-        {Ip, Port} ->
-            Msg = io_lib:format("{whois User: ~s,Connectd From: ~s,On port: ~w}~n",[Name, Ip, Port]),
-            gen_tcp:send(Sock, Msg),
-            {noreply, List}    
-    end;
+    tcp_handler:send_ip(Name, Sock, List);
 
 %% ------------------------------------------------------------------
 %% @doc
@@ -245,12 +238,6 @@ crash_me(Crash_type)->
 %----------------------------------------- SERVER-tcp/ip ----
 %
 %
-
-send_to_all(_,[])->
-    ok;
-send_to_all(Msg,[Sock|Rest])->
-    gen_tcp:send(Sock, Msg),
-    send_to_all(Msg,Rest).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%% Eunit test cases  %%%%%%%%%%%%%%%%%%%%

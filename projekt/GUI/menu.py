@@ -1,27 +1,44 @@
 import tkinter as tki
 
 class UserMenu():
-    def __init__(self,master,socket):
+    def __init__(self,master,socket,userName):
+        self.master = master
         self.current = ""
+        self.userName = userName
         self.socket = socket
         self.menu = tki.Menu(master,tearoff=0)
         self.menu.add_command(label = "Whisper", command = lambda: self.whisper(self.current))
         self.menu.add_command(label = "Whois",command = lambda: self.whois(self.current))
         self.menu.add_command(label = "Track",command = lambda: self.track(self.current))
-        self.menu.add_command(label = "Poke", command = lambda: self.poke(self.current))
-        self.menu.add_command(label = "Close", command = lambda: self.menu.unpost)
+        self.menu.add_command(label = "Dummy",command = self.menu.unpost)
+        self.menu.add_command(label = "Dummy",command = self.menu.unpost)
+
+
+    def createRoomMenu(self,roomList):
+        
+        roomMenu = tki.Menu(self.menu,tearoff=0)
+        
+        def createRoomMenuAux(menu,text):
+            menu.add_command(label=text,command = lambda: self.invite(text,self.current))
+
+        for roomName in roomList:
+            createRoomMenuAux(roomMenu,roomName)
+        
+        self.menu.delete(3,5)
+        self.menu.add_cascade(label="Invite", menu=roomMenu)
+        self.menu.add_command(label = "Close",command = self.menu.unpost)
+
+    def invite(self,roomName,user):
+        self.sendCommand(roomName +" /invite",user)
 
     def whisper(self,namn):
-            print ("Nu ska här viskas till " + namn +" !")
+            self.sendCommand("global /join",namn+self.userName+" private")
+            self.master.after(300,self.sendCommand,namn+self.userName+" /invite",namn)
 
     def whois(self,namn):
         self.sendCommand("global /whois",namn)
     def track(self,namn):
         self.sendCommand("global /track",namn)
-
-    def poke(self,namn):
-        self.sendCommand("global /poke",namn)
-
     def setCurrent(self,name):
         self.current = name
 
@@ -39,6 +56,9 @@ class UserMenu():
     def setRoomList(self,roomList):
         self.roomList = roomList
 
+    def rename(self,newName):
+        self.userName = newName
+
 class RoomMenu():
     def __init__(self,master,socket):
         
@@ -47,16 +67,14 @@ class RoomMenu():
         self.socket = socket
         self.menu = tki.Menu(master,tearoff=0)
         self.menu.add_command(label = "Join", command = lambda: self.join(self.current))
-        self.menu.add_command(label = "List Users", command = lambda: self.listUsers(self.current))
-        self.menu.add_command(label = "Close", command = self.menu.unpost)
+        self.menu.add_command(label = "Close Menu", command = self.menu.unpost)
 
     def join(self, namn):
         if namn in self.roomList:
-            print("ROFLBBQ")
+            1+1
         else:
             self.sendCommand("global /join",namn)
         
-
     def popup(self, event):
         self.menu.post(event.x_root, event.y_root)
         

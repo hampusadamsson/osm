@@ -11,9 +11,12 @@ class StoppableThread(threading.Thread):
         self.messageQueue = queue.Queue()
 
     def run(self):
+        
         while True:
-            data = self.serverSocket.readline()
-
+            try:
+                data = self.serverSocket.readline()
+            except Exception as e:
+                break
             #Om vi bara far bullshit fran socketen avslutas traden och GUI:t
             #informeras att detta har hant med "Disconnect" meddelandet
 
