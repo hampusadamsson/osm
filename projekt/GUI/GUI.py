@@ -66,6 +66,7 @@ class GUI(object):
 #########################################################################
 
         self.message = Entry(master,width=70,textvariable = self.temp)
+        self.message.config(background = "#121A16",foreground="#00EB00") 
         self.message.place(x=123,y=388)
         self.message.bind('<Return>',self.sendMessage)
         
