@@ -5,13 +5,15 @@
 	 rooms/2, get_info/2, rename_user/3, get_ip/2]).
 
 %%--------------------------------------------------------------------------
-%% @doc (MARKED) Returns a list of the connected sockets in the room Room
+%% @doc Returns a list of the connected sockets or the usernames associated 
+%%      to the sockets in the room Room
 %%
 %%      Room - The room from which to list users
 %%
 %%      List - List containing all rooms and the sockets in each room
 %%
-%%      N - ------- Fyll i ---------
+%%      N - Option variable to chose between returning a list of sockets or 
+%%      usernames 
 %% 
 %% example of a return: [{room_name, [sock1,sock2,sock3]}]
 %% @end
@@ -33,7 +35,7 @@ receivers(Room, List, N) ->
     NewList.
 
 %%--------------------------------------------------------------------------
-%% @doc (MARKED) Initial insert into the List of rooms
+%% @doc Initial insert for all new connections into the List of rooms
 %%
 %%      Room - The room in which to put the user/socket
 %%
@@ -91,13 +93,13 @@ insert(Room, List, Sock, Name, Secrecy1) ->
     NewList.
 
 %%--------------------------------------------------------------------------
-%% @doc (MARKED) Remove the List of rooms
+%% @doc Removes socket Sock from the room Room
 %%
-%%      Room - 
+%%      Room - The room to remove Sock from
 %%
 %%      List - List containing all rooms and the sockets in each room
 %%
-%%      Sock - 
+%%      Sock - The socket to remove
 %% 
 %% example of a return: [{room_name, [sock1,sock2,sock3]}]
 %% @end
@@ -193,21 +195,21 @@ find_name(Sock, List) ->
     find(Sock,List,1,2).
 
 %%--------------------------------------------------------------------------
-%% @doc (MARKED) Parses the global room after a certain socket or username
+%% @doc Parses the global room after a certain socket or username
 %% 
-%%      Sock - Either a socket or a username to search for
+%%      User - Either a socket or a username to search for
 %%
 %%      List - List containing all rooms and the sockets in each room
 %%
-%%     N1 - 
+%%     N1 - Argument to help-function keyfind/3
 %%
-%%     N2 - 
+%%     N2 - Argument to help-function element/2
 %% @end
 %%--------------------------------------------------------------------------
-find(Sock, List, N1, N2) ->
+find(User, List, N1, N2) ->
     case lists:keyfind("global", 1, List) of
         {_, SockList, _} ->
-            case lists:keyfind(Sock, N1, SockList) of
+            case lists:keyfind(User, N1, SockList) of
                 false ->
                     false;
                 Tupel ->
@@ -271,14 +273,9 @@ users_in_room(Room ,List) ->
     
 
 %%--------------------------------------------------------------------------
-%% @doc (MARKED) Lists all rooms, or if Name is not false then the Rooms user Name is in.
+%% @doc Returns a string with the names of the rooms in Arg. Comma separated
 %%      
-%%      Room - 
-%%
-%%      SockList - 
-%%
-%%      Name - 
-%%
+%%      Arg - A list of rooms
 %% @end
 %%--------------------------------------------------------------------------
 room_string([]) ->
@@ -305,12 +302,12 @@ user_rooms([{Room, SockList, _}|T], Name) ->
             [Room|user_rooms(T, Name)]
     end.
 %%--------------------------------------------------------------------------
-%% @doc (MARKED)
+%% @doc Returnes a string containg the rooms username Name is a member of.
+%%      If Name = false returns a string with all public rooms.
 %%
 %%      List - List containing all rooms and the sockets in each room
 %%
-%%      Name - 
-%%
+%%      Name - To get the rooms user Name is a member of
 %% @end
 %%--------------------------------------------------------------------------
 rooms([], _) ->
@@ -332,7 +329,6 @@ rooms(List, Name) ->
 %%      Name - The user to get the ip for
 %%
 %%      List - List containing all rooms and the sockets in each room
-%%
 %% @end
 %%--------------------------------------------------------------------------
 get_ip(Name, List) ->
@@ -349,7 +345,7 @@ get_ip(Name, List) ->
 
 
 %%--------------------------------------------------------------------------
-%% @doc (MARKED) Check things before we add a new socket
+%% @doc Correctly adds a socket to List
 %%
 %%      NewSock - The socket to be added
 %%
@@ -390,7 +386,7 @@ add_socket(NewSock, Room, List, Secrecy1) ->
     NewList.
 
 %%--------------------------------------------------------------------------
-%% @doc (MARKED) Get info of a room as a string
+%% @doc Get secrecy info of a room as a string
 %%
 %%      Room - Room to get info about
 %%
