@@ -332,11 +332,11 @@ class GUI(object):
                     elif commandString[0] == 'track':
                         trackList = commandString[1].split(",")
                         self.writeMessage("","syscall")
-                        self.writeMessage("------------------------","syscall")
+                        self.writeMessage("-------------------------------------","syscall")
                         self.writeMessage("Användaren är med i följande rum:","syscall")
                         for element in trackList:
                             self.writeMessage(element,"syscall")
-                        self.writeMessage("------------------------","syscall")
+                        self.writeMessage("-------------------------------------","syscall")
                         self.writeMessage("","syscall")
                     elif commandString[0] == 'username':
                         self.configList["userName"] = commandString[1]
