@@ -66,7 +66,7 @@ class GUI(object):
 #########################################################################
 
         self.message = Entry(master,width=70,textvariable = self.temp)
-        self.message.config(background = "#121A16",foreground="#00EB00") 
+        self.message.config(background = "#121A16",foreground="#00EB00",insertbackground="#00EB00") 
         self.message.place(x=123,y=388)
         self.message.bind('<Return>',self.sendMessage)
         
@@ -265,6 +265,7 @@ class GUI(object):
         self.userMenu = UserMenu(self.master,self.serverSocket,self.configList["userName"])
         self.userWindow.bind('<<ListboxSelect>>',self.userSelect)
         self.userWindow.bind('<Button-3>',self.userMenu.popup)
+      
         self.userMenu.createRoomMenu(self.windowList)
 
         self.roomMenu = RoomMenu(self.master,self.serverSocket)
