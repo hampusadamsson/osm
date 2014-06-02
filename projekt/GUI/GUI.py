@@ -32,18 +32,18 @@ class GUI(object):
 ########################################################## 
 
         self.nb = ttk.Notebook(master)
-        self.nb.place(x=130, y=0)
+        self.nb.place(x=122, y=0)
 
 ##########################################################
 #Userlist där alla användarna i ett rum ska listas
 ########################################################## 
 
-        self.userWindow = Listbox(master, width=15,height=23)
+        self.userWindow = Listbox(master, width=15,height=24)
         self.userWindow.place(x=0,y=23)
-        self.roomWindow = Listbox(master, width=15,height=23)
-        self.roomWindow.place(x=705,y=23)
+        self.roomWindow = Listbox(master, width=15,height=24)
+        self.roomWindow.place(x=689,y=23)
         self.roomLabel = Label(master,text="Tillgängliga Rum",font=("Helvetica",10))
-        self.roomLabel.place(x=715,y=0)
+        self.roomLabel.place(x=695,y=0)
         self.userLabel = Label(master,text="Användare",font=("Helvetica",10))
         self.userLabel.place(x=30,y=0)
        
@@ -58,8 +58,8 @@ class GUI(object):
 #Initierar Entryfältet där användaren skriver in sina meddelanden
 #########################################################################
 
-        self.message = Entry(master,width=40,textvariable = self.temp)
-        self.message.place(x=260,y=440)
+        self.message = Entry(master,width=70,textvariable = self.temp)
+        self.message.place(x=123,y=390)
         self.message.bind('<Return>',self.sendMessage)
         
 ############################################################################
@@ -196,8 +196,6 @@ class GUI(object):
 
         elif (argumentString[0] == "/rename"):
             
-            self.configList["userName"] = argumentString[1]
-            self.rename()
             msg_temp =self.currentTab + " " + mtext1+'\n'
             msg = msg_temp.encode('UTF-8')
             self.serverSocket.send(msg)
@@ -283,9 +281,9 @@ class GUI(object):
 ##########################################################
 
     def checkQueue(self):
+        
         stopSign = 1
         respons = self.thread.returnQueue()
-
         if (respons == "empty"):
             1+1
         elif(respons == "Disconnected"):
@@ -298,7 +296,7 @@ class GUI(object):
             else:
                 self.writeMessage("Tappade anslutningen till servern, anslut manuellt med /connect IP","syscall")           
         elif(respons[0][0] == "{"):
-      
+                print(respons)
                 temp = respons[1:len(respons)-2]
                 if " " in temp:
                     commandString = self.messageSplit(temp)
@@ -325,11 +323,15 @@ class GUI(object):
                         trackList = commandString[1].split(",")
                         self.writeMessage("","syscall")
                         self.writeMessage("------------------------","syscall")
-                        self.writeMessage(self.userWindow.get(self.userWindow.curselection()) + " är med i följande rum:","syscall")
+                        self.writeMessage("Användaren är med i följande rum:","syscall")
                         for element in trackList:
                             self.writeMessage(element,"syscall")
                         self.writeMessage("------------------------","syscall")
                         self.writeMessage("","syscall")
+                    elif commandString[0] == 'username':
+                        print("Nu ska jag döpas om till: " + commandString[1])
+                        self.configList["userName"] = commandString[1]
+                        self.rename()
                         
                     else:
                         self.userList[commandString[0]] = commandString[1].split(",")
@@ -539,7 +541,7 @@ class GUI(object):
 
 if __name__ == "__main__":
     root=Tk()
-    root.geometry("850x500")
+    root.geometry("815x420")
     root.title("Nuntii IRC")
     m=GUI(root)
     m.initiateConfig()

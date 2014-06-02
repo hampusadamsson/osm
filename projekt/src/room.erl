@@ -336,7 +336,7 @@ get_ip(Name, List) ->
         false ->
             false;
         Sock ->
-            Info = inet:sockname(Sock),
+            Info = inet:peername(Sock),
             {_, {Ip, Port}} = Info,    
             Tmp = string:tokens(lists:flatten(io_lib:format("~p", [Ip])), ",{}"),
             Ip2 = string:join(Tmp,"."),
@@ -353,7 +353,7 @@ get_ip(Name, List) ->
 %%
 %%      List - List containing all rooms and the sockets in each room
 %%
-%%      Secrecy1 - true or false, indicates if the room is hidden or not
+%%      Secrecy1 - true or false, indicates if the room is private or public
 %%
 %% @end
 %%--------------------------------------------------------------------------
@@ -444,9 +444,15 @@ rename_user_(New, Sock, List) ->
 rename_user(New1, Sock, List) ->
     case find_sock(New1, List) of
         false ->
+        	Msg = "{username " ++ New1 ++ "}\n",
+        	gen_tcp:send(Sock, Msg),
             NewList = rename_user_(New1, Sock, List);
         _ ->
+
             New2 = string:concat(New1, "_"),
+            Msg = "{username " ++ New2 ++ "}\n",
+            io:fwrite("~w",[Msg]),
+            gen_tcp:send(Sock, Msg),
             NewList = rename_user_(New2, Sock, List)
     end,
     inform_all(NewList),

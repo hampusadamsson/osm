@@ -1,7 +1,7 @@
-userName=SilverLord
-ipAdress=localhost
+delay=5
 reconnectMode=auto
 reconnectAmount=5
 restoreTabs=auto
 connectMode=auto
-delay=5
+ipAdress=localhost
+userName=Erik
