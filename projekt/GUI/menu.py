@@ -56,6 +56,9 @@ class UserMenu():
     def setRoomList(self,roomList):
         self.roomList = roomList
 
+    def rename(self,newName):
+        self.userName = newName
+
 class RoomMenu():
     def __init__(self,master,socket):
         

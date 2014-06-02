@@ -26,12 +26,19 @@ class GUI(object):
     def __init__(self,master):
 
         self.master = master
+
+        mygreen = "#d2ffd2"
+        myred = "#dd0202"
+
+        Gstyle = ttk.Style()
+        Gstyle.configure("TNotebook", background="#121A16", borderwidth=0)
+        Gstyle.configure("TNotebook.Tab", background='#545854',foreground="black",borderwidth=1)
         
 ##########################################################
 #Initierar Notebook widgeten
 ########################################################## 
 
-        self.nb = ttk.Notebook(master)
+        self.nb = ttk.Notebook(master,style='TNotebook')
         self.nb.place(x=122, y=0)
 
 ##########################################################
@@ -39,12 +46,16 @@ class GUI(object):
 ########################################################## 
 
         self.userWindow = Listbox(master, width=15,height=24)
+        self.userWindow.config(background="#121A16",foreground="#00EB00",highlightthickness=0)
         self.userWindow.place(x=0,y=23)
         self.roomWindow = Listbox(master, width=15,height=24)
+        self.roomWindow.config(background="#121A16",foreground="#00EB00",highlightthickness=0)
         self.roomWindow.place(x=689,y=23)
-        self.roomLabel = Label(master,text="Tillgängliga Rum",font=("Helvetica",10))
+        self.roomLabel = Label(master,text="Tillgängliga Rum",font=("Helvetica",10),underline=16)
+        self.roomLabel.config(background="#121A16",foreground="#00EB00")
         self.roomLabel.place(x=695,y=0)
         self.userLabel = Label(master,text="Användare",font=("Helvetica",10))
+        self.userLabel.config(background="#121A16",foreground="#00EB00") 
         self.userLabel.place(x=30,y=0)
        
 
@@ -59,7 +70,7 @@ class GUI(object):
 #########################################################################
 
         self.message = Entry(master,width=70,textvariable = self.temp)
-        self.message.place(x=123,y=390)
+        self.message.place(x=123,y=388)
         self.message.bind('<Return>',self.sendMessage)
         
 ############################################################################
@@ -111,6 +122,7 @@ class GUI(object):
 #####################################################################
 
         self.globalRoom = Text(master,state=DISABLED)
+        self.globalRoom.config(background = "#121A16",foreground="#00EB00")
         self.nb.add(self.globalRoom, text='global')
         self.windowList["global"] = self.globalRoom
 
@@ -120,6 +132,7 @@ class GUI(object):
         
     def addTab(self,name):
         tab = Text(self.master,state=DISABLED)
+        tab.config(background = "#121A16",foreground="#00EB00")
         self.windowList[name] = tab
         self.userMenu.createRoomMenu(self.windowList)
         self.nb.add(tab, text=name)
@@ -296,7 +309,6 @@ class GUI(object):
             else:
                 self.writeMessage("Tappade anslutningen till servern, anslut manuellt med /connect IP","syscall")           
         elif(respons[0][0] == "{"):
-                print(respons)
                 temp = respons[1:len(respons)-2]
                 if " " in temp:
                     commandString = self.messageSplit(temp)
@@ -329,8 +341,8 @@ class GUI(object):
                         self.writeMessage("------------------------","syscall")
                         self.writeMessage("","syscall")
                     elif commandString[0] == 'username':
-                        print("Nu ska jag döpas om till: " + commandString[1])
                         self.configList["userName"] = commandString[1]
+                        self.userMenu.rename(commandString[1])
                         self.rename()
                         
                     else:
@@ -469,7 +481,7 @@ class GUI(object):
         self.windowList[self.currentTab].insert(END,message+'\n')
         if flag == "syscall":
            self.windowList[self.currentTab].tag_add("here", "end -2 line linestart", "end -2 line lineend")
-           self.windowList[self.currentTab].tag_config("here", background="white", foreground="red")
+           self.windowList[self.currentTab].tag_config("here", background="#121A16", foreground="red")
         self.windowList[self.currentTab].yview(END)
         self.windowList[self.currentTab].config(state=DISABLED)
 
@@ -541,7 +553,8 @@ class GUI(object):
 
 if __name__ == "__main__":
     root=Tk()
-    root.geometry("815x420")
+    root.geometry("810x408")
+    root.configure(background="#121A16")
     root.title("Nuntii IRC")
     m=GUI(root)
     m.initiateConfig()
