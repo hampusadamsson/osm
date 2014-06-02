@@ -263,28 +263,21 @@ class GUI(object):
 
     def initiateMenues(self):
         self.userMenu = UserMenu(self.master,self.serverSocket,self.configList["userName"])
-        self.userWindow.bind('<<ListboxSelect>>',self.userSelect)
-        self.userWindow.bind('<Button-3>',self.userMenu.popup)
-      
+        self.userWindow.bind('<Button-3>',lambda e: self.setAndPopup(e,self.userWindow))
         self.userMenu.createRoomMenu(self.windowList)
 
         self.roomMenu = RoomMenu(self.master,self.serverSocket)
-        self.roomWindow.bind('<<ListboxSelect>>',self.roomSelect)
-        self.roomWindow.bind('<Button-3>',self.roomMenu.popup)
-        
-    def userSelect(self,event):
-        
-        self.userMenu.setCurrent(self.userWindow.get(self.userWindow.curselection()))
+        self.roomWindow.bind('<Button-3>',lambda e: self.setAndPopup(e,self.roomWindow))
 
-    def roomSelect(self,event):
- 
-        self.roomMenu.setCurrent(self.roomWindow.get(self.roomWindow.curselection()))
- 
-    def userSelectAlt(self):
-        self.userMenu.setCurrent(self.userWindow.get(self.userWindow.curselection()))
-    def roomSelectAlt(self):
-        self.roomMenu.setCurrent(self.roomWindow.get(self.roomWindow.curselection()))
-       
+
+    def setAndPopup(self,event,listbox):
+        listbox.activate(listbox.nearest(event.y))
+        if (listbox == self.userWindow):
+            self.userMenu.setCurrent(listbox.get(ACTIVE))
+            self.userMenu.popup(event)
+        else:
+            self.roomMenu.setCurrent(listbox.get(ACTIVE))
+            self.roomMenu.popup(event)
 
 ##########################################################
 #Kollar om det finns något nytt meddelande att hämta
