@@ -26,10 +26,6 @@ class GUI(object):
     def __init__(self,master):
 
         self.master = master
-
-        mygreen = "#d2ffd2"
-        myred = "#dd0202"
-
         Gstyle = ttk.Style()
         Gstyle.configure("TNotebook", background="#121A16", borderwidth=0)
         Gstyle.configure("TNotebook.Tab", background='#545854',foreground="black",borderwidth=1)
@@ -51,7 +47,7 @@ class GUI(object):
         self.roomWindow = Listbox(master, width=15,height=24)
         self.roomWindow.config(background="#121A16",foreground="#00EB00",highlightthickness=0)
         self.roomWindow.place(x=689,y=23)
-        self.roomLabel = Label(master,text="Tillgängliga Rum",font=("Helvetica",10),underline=16)
+        self.roomLabel = Label(master,text="Tillgängliga Rum",font=("Helvetica",10))
         self.roomLabel.config(background="#121A16",foreground="#00EB00")
         self.roomLabel.place(x=695,y=0)
         self.userLabel = Label(master,text="Användare",font=("Helvetica",10))
