@@ -1,6 +1,6 @@
 -module(tcp_handler).
 
--export([start/1, server/1, send_ip/3, send_to_all/2]).
+-export([start/1, server/1, send_ip/3, send_msg/4, send_list/3]).
 
 %% ---------------------------------------------------------------------------
 %% @doc (MARKED) Starts listening to incoming connections to the server??
@@ -88,8 +88,25 @@ send_ip(Name, Sock, List) ->
 %%      Sock - List of sockets
 %% @end
 %% ---------------------------------------------------------------------------
-send_to_all(_,[])->
+send_to_all(_, [])->
     ok;
-send_to_all(Msg,[Sock|Rest])->
+send_to_all(Msg, [Sock|Rest])->
     gen_tcp:send(Sock, Msg),
-    send_to_all(Msg,Rest).
+    send_to_all(Msg, Rest).
+
+send_msg(Msg, Sock, Room, List)->
+    NameMsg = parser:get_string(Msg, Sock, List),
+    Receivers = room:receivers(Room, List, 1),
+    send_to_all(NameMsg, Receivers). 
+
+send_list(Room, List, N) ->
+    case N of
+        1 ->
+            Users = room:users_in_room(Room, List),
+            Receivers = room:receivers(Room, List, 1),
+            send_to_all(Users, Receivers);
+        2 ->
+            Rooms = room:rooms(List, false),
+            Receivers = room:receivers("global", List, 1),
+            send_to_all(Rooms, Receivers)
+    end.
