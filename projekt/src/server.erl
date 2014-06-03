@@ -111,8 +111,7 @@ handle_cast({'remove_from_room', Room, RemSocket}, List) ->
 %% @end
 %% ------------------------------------------------------------------
 handle_cast({'send', Room, Msg, Sock}, List) ->
-    NameMsg = parser:get_string(Msg, Sock, List),
-    spawn(tcp_handler, send_to_all,[NameMsg, room:receivers(Room, List, 1)]),
+    spawn(tcp_handler, send_msg,[Msg, Sock, Room, List]),
     {noreply, List};
 
 %% ------------------------------------------------------------------
@@ -121,9 +120,7 @@ handle_cast({'send', Room, Msg, Sock}, List) ->
 %% @end
 %% ------------------------------------------------------------------
 handle_cast({'list_room_users', Room, NewList}, _) ->
-    Users = room:users_in_room(Room, NewList),
-    Receivers = room:receivers(Room, NewList, 1),
-    spawn(tcp_handler, send_to_all, [Users, Receivers]),
+    spawn(tcp_handler, send_list, [Room, NewList, 1]),
     {noreply, NewList};
 
 %% ------------------------------------------------------------------
@@ -132,9 +129,7 @@ handle_cast({'list_room_users', Room, NewList}, _) ->
 %% @end 
 %% ------------------------------------------------------------------
 handle_cast({'list_rooms', NewList}, _) ->
-    Rooms = room:rooms(NewList, false),
-    Receivers = room:receivers("global", NewList, 1),
-    spawn(tcp_handler, send_to_all, [Rooms, Receivers]),
+    spawn(tcp_handler, send_list, ["global", NewList, 2]),
     {noreply, NewList};
 
 %% ------------------------------------------------------------------
@@ -155,7 +150,7 @@ handle_cast({'track', Name, Sock}, List) ->
     {noreply, List};    
 
 %% ------------------------------------------------------------------
-%% @edoc
+%% @doc
 %% Show info about the room
 %% @end
 %% ------------------------------------------------------------------

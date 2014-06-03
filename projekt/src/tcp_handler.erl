@@ -1,6 +1,6 @@
 -module(tcp_handler).
 
--export([start/1, server/1, send_ip/3, send_to_all/2]).
+-export([start/1, server/1, send_ip/3, send_msg/4, send_list/3]).
 
 %% ---------------------------------------------------------------------------
 %% @doc (MARKED) Starts listening to incoming connections to the server??
@@ -88,8 +88,47 @@ send_ip(Name, Sock, List) ->
 %%      Sock - List of sockets
 %% @end
 %% ---------------------------------------------------------------------------
-send_to_all(_,[])->
+send_to_all(_, [])->
     ok;
-send_to_all(Msg,[Sock|Rest])->
+send_to_all(Msg, [Sock|Rest])->
     gen_tcp:send(Sock, Msg),
-    send_to_all(Msg,Rest).
+    send_to_all(Msg, Rest).
+
+%% ---------------------------------------------------------------------------
+%% @doc Sends a normal message built the right way for the client
+%%
+%%      Msg - The message from the client sending it
+%%
+%%      Sock - We need Sock to get the right name of the user
+%%
+%%      Room - All the sockets in Room should get the message
+%%
+%%      List - List containing all rooms and the sockets in each room
+%% @end
+%% ---------------------------------------------------------------------------
+send_msg(Msg, Sock, Room, List)->
+    NameMsg = parser:get_string(Msg, Sock, List),
+    Receivers = room:receivers(Room, List, 1),
+    send_to_all(NameMsg, Receivers). 
+
+%% ---------------------------------------------------------------------------
+%% @doc Sends either a list of users or a list of rooms to the client
+%%
+%%      Room - The users in user list are all in the room Room
+%%      
+%%      List - List containing all rooms and the sockets in each room
+%%
+%%      N - Option to choose between user list or room list
+%% @end
+%% ---------------------------------------------------------------------------
+send_list(Room, List, N) ->
+    case N of
+        1 ->
+            Users = room:users_in_room(Room, List),
+            Receivers = room:receivers(Room, List, 1),
+            send_to_all(Users, Receivers);
+        2 ->
+            Rooms = room:rooms(List, false),
+            Receivers = room:receivers("global", List, 1),
+            send_to_all(Rooms, Receivers)
+    end.
