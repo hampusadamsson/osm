@@ -94,11 +94,33 @@ send_to_all(Msg, [Sock|Rest])->
     gen_tcp:send(Sock, Msg),
     send_to_all(Msg, Rest).
 
+%% ---------------------------------------------------------------------------
+%% @doc Sends a normal message built the right way for the client
+%%
+%%      Msg - The message from the client sending it
+%%
+%%      Sock - We need Sock to get the right name of the user
+%%
+%%      Room - All the sockets in Room should get the message
+%%
+%%      List - List containing all rooms and the sockets in each room
+%% @end
+%% ---------------------------------------------------------------------------
 send_msg(Msg, Sock, Room, List)->
     NameMsg = parser:get_string(Msg, Sock, List),
     Receivers = room:receivers(Room, List, 1),
     send_to_all(NameMsg, Receivers). 
 
+%% ---------------------------------------------------------------------------
+%% @doc Sends either a list of users or a list of rooms to the client
+%%
+%%      Room - The users in user list are all in the room Room
+%%      
+%%      List - List containing all rooms and the sockets in each room
+%%
+%%      N - Option to choose between user list or room list
+%% @end
+%% ---------------------------------------------------------------------------
 send_list(Room, List, N) ->
     case N of
         1 ->
