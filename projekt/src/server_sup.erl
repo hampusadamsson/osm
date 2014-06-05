@@ -11,6 +11,9 @@
 -include_lib("eunit/include/eunit.hrl").
 
 -behaviour(supervisor).
+
+-define(CHILD(I, Type), {I, {I, start_servers, []}, permanent, 5000, Type, [I]}).
+
 %%--------------------------------------------------------------------
 %% Include files
 %%--------------------------------------------------------------------
@@ -19,7 +22,7 @@
 %% External exports
 %%--------------------------------------------------------------------
 -export([
-         start_link/0
+         start_link/0, add_child/1
         ]).
 
 %%--------------------------------------------------------------------
@@ -69,6 +72,17 @@ init(Arg) ->
     Restart_strategy = _One_for_one,
         
       {ok,{Restart_strategy, [Child]}}.
+
+
+%%--------------------------------------------------------------------
+%% Func: add_child/1
+%%--------------------------------------------------------------------
+add_child(Sock)->
+    % supervisor:start_child(supervisor_mod,
+    %                        {example_proc, {example_proc, start_link, []},
+    %                         permanent, brutal_kill, worker, [example_proc]}).
+    supervisor:start_child(?MODULE, {accepter, {tcp_handler, server, [Sock]}, permanent, 2000, worker, dynamic}). 
+
 
 %%====================================================================
 %% Internal functions

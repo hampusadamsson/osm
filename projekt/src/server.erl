@@ -18,7 +18,7 @@
 %% API Function Exports
 %% ------------------------------------------------------------------
 
--export([start_link/0, send/2, start_servers/0, list_users/0, crash_me/1]).
+-export([start_link/0, send/2, return_state/0, list_users/0, crash_me/1]).
 
 %% ------------------------------------------------------------------
 %% gen_server Function Exports
@@ -41,20 +41,20 @@ start_link() ->
 init(_Args) ->
     process_flag(trap_exit, true),
     tcp_handler:start(1337),
+    %server_sup:add_child(),
 
     case storage_handler:recover_state() of
         {error, _Reason} ->
-            io:format("TOM\n"),
+            io:format("Startup state: Empty\n"),
             Arg = [];
         State ->
-            io:format("loading...\n"),
-            io:format("state:~p \n",[State]),
+            io:format("Startup state:~p \n",[State]),
             
                                                 %Arg = [],
             Arg = State,
             storage_handler:delete_state()
     end,
-    
+    io:format("Server  running on PID:~w \n",[self()]),
     {ok, Arg}.
 
 %% Establish a Socket to an incoming connection
@@ -184,9 +184,8 @@ handle_call({'list_users'}, _From, List) ->
 %% Arg1 = listening port for incoming servers
 %% @end
 %% ------------------------------------------------------------------
-handle_call({'start_servers'}, _From, Socket) ->
-    Port=1337,
-    {reply, tcp_handler:start(Port), Socket}.
+handle_call({'return_state'}, _From, List) ->
+    {reply, List, List}.
 
 handle_info(_Info, State) ->
     {noreply, State}.
@@ -213,8 +212,8 @@ code_change(_OldVsn, State, _Extra) ->
 send(Room, Msg)->
     gen_server:cast(server, {'send', Room, Msg}).
 
-start_servers()->
-    gen_server:call(server, {'start_servers'}).
+return_state()->
+    gen_server:call(server, {'return_state'}).
 
 list_users()->
     gen_server:call(server, {'list_users'}).

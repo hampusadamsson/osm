@@ -507,6 +507,7 @@ class GUI(object):
         self.windowList[self.currentTab].config(state=NORMAL)
         self.windowList[self.currentTab].delete("1.0",END)
         self.windowList[self.currentTab].config(state=DISABLED)
+        self.message.delete(0,END)
 
     def deleteAllTabs(self):
         for window in self.windowList:

@@ -1,6 +1,6 @@
 -module(tcp_handler).
 
--export([start/1, server/1, send_ip/3, send_msg/4, send_list/3]).
+-export([start/1, server/1, send_ip/3, send_msg/4, send_list/3, loop/1]).
 
 %% ---------------------------------------------------------------------------
 %% @doc (MARKED) Starts listening to incoming connections to the server??
@@ -9,11 +9,15 @@
 %% @end
 %% ---------------------------------------------------------------------------
 start(LPort) ->
-    io:format("Socket listening: ~w ~n",[self()]),
-    case gen_tcp:listen(LPort,[{active, false},{packet, line},{reuseaddr, true}]) of % 2=line
+
+    case gen_tcp:listen(LPort,[{active, false},{packet, line},{reuseaddr, true}]) of
         {ok, ListenSock} ->
-            Tmp = spawn(tcp_handler, server,[ListenSock]), %<---- supervisor needed (Låt genserver skapa dessa ???)
-            io:format("New Connectiv: ~w ~n",[Tmp]),
+%            Tmp = spawn(tcp_handler, server,[ListenSock]), %<---- supervisor needed (Låt genserver skapa dessa ???)
+            %server_sup:add_child(ListenSock),
+            Tmp = spawn(server_sup, add_child, [ListenSock]),
+
+            io:format("Accepter running on PID: ~w ~n",[Tmp]),
+
             {ok, Port} = inet:port(ListenSock),
             Port;
         {error,Reason} ->
@@ -33,13 +37,13 @@ server(LS) ->
             Length = string:len(Data),
             Name = string:substr(Data, 1, Length-1),
             gen_server:cast(server, {'init_socket', "global", S, Name}),
-            Tmp = spawn(tcp_handler, server,[LS]), %<---- supervisor needed
-            io:format("New Connectiv: ~w ~n",[Tmp]),
-            loop(S),
+            Tmp = spawn(tcp_handler, loop,[S]),
+            io:format("Connection accepted: ~w ~n",[Tmp]),
             server(LS);
         Other ->
-            io:format("accept returned ~w - goodbye!~n",[Other])
+            io:format("Connection failed: ~w~n",[Other])
     end.
+
 
 %% ---------------------------------------------------------------------------
 %% @doc A loop reciving messages form a socket
@@ -47,15 +51,18 @@ server(LS) ->
 %%      S - A socket
 %% @end
 %% ---------------------------------------------------------------------------
+
 loop(S) ->
     inet:setopts(S,[{active,false}]),
+%    Timeout=30000,
+%    case gen_tcp:recv(S,0, Timeout) of
     case gen_tcp:recv(S,0) of
         {ok,Data} ->
-            io:format("Msg: ~s \n",[Data]),
+            io:format("~w: ~s \n",[S,Data]),
             parser:handle(Data, S),
             loop(S);
         {error,Reason} ->
-            io:format("Disconnect: ~s \n",[Reason]),
+            io:format("Connection disconnect: ~w -  ~s \n",[self(),Reason]),
             gen_server:cast(server, {'remove', S}), %global byts mot alla
             gen_tcp:close(S)
     end.
