@@ -15,7 +15,16 @@ class UserMenu():
 
 
     def createRoomMenu(self,roomList):
-        
+        """
+	
+	Creates the list of rooms to be used with the invite option
+	
+	Key arguments:
+		roomList - A list of the rooms the user is a member of
+	Sideeffect:
+		userMenu updated with the new submenu
+	"""
+
         roomMenu = tki.Menu(self.menu,tearoff=0)
         
         def createRoomMenuAux(menu,text):
@@ -27,15 +36,35 @@ class UserMenu():
         self.menu.delete(3,5)
         self.menu.add_cascade(label="Invite", menu=roomMenu)
         self.menu.add_command(label = "Close",command = self.menu.unpost)
-
+	
     def invite(self,roomName,user):
-        self.sendCommand(roomName +" /invite",user)
+        """
 
-    def whisper(self,namn):
-            self.sendCommand("global /join",namn+self.userName+" private")
-            self.master.after(300,self.sendCommand,namn+self.userName+" /invite",namn)
+	Invites another user to a room the user is a member of
+
+	Key arguments: 
+		user - The name of the user to invite
+		roomName - The room to invite to
+        """
+
+        self.sendCommand(roomName +" /invite",user)
+	
+    def whisper(self,name):
+        """
+
+	Starts a private conversation with another user
+
+	Key arguments: 
+		namn - The name of the other user to whisper to
+	Side effects:
+		A new private room is created	
+        """
+
+        self.sendCommand("global /join",name+self.userName+" private")
+        self.master.after(300,self.sendCommand,name+self.userName+" /invite",name)
 
     def whois(self,namn):
+	
         self.sendCommand("global /whois",namn)
     def track(self,namn):
         self.sendCommand("global /track",namn)
@@ -71,7 +100,7 @@ class RoomMenu():
 
     def join(self, namn):
         if namn in self.roomList:
-            1+1
+            pass
         else:
             self.sendCommand("global /join",namn)
         

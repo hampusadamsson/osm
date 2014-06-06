@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 from tkinter import *
 import tkinter.ttk as ttk
 import tkinter
@@ -17,29 +19,25 @@ from menu import RoomMenu
 import copy
 
 
-##########################################################
-#Initierar GUI:t
-##########################################################    
 
 class GUI(object):
 
+
+    """
+    Initiate the GUI
+
+    master - The frame in which to display the GUI
+    """
+  
     def __init__(self,master):
 
         self.master = master
         Gstyle = ttk.Style()
         Gstyle.configure("TNotebook", background="#121A16", borderwidth=0)
         Gstyle.configure("TNotebook.Tab", background='#545854',foreground="black",borderwidth=1)
-        
-##########################################################
-#Initierar Notebook widgeten
-########################################################## 
-
+      
         self.nb = ttk.Notebook(master,style='TNotebook')
         self.nb.place(x=122, y=0)
-
-##########################################################
-#Userlist där alla användarna i ett rum ska listas
-########################################################## 
 
         self.userWindow = Listbox(master, width=15,height=24)
         self.userWindow.config(background="#121A16",foreground="#00EB00",highlightthickness=0)
@@ -47,32 +45,20 @@ class GUI(object):
         self.roomWindow = Listbox(master, width=15,height=24)
         self.roomWindow.config(background="#121A16",foreground="#00EB00",highlightthickness=0)
         self.roomWindow.place(x=689,y=23)
-        self.roomLabel = Label(master,text="Tillgängliga Rum",font=("Helvetica",10))
+        self.roomLabel = Label(master,text="Tillgangliga Rum",font=("Helvetica",10))
         self.roomLabel.config(background="#121A16",foreground="#00EB00")
         self.roomLabel.place(x=695,y=0)
-        self.userLabel = Label(master,text="Användare",font=("Helvetica",10))
+        self.userLabel = Label(master,text="Anvandare",font=("Helvetica",10))
         self.userLabel.config(background="#121A16",foreground="#00EB00") 
         self.userLabel.place(x=30,y=0)
        
-
-##########################################################################
-#Stringvariablel som används för att få tillbaka texten från Entryfältet
-##########################################################################
-
         self.temp = StringVar()
 
-#########################################################################
-#Initierar Entryfältet där användaren skriver in sina meddelanden
-#########################################################################
 
         self.message = Entry(master,width=70,textvariable = self.temp)
         self.message.config(background = "#121A16",foreground="#00EB00",insertbackground="#00EB00") 
         self.message.place(x=123,y=388)
         self.message.bind('<Return>',self.sendMessage)
-        
-############################################################################
-#Initierar ett dictionary för att hålla koll på alla fönsternamn som skapas
-############################################################################
 
         self.windowList = {}
         self.userList = {}
@@ -80,54 +66,34 @@ class GUI(object):
         self.configList = {}
 
         self.userList["global"] = ['']
-                
-#################################
-#Användarnamnet
-#################################
         
         self.configList["userName"] = ""
-        self.Erik = 0
-
-###########################################
-#Anger om socketen är ansluten eller inte
-###########################################
 
         self.socketStatus = "disconnected"
         self.config = ()
 
-#######################################################################################
-#Anger den nu aktiva taben. Ändras automatiskt när man byter tab     
-#######################################################################################
-
         self.currentTab = "global"
         self.nb.bind_all("<<NotebookTabChanged>>", self.tabChangedEvent)
 
-#####################################################################
-#Initierar socketen
-#####################################################################
-        
         self.serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-#####################################################################
-#Overridar fönstrets orginal-stängningsfunktion   
-##################################################################### 
-        
         self.master.protocol('WM_DELETE_WINDOW', self.closeConnection)
-
-#####################################################################
-#Skapar och registrerar global-rummet
-#####################################################################
 
         self.globalRoom = Text(master,state=DISABLED)
         self.globalRoom.config(background = "#121A16",foreground="#00EB00")
         self.nb.add(self.globalRoom, text='global')
         self.windowList["global"] = self.globalRoom
 
-#######################################################################################
-#Skapar ett nytt fönster och tab och lägger till dem i dictionaryt över fönster      
-#######################################################################################
+    
         
     def addTab(self,name):
+
+        """
+
+        Creates a new tab and corrensponding chat window and stores them
+
+        Keyword arguments:
+        name - The name of the tab
+        """    
         tab = Text(self.master,state=DISABLED)
         tab.config(background = "#121A16",foreground="#00EB00")
         self.windowList[name] = tab
@@ -136,21 +102,27 @@ class GUI(object):
         self.userMenu.setRoomList(self.windowList)
         self.roomMenu.setRoomList(self.windowList)
 
-###################################################
-#Importerar nuvarande tiden och returnerar den
-###################################################
-        
+   
+
     def GetTime(self):
+        """
+
+        Import the current time and return it
+        """
         return "<" + time.strftime("%H:%M")+" "
 
-##################################################################
-#Hämtar texten från entryfältet och skickar den i bytearray-format
-#till socketen. Tömmer sedan entryfältet. Parsar även de möjliga
-#kommandona man kan utföra
-##################################################################
-
     def sendMessage(self,event):
+        """
 
+        Retrieves the text from the entry field, parses it and sends it to 
+        the server in a bytearray form. 
+
+        Keyword arguments: 
+        event - The return-key was pressent
+
+        Side-effects:
+        Checks if the command is valid. If so, sends it to the server
+        """
         mtext1 = self.temp.get()
         argumentString = self.messageSplit(mtext1)
 
@@ -160,7 +132,7 @@ class GUI(object):
                self.reconnect()
             else:
                 if argumentString[1] == self.configList["ipAdress"]:
-                    self.writeMessage("Du är redan ansluten till " +argumentString[1],"syscall")
+                    self.writeMessage("Du ar redan ansluten till " +argumentString[1],"syscall")
                 else:
                     self.disconnect()
                     self.configList["ipAdress"] = argumentString[1]
@@ -169,7 +141,7 @@ class GUI(object):
             
                     
         elif (self.socketStatus != "ok"):
-            self.writeMessage("Du är inte ansluten till en server, anslut med /connect IP","syscall")
+            self.writeMessage("Du ar inte ansluten till en server, anslut med /connect IP","syscall")
             self.message.delete(0,END)
             
         elif (argumentString[0] == "/join"):
@@ -193,7 +165,7 @@ class GUI(object):
                 self.serverSocket.send(msg)
                 self.message.delete(0,END)
             else:
-                self.writeMessage("Du är redan med i det angivna rummet!","syscall")
+                self.writeMessage("Du ar redan med i det angivna rummet!","syscall")
                 self.message.delete(0,END)
 
         elif (argumentString[0] == "/invite"):
@@ -203,6 +175,7 @@ class GUI(object):
             self.message.delete(0,END)
         elif (argumentString[0] == "/clea"):
             self.clearWindow()
+            self.message.delete(0,END)
 
         elif (argumentString[0] == "/rename"):
             
@@ -213,7 +186,7 @@ class GUI(object):
             
         elif (argumentString[0] == "/exit"):
             if argumentString[1] == "global":
-                self.writeMessage("Du kan inte gå ur global!","syscall")
+                self.writeMessage("Du kan inte go ur global!","syscall")
                 self.message.delete(0,END)
             else:
                 if(not self.noDuplicate(argumentString[1])):
@@ -225,7 +198,7 @@ class GUI(object):
                     self.serverSocket.send(msg)
                     self.message.delete(0,END)
                 else:
-                    self.writeMessage("Du är inte inne i rummet: " + argumentString[1]+"!","syscall")
+                    self.writeMessage("Du ar inte inne i rummet: " + argumentString[1]+"!","syscall")
                     self.message.delete(0,END)
         else:
             mtext = self.currentTab + " " + mtext1+'\n'
@@ -233,23 +206,25 @@ class GUI(object):
             self.serverSocket.send(msg)
             self.message.delete(0,END)
 
-##################################################################
-#Stänger ner connectionen när man trycker krysset
-##################################################################
-
     def closeConnection(self):
+        """
+
+        Shuts down the connection and window when the user closes the window
+        """
         if self.socketStatus == "ok":            
             self.serverSocket.shutdown(socket.SHUT_RDWR)
         self.serverSocket.close()
         self.master.destroy()
-        sys.exit(0)
-        
-##########################################################
-#Startar bakgrundsfunktionen som kontinuerligt kollar om
-#vi har fått nytt meddelande
-##########################################################
+        sys.exit(0)    
 
     def Start(self):
+        """
+
+        Starts the background thread which continuously checks if there is a 
+        new message from the server. 
+
+        Also initiates the function checkQueue.
+        """
         self.thread = StoppableThread(self.serverSocket)
         self.thread.daemon = True
         self.thread.start()
@@ -258,10 +233,16 @@ class GUI(object):
         self.userMenu.setCurrent(self.configList["userName"])
         self.roomMenu.setCurrent("global")
         
+        
 
-#########################################################
+   
+
 
     def initiateMenues(self):
+        """
+
+        Creates userMenu and roomMenu that appears when the user right-clicks.
+        """
         self.userMenu = UserMenu(self.master,self.serverSocket,self.configList["userName"])
         self.userWindow.bind('<Button-3>',lambda e: self.setAndPopup(e,self.userWindow))
         self.userMenu.createRoomMenu(self.windowList)
@@ -269,8 +250,17 @@ class GUI(object):
         self.roomMenu = RoomMenu(self.master,self.serverSocket)
         self.roomWindow.bind('<Button-3>',lambda e: self.setAndPopup(e,self.roomWindow))
 
+    
 
     def setAndPopup(self,event,listbox):
+        """
+        Sets the listbox item the user right clicks on to active and displays 
+        the corresponding menu.
+
+        Keyword arguments:
+        event - The user right clicks
+        listbox - The listbox on which the user right clicked 
+        """
         listbox.activate(listbox.nearest(event.y))
         if (listbox == self.userWindow):
             self.userMenu.setCurrent(listbox.get(ACTIVE))
@@ -279,23 +269,29 @@ class GUI(object):
             self.roomMenu.setCurrent(listbox.get(ACTIVE))
             self.roomMenu.popup(event)
 
-##########################################################
-#Kollar om det finns något nytt meddelande att hämta
-#Tolkar även specialmeddelanden från servern
-##########################################################
-
+   
     def checkQueue(self):
+        """
+
+        Parses the answer from the server and performes the corresponding 
+        command.
+
+        Side effects: 
+
+        Can be one of the following: A new tab is created, 
+        the username is changed, a message is printed in the current window.
+        """
         
         stopSign = 1
         respons = self.thread.returnQueue()
         if (respons == "empty"):
-            1+1
+            pass
         elif(respons == "Disconnected"):
             self.socketStatus = "disconnected"
             self.disconnect()
             stopSign = 0
             if self.configList["reconnectMode"] == 'auto':
-                self.writeMessage("Tappade anslutningen, försöker återansluta automatiskt","syscall")
+                self.writeMessage("Tappade anslutningen, forsoker ateransluta automatiskt","syscall")
                 self.reconnect()
             else:
                 self.writeMessage("Tappade anslutningen till servern, anslut manuellt med /connect IP","syscall")           
@@ -308,7 +304,7 @@ class GUI(object):
                         self.rooms[commandString2[0]] = [commandString[0],commandString2[1]]
                         self.addTab(commandString2[0])
                     elif commandString[0] == 'error':
-                        self.writeMessage("Rummet är slutet, du måste bli inbjuden","syscall")
+                        self.writeMessage("Rummet ar slutet, du maste bli inbjuden","syscall")
                     elif (commandString[0] == 'invited'):
                         if(self.noDuplicate(commandString[1])):
                             self.addTab(commandString[1])
@@ -326,7 +322,7 @@ class GUI(object):
                         trackList = commandString[1].split(",")
                         self.writeMessage("","syscall")
                         self.writeMessage("-------------------------------------","syscall")
-                        self.writeMessage("Användaren är med i följande rum:","syscall")
+                        self.writeMessage("Anvandaren ar med i foljande rum:","syscall")
                         for element in trackList:
                             self.writeMessage(element,"syscall")
                         self.writeMessage("-------------------------------------","syscall")
@@ -354,92 +350,113 @@ class GUI(object):
         if stopSign == 1:
             self.master.after(50,self.checkQueue)
 
-##########################################################
-#Fyller userList med användarna i det aktuella rummet
-##########################################################
+    
+
 
     def fillUserList(self,roomName):
+        """
+
+        Fill the userList with the usernames in the current room.
+
+        Keyword arguments:
+        roomName - In which to list the users.
+        """
         self.userWindow.delete(0,END)
         for userName in self.userList[roomName]:     
             self.userWindow.insert(END,userName)
 
-##########################################################
-#Skriver ut välkomstmeddelandet
-##########################################################
-
     def welcome(self):
+        """
+
+        The welcome message the user is presented with.
+        """
         self.globalRoom.config(state=NORMAL)
-        self.globalRoom.insert(END,"Välkommen "+self.configList["userName"] +"!\n")
+        self.globalRoom.insert(END,"Valkommen "+self.configList["userName"] +"!\n")
         self.globalRoom.insert(END,"----------------------------------------\n")
         self.globalRoom.config(state=DISABLED)
 
-##########################################################
-#Returnerar det angivna användarnamnet
-##########################################################
-
-    def getUserName(self):
-        return self.popup.value
-
-##########################################################
-#Skickar vårt användarnamn till servern
-##########################################################
-
     def sendUserName(self):
+        """
+
+        Sends the userName to the server. 
+        """
         userName = self.configList["userName"]
         temp = userName+'\n'
         msg = temp.encode('UTF-8')
         self.serverSocket.send(msg)
 
-########################################################################################
-#Uppdaterar self.currentTab till den nya aktuella taben varje gång användaren byter tab
-########################################################################################
-
     def tabChangedEvent(self,event):
+        """
+
+        Changes to the current tab.
+
+        Keyword arguments:
+        event - User clicks on a new tab.
+        """
         self.currentTab = event.widget.tab(event.widget.index("current"),"text")
         self.fillUserList(self.currentTab)
-
-##########################################################
-#Splittar upp en mottagen sträng från servern
-##########################################################
         
     def messageSplit(self,input):
+        """
+
+        Reads to a blankspace and splits the string into two.
+
+        Keyword arguments:
+        input - The string to split.
+        """
         index = input.find(" ")
         message = (input[0:index],input[index+1:len(input)])
         return message
 
-############################################################
-#Tar bort den angivna taben och det relaterade chatfönstret
-############################################################
+    
 
     def deleteTab(self,name):
+        """
+
+        Deletes the selected tab.
+
+        Keyword arguments:
+        name - The name of the tab to be deleted.
+        """
         self.nb.forget(self.windowList[name])
         self.userMenu.setRoomList(self.windowList)
         self.roomMenu.setRoomList(self.windowList)
-###################################################################
-#Kolla om det angivna namnet redan existerar i listan över fönster
-###################################################################
 
     def noDuplicate(self,name):
+        """
+
+        Checks if the window already exists
+
+        Keyword arguments: 
+        name - The name of the room.
+
+        Return: 
+        Zero if the name already exists else one. 
+        """
         if name in self.windowList:
             return 0
         else:
             return 1
 
-##########################################################
-#Upprepar periodiska anslutningsförsök 5 gånger och utför
-#lite stuff beroende på om den lyckas eller inte
-##########################################################
-
     def checkConnectQueue(self,thread):
+        """
+
+        Parses the result from a connection attempt. 
+
+        Keyword arguments:
+        thread - The thread attempting to connect.
+
+        """
         result = thread.returnQueue()
         if (result == "empty"):
             self.master.after(500,self.checkConnectQueue,thread)
         elif (result == "Connected"):
             self.message.config(state=NORMAL)
             self.socketStatus = "ok"
-            self.writeMessage("Du är nu ansluten till " + self.configList["ipAdress"] + "!","syscall")
+            self.writeMessage("Du ar nu ansluten till " + self.configList["ipAdress"] + "!","syscall")
             self.Start()
             self.sendUserName()
+            self.timeout_update()
             self.message.delete(0,END)
             if self.configList["restoreTabs"] == "auto" and len(self.windowList) > 1:
                 self.restoreTabs()
@@ -448,26 +465,31 @@ class GUI(object):
                 self.clearWindowList()
                 
         elif (result == "Failed"):
-            self.writeMessage("Återanslutning misslyckades, anslut manuellt med /connect IP","syscall")
+            self.writeMessage("Ateranslutning misslyckades, anslut manuellt med /connect IP","syscall")
             self.message.config(state=NORMAL)
             self.message.delete(0,END)
         else:
-            self.writeMessage("Inget svar från servern... Försöker igen om " + self.configList["delay"] + " sekunder. " + str(result) + " försök kvar","syscall")
+            self.writeMessage("Inget svar fran servern... Forsoker igen om " + self.configList["delay"] + " sekunder. " + str(result) + " forsok kvar","syscall")
             self.master.after(2000,self.checkConnectQueue,thread)
+
     
     def reconnect(self):
+        """
+
+        Starts the connect thread and initiate the checkConnectQueue function.
+        """
         self.message.config(state=DISABLED)
         thread = connectToServer(self.serverSocket,self.configList["ipAdress"],self.configList["delay"],self.configList["reconnectAmount"])
         thread.daemon = True
         thread.start()
         self.checkConnectQueue(thread)
-        
-
-##########################################################
-#Skriver ut ett meddelande i det aktiva fönstret
-##########################################################
 
     def writeMessage(self,message,flag):
+        """
+
+        Displays the message in the currently active window.
+        If the flag is set to syscall the text color is set to red. 
+        """
         self.windowList[self.currentTab].config(state=NORMAL)
         self.windowList[self.currentTab].insert(END,message+'\n')
         if flag == "syscall":
@@ -476,27 +498,33 @@ class GUI(object):
         self.windowList[self.currentTab].yview(END)
         self.windowList[self.currentTab].config(state=DISABLED)
 
-###########################################################################################
-#Initierar den angivna konfigurationen från configFilen mha hjälpfunktionen parseConfig
-###########################################################################################
-
     def initiateConfig(self):
+        """
+
+        Reads all the information from the configurationfile. 
+        """
         file = open('configFile','r')
         for line in file:
             self.parseConfig(line)
 
     def parseConfig(self,configString):
+        """
+
+        interprets the read line.
+
+        Keyword arguments:
+        configString - The line to interpret.
+        """
         index = configString.find("=")
         element = configString[0:index]
         message = configString[index+1:len(configString)-1]
         self.configList[element] = message
 
-
-##########################################################
-#Skriver ut ett meddelande i det aktiva fönstret
-##########################################################
-
     def restoreTabs(self):
+        """
+
+        Restores all the rooms the user was in.
+        """
         for element in self.windowList:
             if element != "global":
                 temp = element + " " + "/invite "+self.configList["userName"] + '\n'
@@ -504,17 +532,28 @@ class GUI(object):
                 self.serverSocket.send(msg)         
 
     def clearWindow(self):
+        """
+
+        Removes all text from the currently active window.
+        """
         self.windowList[self.currentTab].config(state=NORMAL)
         self.windowList[self.currentTab].delete("1.0",END)
         self.windowList[self.currentTab].config(state=DISABLED)
-        self.message.delete(0,END)
 
     def deleteAllTabs(self):
+        """
+
+        deletes all tabs except for global.
+        """
         for window in self.windowList:
             if window != "global":
                 self.deleteTab(window)
 
     def rename(self):
+        """
+
+        Updates the configurationfile.
+        """
         open('configFile', 'w').close()
         file = open('configFile','w')
         for element in self.configList:
@@ -522,6 +561,10 @@ class GUI(object):
         file.close()
 
     def disconnect(self):
+        """
+
+        Terminates the connectin to the server.
+        """
         if self.socketStatus == "ok":            
             self.serverSocket.shutdown(socket.SHUT_RDWR)
         self.serverSocket.close()
@@ -529,6 +572,10 @@ class GUI(object):
         self.socketStatus = "disconnected"
 
     def clearWindowList(self):
+        """
+
+        Clears the entire windowList except for global. 
+        """
         copyList = []
         for element in self.windowList:
             if element != "global":
@@ -537,13 +584,24 @@ class GUI(object):
             if key == "global":
                 continue
             else:
-                self.windowList.pop(key,None)       
+                self.windowList.pop(key,None)
+                
+    def timeout_update(self):
+        if self.socketStatus == "ok":
+            text = "/global " + "timeout_update\n"
+            msg = text.encode('UTF-8')
+            self.serverSocket.send(msg)
+            self.master.after(30000,self.timeout_update)
+        else:
+            pass
 
-##########################################################
-#Startar mainfunktionen
-##########################################################
+    
 
 if __name__ == "__main__":
+    """
+
+    The main function.
+    """
     root=Tk()
     root.geometry("810x408")
     root.configure(background="#121A16")
@@ -554,7 +612,7 @@ if __name__ == "__main__":
     if m.configList["connectMode"] == 'auto':
         m.reconnect()
     else:
-        m.writeMessage("Du är inte ansluten till en server, anslut med /connect IP","syscall") 
+        m.writeMessage("Du ar inte ansluten till en server, anslut med /connect IP","syscall") 
         
     root.mainloop()
        
