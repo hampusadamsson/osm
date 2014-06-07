@@ -56,7 +56,7 @@ loop(S) ->
     inet:setopts(S,[{active,false}]),
 %    Timeout=30000,
 %    case gen_tcp:recv(S,0, Timeout) of
-    case gen_tcp:recv(S,0) of
+    case gen_tcp:recv(S,0, 40000) of
         {ok,Data} ->
             io:format("~w: ~s \n",[S,Data]),
             parser:handle(Data, S),
