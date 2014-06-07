@@ -1,0 +1,4 @@
+{application,server}.
+{packages,[]}.
+{modules,[bot,parser,room,server,server_app,server_sup,storage_handler,
+          tcp_handler]}.

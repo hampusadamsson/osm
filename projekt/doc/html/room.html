@@ -1,0 +1,211 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Module room</title>
+<link rel="stylesheet" type="text/css" href="stylesheet.css" title="EDoc">
+</head>
+<body bgcolor="white">
+<div class="navbar"><a name="#navbar_top"></a><table width="100%" border="0" cellspacing="0" cellpadding="2" summary="navigation bar"><tr><td><a href="overview-summary.html" target="overviewFrame">Overview</a></td><td><a href="http://www.erlang.org/"><img src="erlang.png" align="right" border="0" alt="erlang logo"></a></td></tr></table></div>
+<hr>
+
+<h1>Module room</h1>
+<ul class="index"><li><a href="#index">Function Index</a></li><li><a href="#functions">Function Details</a></li></ul>
+
+
+<h2><a name="index">Function Index</a></h2>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#add_socket-4">add_socket/4</a></td><td>Correctly adds a socket to List.</td></tr>
+<tr><td valign="top"><a href="#find_name-2">find_name/2</a></td><td>  
+Find the name assosciated with the socket Sock.</td></tr>
+<tr><td valign="top"><a href="#find_sock-2">find_sock/2</a></td><td>  
+Find the socket assosciated with the user with name Name.</td></tr>
+<tr><td valign="top"><a href="#get_info-2">get_info/2</a></td><td>Get secrecy info of a room as a string.</td></tr>
+<tr><td valign="top"><a href="#get_ip-2">get_ip/2</a></td><td>Returns the user Name's ip and the port said user is connected through.</td></tr>
+<tr><td valign="top"><a href="#init_sock-4">init_sock/4</a></td><td>Initial insert for all new connections into the List of rooms.</td></tr>
+<tr><td valign="top"><a href="#insert-5">insert/5</a></td><td>Insert a socket into the List of rooms.</td></tr>
+<tr><td valign="top"><a href="#invite-3">invite/3</a></td><td>Find the invited socket, if it exists.</td></tr>
+<tr><td valign="top"><a href="#receivers-3">receivers/3</a></td><td>Returns a list of the connected sockets or the usernames associated       
+to the sockets in the room Room.</td></tr>
+<tr><td valign="top"><a href="#remove-3">remove/3</a></td><td>Removes socket Sock from the room Room.</td></tr>
+<tr><td valign="top"><a href="#remove_from_all-2">remove_from_all/2</a></td><td>Remove socket Sock from all rooms in List.</td></tr>
+<tr><td valign="top"><a href="#rename_user-3">rename_user/3</a></td><td>Gives the user with socket Sock the new name New.</td></tr>
+<tr><td valign="top"><a href="#rooms-2">rooms/2</a></td><td>Returnes a string containg the rooms username Name is a member of.</td></tr>
+<tr><td valign="top"><a href="#users_in_room-2">users_in_room/2</a></td><td>Sends a lists users in a room to the client.</td></tr>
+</table>
+
+<h2><a name="functions">Function Details</a></h2>
+
+<h3 class="function"><a name="add_socket-4">add_socket/4</a></h3>
+<div class="spec">
+<p><tt>add_socket(NewSock, Room, List, Secrecy1) -&gt; any()</tt></p>
+</div><p><p>Correctly adds a socket to List</p>
+ 
+       <p>NewSock - The socket to be added</p>
+ 
+       <p>Room - The room in which to add the socket to</p>
+ 
+       <p>List - List containing all rooms and the sockets in each room</p>
+ 
+       Secrecy1 - true or false, indicates if the room is private or public
+ </p>
+
+<h3 class="function"><a name="find_name-2">find_name/2</a></h3>
+<div class="spec">
+<p><tt>find_name(Sock, List) -&gt; any()</tt></p>
+</div><p><p>  
+Find the name assosciated with the socket Sock</p>
+ 
+  <p>Sock - socket to find assosciated name for</p>
+ 
+  List - List containing all rooms and the sockets in each room</p>
+
+<h3 class="function"><a name="find_sock-2">find_sock/2</a></h3>
+<div class="spec">
+<p><tt>find_sock(Name, List) -&gt; any()</tt></p>
+</div><p><p>  
+Find the socket assosciated with the user with name Name</p>
+ 
+  <p>Name - username to find associated socket for</p>
+ 
+  List - List containing all rooms and the sockets in each room</p>
+
+<h3 class="function"><a name="get_info-2">get_info/2</a></h3>
+<div class="spec">
+<p><tt>get_info(Room, List) -&gt; any()</tt></p>
+</div><p><p>Get secrecy info of a room as a string</p>
+ 
+       <p>Room - Room to get info about</p>
+ 
+       List - List containing all rooms and the sockets in each room
+ </p>
+
+<h3 class="function"><a name="get_ip-2">get_ip/2</a></h3>
+<div class="spec">
+<p><tt>get_ip(Name, List) -&gt; any()</tt></p>
+</div><p><p>Returns the user Name's ip and the port said user is connected through</p>
+ 
+       <p>Name - The user to get the ip for</p>
+ 
+       List - List containing all rooms and the sockets in each room</p>
+
+<h3 class="function"><a name="init_sock-4">init_sock/4</a></h3>
+<div class="spec">
+<p><tt>init_sock(Room, List, Sock, Name) -&gt; any()</tt></p>
+</div><p><p>Initial insert for all new connections into the List of rooms</p>
+ 
+       <p>Room - The room in which to put the user/socket</p>
+ 
+       <p>List - List containing all rooms and the sockets in each room</p>
+ 
+       <p>Sock - The socket to be added to the list</p>
+ 
+       <p>Name - The name of the user associated to the socket about to be              
+added</p>
+ 
+       example of a return: [{room_name, [sock1,sock2,sock3]}]</p>
+
+<h3 class="function"><a name="insert-5">insert/5</a></h3>
+<div class="spec">
+<p><tt>insert(Room, List, Sock, Name, Secrecy1) -&gt; any()</tt></p>
+</div><p><p>Insert a socket into the List of rooms</p>
+ 
+       <p>Room - The room in which to put the user/socket</p>
+ 
+       <p>List - List containing all rooms and the sockets in each room</p>
+ 
+       <p>Sock - The socket to be added to the list</p>
+ 
+       <p>Name - The name of the user associated to the socket about to be              
+added</p>
+ 
+       <p>Secrecy1 - true or fals, indicates if the room is hidden or not</p>
+ 
+  example of a return: [{room_name, [sock1,sock2,sock3]}]</p>
+
+<h3 class="function"><a name="invite-3">invite/3</a></h3>
+<div class="spec">
+<p><tt>invite(Name, Room, List) -&gt; any()</tt></p>
+</div><p><p>Find the invited socket, if it exists</p>
+ 
+       <p>Name - The name of the user to be invited into a room</p>
+ 
+       <p>Room - The room into which the user is to be invited</p>
+ 
+       List - List containing all rooms and the sockets in each room</p>
+
+<h3 class="function"><a name="receivers-3">receivers/3</a></h3>
+<div class="spec">
+<p><tt>receivers(Room, List, N) -&gt; any()</tt></p>
+</div><p><p>Returns a list of the connected sockets or the usernames associated       
+to the sockets in the room Room</p>
+ 
+       <p>Room - The room from which to list users</p>
+ 
+       <p>List - List containing all rooms and the sockets in each room</p>
+ 
+       <p>N - Option variable to chose between returning a list of sockets or       
+usernames</p>
+ 
+  example of a return: [{room_name, [sock1,sock2,sock3]}]</p>
+
+<h3 class="function"><a name="remove-3">remove/3</a></h3>
+<div class="spec">
+<p><tt>remove(Room, List, Sock) -&gt; any()</tt></p>
+</div><p><p>Removes socket Sock from the room Room</p>
+ 
+       <p>Room - The room to remove Sock from</p>
+ 
+       <p>List - List containing all rooms and the sockets in each room</p>
+ 
+       <p>Sock - The socket to remove</p>
+ 
+  example of a return: [{room_name, [sock1,sock2,sock3]}]</p>
+
+<h3 class="function"><a name="remove_from_all-2">remove_from_all/2</a></h3>
+<div class="spec">
+<p><tt>remove_from_all(List, Sock) -&gt; any()</tt></p>
+</div><p><p>Remove socket Sock from all rooms in List</p>
+ 
+       <p>List - List containing all rooms and the sockets in each room</p>
+ 
+       <p>Sock - The socket to be removed</p>
+ 
+  example of a return: [{room_name, [sock1,sock2,sock3]}]</p>
+
+<h3 class="function"><a name="rename_user-3">rename_user/3</a></h3>
+<div class="spec">
+<p><tt>rename_user(New1, Sock, List) -&gt; any()</tt></p>
+</div><p><p>Gives the user with socket Sock the new name New</p>
+ 
+       <p>New1 - The new name to set to a user</p>
+ 
+       <p>Sock - The socket of the user to be renamed</p>
+ 
+       List - List containing all rooms and the sockets in each room
+ </p>
+
+<h3 class="function"><a name="rooms-2">rooms/2</a></h3>
+<div class="spec">
+<p><tt>rooms(List, Name) -&gt; any()</tt></p>
+</div><p><p>Returnes a string containg the rooms username Name is a member of.       
+If Name = false returns a string with all public rooms.</p>
+ 
+       <p>List - List containing all rooms and the sockets in each room</p>
+ 
+       Name - To get the rooms user Name is a member of</p>
+
+<h3 class="function"><a name="users_in_room-2">users_in_room/2</a></h3>
+<div class="spec">
+<p><tt>users_in_room(Room, List) -&gt; any()</tt></p>
+</div><p><p>Sends a lists users in a room to the client</p>
+ 
+       <p>Room - The room to list users in</p>
+ 
+       List - List containing all rooms and the sockets in each room
+ </p>
+<hr>
+
+<div class="navbar"><a name="#navbar_bottom"></a><table width="100%" border="0" cellspacing="0" cellpadding="2" summary="navigation bar"><tr><td><a href="overview-summary.html" target="overviewFrame">Overview</a></td><td><a href="http://www.erlang.org/"><img src="erlang.png" align="right" border="0" alt="erlang logo"></a></td></tr></table></div>
+<p><i>Generated by EDoc, Jun 7 2014, 18:02:26.</i></p>
+</body>
+</html>
