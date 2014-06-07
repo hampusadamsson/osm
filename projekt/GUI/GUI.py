@@ -83,7 +83,7 @@ class GUI(object):
         self.nb.add(self.globalRoom, text='global')
         self.windowList["global"] = self.globalRoom
 
-    
+#######################################################################################    
         
     def addTab(self,name):
 
@@ -102,14 +102,16 @@ class GUI(object):
         self.userMenu.setRoomList(self.windowList)
         self.roomMenu.setRoomList(self.windowList)
 
+####################################################################################### 
    
-
     def GetTime(self):
         """
 
         Import the current time and return it
         """
         return "<" + time.strftime("%H:%M")+" "
+
+####################################################################################### 
 
     def sendMessage(self,event):
         """
@@ -136,7 +138,8 @@ class GUI(object):
                 else:
                     self.disconnect()
                     self.configList["ipAdress"] = argumentString[1]
-                    self.reconnect()
+                    if self.configList["reconnectMode"] != "auto":
+                        self.master.after(100,self.reconnect)
                 self.message.delete(0,END)
             
                     
@@ -206,6 +209,8 @@ class GUI(object):
             self.serverSocket.send(msg)
             self.message.delete(0,END)
 
+####################################################################################### 
+
     def closeConnection(self):
         """
 
@@ -215,7 +220,9 @@ class GUI(object):
             self.serverSocket.shutdown(socket.SHUT_RDWR)
         self.serverSocket.close()
         self.master.destroy()
-        sys.exit(0)    
+        sys.exit(0)
+
+####################################################################################### 
 
     def Start(self):
         """
@@ -233,11 +240,8 @@ class GUI(object):
         self.userMenu.setCurrent(self.configList["userName"])
         self.roomMenu.setCurrent("global")
         
+####################################################################################### 
         
-
-   
-
-
     def initiateMenues(self):
         """
 
@@ -250,7 +254,7 @@ class GUI(object):
         self.roomMenu = RoomMenu(self.master,self.serverSocket)
         self.roomWindow.bind('<Button-3>',lambda e: self.setAndPopup(e,self.roomWindow))
 
-    
+####################################################################################### 
 
     def setAndPopup(self,event,listbox):
         """
@@ -269,6 +273,7 @@ class GUI(object):
             self.roomMenu.setCurrent(listbox.get(ACTIVE))
             self.roomMenu.popup(event)
 
+####################################################################################### 
    
     def checkQueue(self):
         """
@@ -350,8 +355,7 @@ class GUI(object):
         if stopSign == 1:
             self.master.after(50,self.checkQueue)
 
-    
-
+####################################################################################### 
 
     def fillUserList(self,roomName):
         """
@@ -364,6 +368,8 @@ class GUI(object):
         self.userWindow.delete(0,END)
         for userName in self.userList[roomName]:     
             self.userWindow.insert(END,userName)
+
+####################################################################################### 
 
     def welcome(self):
         """
@@ -385,6 +391,8 @@ class GUI(object):
         msg = temp.encode('UTF-8')
         self.serverSocket.send(msg)
 
+####################################################################################### 
+
     def tabChangedEvent(self,event):
         """
 
@@ -395,6 +403,8 @@ class GUI(object):
         """
         self.currentTab = event.widget.tab(event.widget.index("current"),"text")
         self.fillUserList(self.currentTab)
+
+####################################################################################### 
         
     def messageSplit(self,input):
         """
@@ -408,7 +418,7 @@ class GUI(object):
         message = (input[0:index],input[index+1:len(input)])
         return message
 
-    
+####################################################################################### 
 
     def deleteTab(self,name):
         """
@@ -421,6 +431,8 @@ class GUI(object):
         self.nb.forget(self.windowList[name])
         self.userMenu.setRoomList(self.windowList)
         self.roomMenu.setRoomList(self.windowList)
+
+####################################################################################### 
 
     def noDuplicate(self,name):
         """
@@ -437,6 +449,8 @@ class GUI(object):
             return 0
         else:
             return 1
+
+####################################################################################### 
 
     def checkConnectQueue(self,thread):
         """
@@ -472,6 +486,7 @@ class GUI(object):
             self.writeMessage("Inget svar fran servern... Forsoker igen om " + self.configList["delay"] + " sekunder. " + str(result) + " forsok kvar","syscall")
             self.master.after(2000,self.checkConnectQueue,thread)
 
+####################################################################################### 
     
     def reconnect(self):
         """
@@ -483,6 +498,8 @@ class GUI(object):
         thread.daemon = True
         thread.start()
         self.checkConnectQueue(thread)
+
+####################################################################################### 
 
     def writeMessage(self,message,flag):
         """
@@ -498,6 +515,8 @@ class GUI(object):
         self.windowList[self.currentTab].yview(END)
         self.windowList[self.currentTab].config(state=DISABLED)
 
+####################################################################################### 
+
     def initiateConfig(self):
         """
 
@@ -506,6 +525,8 @@ class GUI(object):
         file = open('configFile','r')
         for line in file:
             self.parseConfig(line)
+
+####################################################################################### 
 
     def parseConfig(self,configString):
         """
@@ -520,6 +541,8 @@ class GUI(object):
         message = configString[index+1:len(configString)-1]
         self.configList[element] = message
 
+####################################################################################### 
+
     def restoreTabs(self):
         """
 
@@ -530,6 +553,8 @@ class GUI(object):
                 temp = element + " " + "/invite "+self.configList["userName"] + '\n'
                 msg = temp.encode('UTF-8')
                 self.serverSocket.send(msg)         
+
+####################################################################################### 
 
     def clearWindow(self):
         """
@@ -549,6 +574,8 @@ class GUI(object):
             if window != "global":
                 self.deleteTab(window)
 
+####################################################################################### 
+
     def rename(self):
         """
 
@@ -560,6 +587,8 @@ class GUI(object):
             file.write(element+"="+self.configList[element]+'\n')
         file.close()
 
+####################################################################################### 
+
     def disconnect(self):
         """
 
@@ -570,6 +599,8 @@ class GUI(object):
         self.serverSocket.close()
         self.serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socketStatus = "disconnected"
+
+####################################################################################### 
 
     def clearWindowList(self):
         """
@@ -585,6 +616,8 @@ class GUI(object):
                 continue
             else:
                 self.windowList.pop(key,None)
+
+####################################################################################### 
                 
     def timeout_update(self):
         if self.socketStatus == "ok":
@@ -595,7 +628,7 @@ class GUI(object):
         else:
             pass
 
-    
+####################################################################################### 
 
 if __name__ == "__main__":
     """
@@ -609,11 +642,9 @@ if __name__ == "__main__":
     m=GUI(root)
     m.initiateConfig()
     m.welcome()
-    if m.configList["connectMode"] == 'auto':
+    if m.configList["reconnectMode"] == 'auto':
         m.reconnect()
     else:
         m.writeMessage("Du ar inte ansluten till en server, anslut med /connect IP","syscall") 
         
     root.mainloop()
-       
-    
