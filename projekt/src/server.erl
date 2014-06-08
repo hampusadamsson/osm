@@ -6,15 +6,6 @@
 -include_lib("eunit/include/eunit.hrl").
 
 %% ------------------------------------------------------------------
-%%
-%%
-%%   Run with: server_sup:start_link().
-%%              server:start_servers().
-%%              
-%%   Client:    comment line 171
-%%             **this will render the server a client instead
-%%
-%% ------------------------------------------------------------------
 %% API Function Exports
 %% ------------------------------------------------------------------
 
@@ -57,13 +48,8 @@ init(_Args) ->
     io:format("Server  running on PID:~w \n",[self()]),
     {ok, Arg}.
 
-%% Establish a Socket to an incoming connection
-%% Sock = inc. Socket
-%% ------------------------------------------------------------------
-
 %% @doc
-%% Establish a Socket to an incoming connection
-%% Sock = inc. Socket
+%% Calls function init_sock in module room
 %% @end
 %% ------------------------------------------------------------------
 handle_cast({'init_socket', Room, NewSock, Name}, List) ->
@@ -71,8 +57,7 @@ handle_cast({'init_socket', Room, NewSock, Name}, List) ->
 
 %% ------------------------------------------------------------------
 %% @doc
-%% Add socket with name when writing /join
-%% Sock = inc. Socket
+%% Calls function add_socket in module room
 %% @end
 %% ------------------------------------------------------------------
 handle_cast({'add_socket', Room, NewSock, Secrecy}, List) ->
@@ -80,7 +65,7 @@ handle_cast({'add_socket', Room, NewSock, Secrecy}, List) ->
 
 %% ------------------------------------------------------------------
 %% @doc
-%% Invite user Name to room Room
+%% Calls function invite in module room
 %% @end
 %% ------------------------------------------------------------------
 handle_cast({'invite', Name, Room}, List) ->
@@ -88,8 +73,7 @@ handle_cast({'invite', Name, Room}, List) ->
 
 %% ------------------------------------------------------------------
 %% @doc
-%% Remove socket from list after disconnect
-%% Rem_Sock = The one to remove
+%% Calls function remove_from_all in module room
 %% @end
 %% ------------------------------------------------------------------
 handle_cast({'remove', RemSocket}, List) ->
@@ -97,8 +81,7 @@ handle_cast({'remove', RemSocket}, List) ->
 
 %% ------------------------------------------------------------------
 %% @doc
-%% Remove socket from certain room in list
-%% Rem_Sock = The one to remove
+%% Calls function remove in module room
 %% @end
 %% ------------------------------------------------------------------
 handle_cast({'remove_from_room', Room, RemSocket}, List) ->
@@ -106,8 +89,7 @@ handle_cast({'remove_from_room', Room, RemSocket}, List) ->
 
 %% ------------------------------------------------------------------
 %% @doc
-%% Sends a message !IF! connected
-%% Sock = socket created by 'connect'
+%% Calls function send_msg in module tcp_handler
 %% @end
 %% ------------------------------------------------------------------
 handle_cast({'send', Room, Msg, Sock}, List) ->
@@ -116,7 +98,7 @@ handle_cast({'send', Room, Msg, Sock}, List) ->
 
 %% ------------------------------------------------------------------
 %% @doc
-%% Returns users in a room.
+%% Calls function send_list in module tcp_handler
 %% @end
 %% ------------------------------------------------------------------
 handle_cast({'list_room_users', Room, NewList}, _) ->
@@ -134,7 +116,7 @@ handle_cast({'list_rooms', NewList}, _) ->
 
 %% ------------------------------------------------------------------
 %% @doc
-%% Returns the ip of a user.
+%% Calls function send_ip in module tcp_handler
 %% @end
 %% ------------------------------------------------------------------
 handle_cast({'whois', Name, Sock}, List) ->
@@ -142,7 +124,7 @@ handle_cast({'whois', Name, Sock}, List) ->
 
 %% ------------------------------------------------------------------
 %% @doc
-%% Returns a list of the rooms that user Name is a member of.
+%% Calls function rooms in module room
 %% @end
 %% ------------------------------------------------------------------
 handle_cast({'track', Name, Sock}, List) ->
@@ -151,7 +133,7 @@ handle_cast({'track', Name, Sock}, List) ->
 
 %% ------------------------------------------------------------------
 %% @doc
-%% Show info about the room
+%% Calls function get_info in module room
 %% @end
 %% ------------------------------------------------------------------
 handle_cast({'info', Room, Sock}, List) ->
@@ -160,7 +142,7 @@ handle_cast({'info', Room, Sock}, List) ->
 
 %% ------------------------------------------------------------------
 %% @doc
-%% Rename yourself
+%% Calls function rename_user in module room
 %% @end
 %% ------------------------------------------------------------------
 handle_cast({'rename_user', New, Sock}, List) ->
@@ -168,7 +150,7 @@ handle_cast({'rename_user', New, Sock}, List) ->
 
 %% ------------------------------------------------------------------
 %% @doc
-%% Displays current user-list
+%% Displays information regarding connection, rooms, sockets, processes and users
 %% @end
 %% ------------------------------------------------------------------
 handle_call({'list_users'}, _From, List) ->
@@ -178,10 +160,7 @@ handle_call({'list_users'}, _From, List) ->
 
 %% ------------------------------------------------------------------
 %% @doc
-%% Listen for incoming connections 
-%%
-%% start(Arg1,Arg2)
-%% Arg1 = listening port for incoming servers
+%% Returns the state of the gen_server
 %% @end
 %% ------------------------------------------------------------------
 handle_call({'return_state'}, _From, List) ->
@@ -190,6 +169,11 @@ handle_call({'return_state'}, _From, List) ->
 handle_info(_Info, State) ->
     {noreply, State}.
 
+%% ------------------------------------------------------------------
+%% @doc
+%% This function will activate when the gen_server shuts down; saving state, error log and close socket connections
+%% @end
+%% ------------------------------------------------------------------
 terminate(Reason, State) ->
     Sockets2kill = room:receivers("global", State, 1),
     lists:foreach(fun(X)->gen_tcp:close(X) end, Sockets2kill),
@@ -206,18 +190,39 @@ code_change(_OldVsn, State, _Extra) ->
 
 %% ------------------------------------------------------------------
 %% Internal Function Definitions
+%% Unused fuctions, debugging purposes 
 %% ------------------------------------------------------------------
 
 
+%% ------------------------------------------------------------------
+%% @doc
+%% Sends a message to a room on the gen_server
+%% @end
+%% ------------------------------------------------------------------
 send(Room, Msg)->
     gen_server:cast(server, {'send', Room, Msg}).
 
+%% ------------------------------------------------------------------
+%% @doc
+%% Returns the state of the gen_server
+%% @end
+%% ------------------------------------------------------------------
 return_state()->
     gen_server:call(server, {'return_state'}).
 
+%% ------------------------------------------------------------------
+%% @doc
+%% debugging function; Displays information regarding connection, rooms, sockets, processes and users
+%% @end
+%% ------------------------------------------------------------------
 list_users()->
     gen_server:call(server, {'list_users'}).
 
+%% ------------------------------------------------------------------
+%% @doc
+%% Generates a crash; used to debug the supervisor
+%% @end
+%% ------------------------------------------------------------------
 crash_me(Crash_type)->
     case Crash_type of
         1 ->
