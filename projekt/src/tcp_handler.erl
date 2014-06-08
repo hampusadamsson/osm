@@ -82,7 +82,7 @@ send_ip(Name, Sock, List) ->
         false ->
             {noreply, List};    
         {Ip, Port} ->
-            Msg = io_lib:format("{whois Användare: ~s,Ansluten från: ~s,På port: ~w}~n",[Name, Ip, Port]),
+            Msg = io_lib:format("{whois User: ~s,Connected from: ~s,On port: ~w}~n",[Name, Ip, Port]),
             gen_tcp:send(Sock, Msg),
             {noreply, List}    
     end.
