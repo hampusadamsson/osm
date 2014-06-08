@@ -2,9 +2,6 @@
 -behaviour(gen_server).
 -define(SERVER, ?MODULE).
 
-%% To use EUnit we must include this:
--include_lib("eunit/include/eunit.hrl").
-
 %% ------------------------------------------------------------------
 %% API Function Exports
 %% ------------------------------------------------------------------
