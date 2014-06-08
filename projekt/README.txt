@@ -25,7 +25,7 @@ An IRC like client/server
 
 900921-1492 Hampus.Adamsson.2548@student.uu.se
 860119-2936 Erik.Andersson.8953@student.uu.se
-YYMMDD-XXXX Firstname.Lastname.1234@student.uu.se
+930213-0738 John.Davey.0738@student.uu.se
 900321-1613 PerAlbin.Mattsson.5692@student.uu.se
 920821-8041 Maria.Svensson.6227@student.uu.se
 
