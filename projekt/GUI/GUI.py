@@ -24,6 +24,7 @@ class GUI(object):
 
 
     """
+
     Initiate the GUI
 
     master - The frame in which to display the GUI
@@ -130,6 +131,9 @@ class GUI(object):
 
         if (argumentString[0] == "/connect"):
             if(self.socketStatus == "disconnected"):
+               if self.configList["ipAdress"] != argumentString[1]:
+                    self.deleteAllTabs()
+                    self.clearWindowList()
                self.configList["ipAdress"] = argumentString[1]
                self.reconnect()
             else:
@@ -137,6 +141,8 @@ class GUI(object):
                     self.writeMessage("Du ar redan ansluten till " +argumentString[1],"syscall")
                 else:
                     self.disconnect()
+                    self.deleteAllTabs()
+                    self.clearWindowList()
                     self.configList["ipAdress"] = argumentString[1]
                     if self.configList["reconnectMode"] != "auto":
                         self.master.after(100,self.reconnect)

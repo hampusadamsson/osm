@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import queue
 import sys
 import threading
@@ -43,7 +45,6 @@ class connectToServer(threading.Thread):
             self.messageQueue.put("Connected")
             self.tries = 0
         except Exception as e:
-                print(e)
                 self.tries -=1
                 self.messageQueue.put(self.tries)
             

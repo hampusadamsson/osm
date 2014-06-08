@@ -24,7 +24,7 @@ An IRC like client/server
 ==== GROUP MEMBERS ==== 
 
 900921-1492 Hampus.Adamsson.2548@student.uu.se
-YYMMDD-XXXX Firstname.Lastname.1234@student.uu.se
+860119-2936 Erik.Andersson.8953@student.uu.se
 YYMMDD-XXXX Firstname.Lastname.1234@student.uu.se
 900321-1613 PerAlbin.Mattsson.5692@student.uu.se
 920821-8041 Maria.Svensson.6227@student.uu.se
@@ -46,6 +46,12 @@ directory.
 This software was developed and tested using 
      Erlang R16B01.
      Erlang/OTP 17
+
+==== PYTHON VERSION ====
+     
+This software was developed and tested using 
+     
+     Python 3
 	      	  	    	       
 ==== MAKE IT HAPPEN ==== 
 
@@ -62,8 +68,16 @@ make doc ==> Generates Edoc documentation in the doc/html directory.
 make start ==> Starts the system.
 make test ==> Runs all Eunit tests.
 
+==== GENERATE PYTHON DOCUMENTATION ====
 
-==== TO COMPILE ==== 
+You can generate documentation for the client by using Pydoc.
+Open a terminal in the folder with the Python source code and enter
+"pydoc -w ./" to generate HTML documentation for all the modules.
+
+If Python 2 is the standard on your system and you installed Python 3 along side
+it, you should instead enter "pydoc3 -w ./"
+
+==== TO COMPILE ====  
 
 To compile the project, simply type make/rebar compile and press enter.
 1- make
@@ -74,7 +88,23 @@ To compile the project, simply type make/rebar compile and press enter.
 1- ./rebar eunit -v ==> Runs all Eunit tests.
 2- make test ==> Runs all Eunit tests.
 
+===== CONFIGURE THE CLIENT =====
 
+The client comes with a configFile in which you have a number of options to change.
+
+reconnectMode= [auto / manual] - Set this to auto if you want the client to automaticly try to reconnect to the server if you lose connection
+				 Otherwise reconnect manually with the /connect commando 
+
+delay= [Int] - How long the client should wait between each reconnect attempt
+
+reconnectAmount= [X] - How many times the client should try to reconnect
+
+restoreTabs=[auto / manual] - Set this to auto if you want the client to automaticly restore the rooms you were in if a server crash would occure
+			      Othwerwise rejoin the rooms manually
+
+ipAdress= [ipAdress] - The last ipAdress you connected to. If reconnectMode is set to auto, this is the ipAdress the server tries to reconnect to
+
+userName= [Name] - The username you want displayed
 
 ===== HELP =====
 
@@ -103,4 +133,5 @@ To compile the project, simply type make/rebar compile and press enter.
 /connect [host] [Port]
        Attempts to connect to Host:Port.
 
-
+/clear 
+       Clears the current chat window
