@@ -27,7 +27,7 @@ An IRC like client/server
 YYMMDD-XXXX Firstname.Lastname.1234@student.uu.se
 YYMMDD-XXXX Firstname.Lastname.1234@student.uu.se
 900321-1613 PerAlbin.Mattsson.5692@student.uu.se
-YYMMDD-XXXX Firstname.Lastname.1234@student.uu.se
+920821-8041 Maria.Svensson.6227@student.uu.se
 
 
 ==== MAY THE SOURCE BE WITH YOU ==== 
